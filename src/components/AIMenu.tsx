@@ -56,7 +56,7 @@ export default function AIMenu({ isEditor, editing, saveState, setEditing, onAdd
             label: 'העתקת קישור העריכה',
             hint: 'לחיבור מכשיר נוסף',
             onSelect: async () => {
-              const link = `${location.origin}/#editor=${readEditorKey()}`;
+              const link = `${location.origin}${location.pathname}#editor=${readEditorKey()}`;
               try {
                 await navigator.clipboard.writeText(link);
                 toast('קישור העריכה הועתק. פתחי אותו פעם אחת במכשיר השני.');

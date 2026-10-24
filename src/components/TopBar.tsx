@@ -62,14 +62,14 @@ export default function TopBar({ route, apps, facets, search, onHome, onSearch, 
       <div className="topbar-inner">
         <a
           className="brand"
-          href="/"
+          href={import.meta.env.BASE_URL}
           onClick={(e) => {
             e.preventDefault();
             onHome();
           }}
           aria-label="דף הבית"
         >
-          <img src="/icon.svg" alt="" className="brand-mark" />
+          <img src={import.meta.env.BASE_URL + 'icon.svg'} alt="" className="brand-mark" />
           <span className="brand-name">Apps</span>
           <span className="brand-sub">תיק עבודות</span>
         </a>
