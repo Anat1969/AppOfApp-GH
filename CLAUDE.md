@@ -73,6 +73,9 @@ connected one field for the editor link appears above the save button and is use
 copy the link from the A&I menu ("העתקת קישור העריכה") to connect another device. Open editing for everyone was
 requested first and blocked by the Claude Code safety check; do not remove the key check without her explicit
 approval in the session.
+Saving must not depend on localStorage (Anat, 2026-10-24, "אתה פשוט מרגיז אותי"): on anat1969.github.io all her
+apps share one localStorage, the link check passed and the save got 403. The key is kept in memory too, the add
+dialog passes the pasted key straight to the save, and a refused save shows the link field again with the form intact.
 Safety net in `aoa-edit`: the previous version of an app goes to `aoa_app_versions` before a save (at most one
 per app every 10 minutes); a delete moves the app to `aoa_trash` (action `restore_app`). Both tables are public
 read, written by the function only. Migration: `supabase/migrations/20261024_aoa_versions_trash.sql`.

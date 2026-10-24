@@ -12,7 +12,7 @@ interface Props {
   prefill: AddPrefill;
   isEditor: boolean;
   onConnect: (key: string) => Promise<boolean>;
-  onCreate: (a: AppData) => Promise<boolean>;
+  onCreate: (a: AppData, key?: string) => Promise<boolean>;
 }
 
 /**
@@ -32,9 +32,11 @@ export default function AddAppDialog({ open, onClose, apps, facets, prefill, isE
   const submit = async () => {
     if (!name.trim()) return;
     setBusy(true);
+    let key: string | undefined;
     if (!isEditor) {
       const v = link.trim();
-      const ok = await onConnect(v.match(/editor=([\w-]{16,})/)?.[1] ?? v);
+      key = v.match(/editor=([\w-]{16,})/)?.[1] ?? v;
+      const ok = await onConnect(key);
       if (!ok) {
         setBusy(false);
         return;
@@ -58,7 +60,7 @@ export default function AddAppDialog({ open, onClose, apps, facets, prefill, isE
       updatedAt: now,
       linkAddedAt: url.trim() ? now : undefined,
     };
-    const ok = await onCreate(app);
+    const ok = await onCreate(app, key);
     setBusy(false);
     if (ok) onClose();
   };

@@ -10,16 +10,20 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 const KEY_STORE = 'aoa-editor-key';
+// The key is also kept in memory: on anat1969.github.io all of Anat's apps share one localStorage, and
+// another app clearing it must not break a save in this tab (2026-10-24: the check passed, the save got 403).
+let memoryKey = '';
 
 export function readEditorKey(): string {
   try {
-    return localStorage.getItem(KEY_STORE) ?? '';
+    return localStorage.getItem(KEY_STORE) || memoryKey;
   } catch {
-    return '';
+    return memoryKey;
   }
 }
 
 export function storeEditorKey(key: string) {
+  memoryKey = key;
   try {
     if (key) localStorage.setItem(KEY_STORE, key);
     else localStorage.removeItem(KEY_STORE);

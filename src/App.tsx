@@ -188,8 +188,8 @@ export default function App() {
         prefill={adding ?? {}}
         isEditor={store.isEditor}
         onConnect={store.connect}
-        onCreate={async (a) => {
-          const ok = await store.addApp(a);
+        onCreate={async (a, key) => {
+          const ok = await store.addApp(a, key);
           if (ok) {
             setEditing(true);
             go({ app: a.id, view: 'home' });
