@@ -39,7 +39,7 @@
     button { font: inherit; color: inherit; cursor: pointer; }
     .logo {
       display: inline-flex; align-items: center; gap: 10px; padding: 4px 4px 4px 12px;
-      border: 1px solid rgba(23, 25, 28, 0.18); border-radius: 10px;
+      border: 1px solid rgba(23, 25, 28, 0.18); border-radius: 0;
       background: linear-gradient(180deg, #fbfaf8, #ecebe7);
       box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 1px 2px rgba(20, 22, 26, 0.08), 0 6px 16px -8px rgba(20, 22, 26, 0.35);
       transition: box-shadow 0.25s, transform 0.25s;
@@ -47,7 +47,7 @@
     .logo:hover, .logo[aria-expanded='true'] { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 2px 4px rgba(20,22,26,.1), 0 14px 28px -10px rgba(20,22,26,.45); }
     .logo:focus-visible { outline: 2px solid #22324f; outline-offset: 2px; }
     .mark {
-      order: 2; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 7px;
+      order: 2; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 0;
       background: linear-gradient(160deg, #34383e, #121417); color: #f4f3f0;
       font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.02em;
       box-shadow: 0 1px 0 rgba(255,255,255,.15) inset, -3px 3px 0 -1px #c9c6bf;
@@ -58,7 +58,7 @@
     .status:empty { display: none; }
     .panel {
       position: fixed; top: 0; left: 0; z-index: 2147483001; width: 290px; max-width: calc(100vw - 24px);
-      background: #f7f6f3; color: #17191c; border: 1px solid #cfccc5; border-radius: 12px; padding: 8px;
+      background: #f7f6f3; color: #17191c; border: 1px solid #cfccc5; border-radius: 0; padding: 8px;
       box-shadow: 0 4px 6px rgba(20,22,26,.06), 0 18px 36px rgba(20,22,26,.14), 0 48px 96px -24px rgba(20,22,26,.35);
       transform-origin: top left; animation: open .18s cubic-bezier(.2,.7,.2,1);
     }
@@ -73,7 +73,7 @@
     .label { padding: 4px 10px 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .16em; color: #6b7077; }
     .item {
       display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px;
-      padding: 9px 10px; border: 0; border-radius: 7px; background: none; text-align: right; font-size: 14px; color: #17191c; text-decoration: none;
+      padding: 9px 10px; border: 0; border-radius: 0; background: none; text-align: right; font-size: 14px; color: #17191c; text-decoration: none;
     }
     .item:hover:not(:disabled), .item:focus-visible { background: #e9e7e2; outline: none; }
     .item:disabled { opacity: .45; cursor: default; }

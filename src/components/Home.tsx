@@ -6,7 +6,7 @@ import { activityOf } from '../lib/format';
 import { ACTIONS, actionOf, facetLabel } from '../lib/facets';
 import AppCard from './AppCard';
 import Filters from './Filters';
-import Matrix from './Matrix';
+import Matrix, { type AddPrefill } from './Matrix';
 import Vocabulary from './Vocabulary';
 
 interface Props {
@@ -21,11 +21,14 @@ interface Props {
   setSort: (s: 'date' | 'alpha') => void;
   editing: boolean;
   vocab: { actions: ActionValue[]; domains: string[]; contexts: string[] };
+  reasons: Map<string, string>;
+  near: boolean;
+  onAdd: (p?: AddPrefill) => void;
   saveFacet: (f: Facet) => Promise<boolean>;
   deleteFacet: (f: Facet) => Promise<boolean>;
 }
 
-export default function Home({ apps, results, searched, facets, sheets, route, go, sort, setSort, editing, vocab, saveFacet, deleteFacet }: Props) {
+export default function Home({ apps, results, searched, facets, sheets, route, go, sort, setSort, editing, vocab, reasons, near, onAdd, saveFacet, deleteFacet }: Props) {
   const { scrollY } = useScroll();
   const ghostY = useTransform(scrollY, [0, 600], [0, 140]);
   const titleY = useTransform(scrollY, [0, 600], [0, -40]);
@@ -68,6 +71,12 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
             או אפליקציה
           </h1>
           <p className="lead">כל גיליון פותח עולם שלם: בעיה, פתרון, ותוצר שעובד בפועל.</p>
+          <div className="hero-cta">
+            <button className="solid hero-add" onClick={() => onAdd()}>
+              הוספת אפליקציה חדשה
+            </button>
+            <span className="dim">שם, קישור, פעולה ותחום. היא מקבלת מיד מקום במפה ובחיפוש.</span>
+          </div>
         </motion.div>
       </section>
 
@@ -90,9 +99,9 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
           <header className="band-head">
             <span className="mono">02</span>
             <h2>מפת התחומים והפעולות</h2>
-            <span className="band-note">שורה היא תחום, עמודה היא מה יוצאים איתו. משבצת ריקה היא פער: אין עדיין אפליקציה כזו.</span>
+            <span className="band-note">שורה היא תחום, עמודה היא מה יוצאים איתו. ריחוף על משבצת מציג את האפליקציות בה. משבצת ריקה היא פער, ובה הצעה לאפליקציה חדשה.</span>
           </header>
-          <Matrix apps={apps} facets={facets} go={go} />
+          <Matrix apps={apps} facets={facets} sheets={sheets} go={go} onAdd={onAdd} />
           {editing && <Vocabulary facets={facets} saveFacet={saveFacet} deleteFacet={deleteFacet} />}
         </section>
       )}
@@ -103,6 +112,9 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
           <h2>{filtering ? `${results.length} אפליקציות` : 'כל הגיליונות'}</h2>
           {filtering && <span className="band-note">{summary.join(' · ')}</span>}
           <div className="filters">
+            <button className="solid" onClick={() => onAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}>
+              הוספת אפליקציה
+            </button>
             {filtering && (
               <button className="chip on" onClick={() => go({ q: '', action: null, domain: null, ctx: null, links: false })}>
                 ניקוי הסינון
@@ -123,6 +135,11 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
             )}
           </div>
         </header>
+        {q && near && (
+          <p className="expand-note">
+            לא נמצאה התאמה מדויקת ל"{q}". אלה האפליקציות הקרובות ביותר.
+          </p>
+        )}
         {q && expanded.length > 0 && (
           <p className="expand-note">
             החיפוש "{q}" כולל גם את כל האפליקציות בסיווג: <b>{expanded.join(', ')}</b>
@@ -132,14 +149,19 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
         {results.length === 0 ? (
           <div className="empty">
             <p>אין אפליקציות בצירוף הזה. זה פער, אולי רעיון לאפליקציה הבאה.</p>
-            <button className="solid" onClick={() => go({ q: '', action: null, domain: null, ctx: null, links: false })}>
-              הצגת כל האפליקציות
-            </button>
+            <span className="row">
+              <button className="solid" onClick={() => onAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined, name: q || undefined })}>
+                הוספת אפליקציה חדשה
+              </button>
+              <button className="ghost" onClick={() => go({ q: '', action: null, domain: null, ctx: null, links: false })}>
+                הצגת כל האפליקציות
+              </button>
+            </span>
           </div>
         ) : (
           <div className="grid">
             {results.map((a, i) => (
-              <AppCard key={a.id} app={a} sheet={sheets.get(a.id) ?? ''} category={domainsOf(a)} onOpen={() => go({ app: a.id })} index={i} />
+              <AppCard key={a.id} app={a} sheet={sheets.get(a.id) ?? ''} category={domainsOf(a)} why={reasons.get(a.id)} onOpen={() => go({ app: a.id })} index={i} />
             ))}
           </div>
         )}

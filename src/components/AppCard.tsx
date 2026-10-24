@@ -10,10 +10,11 @@ interface Props {
   onOpen: () => void;
   index?: number;
   compact?: boolean;
+  why?: string;
 }
 
 /** A sheet in the portfolio: framed cover with a slight perspective tilt that follows the pointer. */
-export default function AppCard({ app, sheet, category, onOpen, index = 0, compact }: Props) {
+export default function AppCard({ app, sheet, category, onOpen, index = 0, compact, why }: Props) {
   const mx = useMotionValue(0.5);
   const my = useMotionValue(0.5);
   const rx = useSpring(useTransform(my, [0, 1], [5, -5]), { stiffness: 200, damping: 20 });
@@ -56,6 +57,7 @@ export default function AppCard({ app, sheet, category, onOpen, index = 0, compa
         <button className="card-name" onClick={onOpen}>
           {app.name}
         </button>
+        {why && <div className="card-why">נמצא דרך: {why}</div>}
         <div className="card-meta mono">
           <span>{category || 'ללא תחום'}</span>
           <span>{fmtDate(activityOf(app), true)}</span>

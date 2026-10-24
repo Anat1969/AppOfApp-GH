@@ -47,6 +47,7 @@ const rows = names.map(([name, originalName, action, domains, contexts, keywords
     domains,
     contexts,
     keywords,
+    concepts: i === 1 ? ['עיתון', 'אקטואליה', 'news'] : i === 4 ? ['גינון', 'השקיה'] : [],
     previewUrl: url,
     primaryBtn: '← קישור לאפליקציה - VERCAL',
     desc: i === 0 ? 'מערכת לזיקוק רעיון גולמי ל**קוד גנטי עיצובי**, עם פרומפט ותמונה.' : 'תאר את הרקע והמטרה...',
@@ -149,6 +150,30 @@ const browser = await chromium.launch();
   await page.locator('.chip', { hasText: 'ניקוי הסינון' }).click();
   ok(!page.url().includes('action='), 'clearing removes all filters');
 
+  // hover window over a filled cell: one app per line, name links to the app, sheet opens the page
+  await page.locator('.matrix .cell[aria-label^="תכנון עירוני, אבחון"]').hover();
+  await page.waitForSelector('.cell-pop');
+  ok((await page.locator('.cell-pop .pop-list li').count()) === 1, 'hover lists the cell apps one per line');
+  ok((await page.locator('.cell-pop a.pop-name').getAttribute('href'))?.includes('ashdod-mitar-twin'), 'the name links straight to the app');
+  await page.screenshot({ path: SHOTS + 'desktop-cell-hover.png' });
+  await page.locator('.cell-pop .pop-sheet').click();
+  ok(page.url().includes('app=app-4'), 'the sheet number opens the app page');
+  await page.locator('.brand').click();
+
+  // empty cell: an idea, apps to build on, a prompt and an add action
+  await page.locator('.matrix .gap').first().click();
+  await page.waitForSelector('.cell-pop .pop-idea');
+  ok((await page.locator('.cell-pop .pop-idea h4').textContent())?.length > 2, 'an empty cell suggests an app');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: SHOTS + 'desktop-gap-idea.png' });
+  await page.locator('.cell-pop .ghost', { hasText: 'העתקת פרומפט' }).click();
+  const prompt = await page.evaluate(() => navigator.clipboard.readText());
+  ok(prompt.includes('anat-app-builder') && prompt.includes('uipro init'), 'the gap prompt for Claude Code is copied');
+  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).click();
+  ok(await page.locator('.dialog .connect').isVisible(), 'a device not connected is asked for the editor link first');
+  await page.keyboard.press('Escape');
+  ok(await page.locator('.hero-add').isVisible(), 'a prominent add button on the home page');
+
   // facet filters combine
   await page.locator('.matrix .axis', { hasText: 'משחק ואימון' }).click();
   ok((await page.locator('.grid .card').count()) === 2, 'action column filters to 2 apps');
@@ -177,6 +202,15 @@ const browser = await chromium.launch();
   await page.locator('.search input').blur();
   await page.waitForTimeout(250);
   ok((await page.locator('.grid .card-name').allTextContents()).includes('פנג שואי'), 'the old name still finds the app');
+  await page.fill('.search input', 'עיתון');
+  await page.locator('.search input').blur();
+  await page.waitForTimeout(250);
+  ok((await page.locator('.grid .card-name').allTextContents()).includes('רדאר אקטואליה'), 'a hidden concept finds the app');
+  ok((await page.locator('.card-why').first().textContent())?.includes('עיתון'), 'the card says why it was found');
+  await page.fill('.search input', 'והעיתון');
+  await page.locator('.search input').blur();
+  await page.waitForTimeout(250);
+  ok((await page.locator('.grid .card-name').allTextContents()).includes('רדאר אקטואליה'), 'Hebrew prefixes are stripped');
   await page.fill('.search input', 'תב"ע');
   await page.locator('.search input').blur();
   await page.waitForTimeout(250);
@@ -350,6 +384,17 @@ const browser = await chromium.launch();
   await page.waitForTimeout(1000);
   ok(lastOf(calls, 'save_app')?.data?.coverImage?.includes('/aoa-media/app-1/cover-'), 'new cover saved on the app');
   await page.screenshot({ path: SHOTS + 'editor-app.png', fullPage: true });
+
+  // add from a gap idea: the dialog is prefilled
+  await page.goto(BASE + '/');
+  await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
+  await page.locator('.matrix .gap').first().click();
+  await page.waitForSelector('.cell-pop .pop-idea');
+  const ideaTitle = await page.locator('.cell-pop .pop-idea h4').textContent();
+  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).click();
+  ok((await page.locator('.dialog input').first().inputValue()) === ideaTitle, 'add dialog is prefilled from the idea');
+  ok((await page.locator('.dialog .chip.on').count()) === 2, 'action and domain of the cell are preselected');
+  await page.keyboard.press('Escape');
 
   // add app
   await menu(page, 'אפליקציה חדשה');
