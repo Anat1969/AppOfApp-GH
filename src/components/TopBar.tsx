@@ -2,10 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { AppData, Category } from '../lib/types';
 import type { Route } from '../lib/route';
-import { useInstall } from '../lib/install';
-import { toast } from './Toasts';
-
-export const DEV_SESSION_URL = 'https://claude.ai/code/session_01FtP6sty7hczHKPv2RmvypM';
+import type { ReactNode } from 'react';
 
 interface Props {
   route: Route;
@@ -15,10 +12,10 @@ interface Props {
   onSearch: (q: string) => void;
   onOpen: (id: string) => void;
   onView: (v: Route['view']) => void;
+  menu: ReactNode;
 }
 
-export default function TopBar({ route, apps, categories, onHome, onSearch, onOpen, onView }: Props) {
-  const { canInstall, install } = useInstall();
+export default function TopBar({ route, apps, categories, onHome, onSearch, onOpen, onView, menu }: Props) {
   const [focus, setFocus] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const q = route.q.trim().toLowerCase();
@@ -31,15 +28,6 @@ export default function TopBar({ route, apps, categories, onHome, onSearch, onOp
   }, [apps, q]);
 
   const catLabel = (v?: string | null) => categories.find((c) => c.value === v)?.label ?? '';
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(location.href);
-      toast('הקישור למצב הנוכחי הועתק');
-    } catch {
-      toast('לא ניתן להעתיק בדפדפן הזה', 'error');
-    }
-  };
 
   return (
     <header className="topbar">
@@ -110,15 +98,7 @@ export default function TopBar({ route, apps, categories, onHome, onSearch, onOp
             טבלה
           </button>
           <span className="sep" aria-hidden />
-          <button className="ghost" onClick={copy}>העתקת קישור</button>
-          <a className="ghost" href={DEV_SESSION_URL} target="_blank" rel="noopener noreferrer">
-            שיחת הפיתוח
-          </a>
-          {canInstall && (
-            <button className="solid" onClick={install}>
-              התקנת האפליקציה
-            </button>
-          )}
+          {menu}
         </nav>
       </div>
     </header>

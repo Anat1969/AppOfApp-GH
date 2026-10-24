@@ -144,7 +144,7 @@ img { display: block; max-width: 100%; }
 .sep { width: 1px; height: 22px; background: var(--line-2); margin: 0 4px; }
 
 /* ---------- stage ---------- */
-.stage { max-width: 1440px; margin: 0 auto; padding: 0 24px 140px; min-height: calc(100vh - var(--bar-h)); }
+.stage { max-width: 1440px; margin: 0 auto; padding: 0 24px 96px; min-height: calc(100vh - var(--bar-h)); }
 .state { min-height: 60vh; display: grid; place-content: center; justify-items: center; gap: 16px; text-align: center; }
 .loader { display: flex; gap: 6px; perspective: 400px; }
 .loader span { width: 34px; height: 46px; background: var(--paper); border: 1px solid var(--line-2); box-shadow: var(--shadow-2); animation: flip 1.4s ease-in-out infinite; }
@@ -360,25 +360,6 @@ td.wide { min-width: 220px; max-width: 320px; }
 .tag.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 .cell-input { min-width: 160px; font-size: 0.85rem; }
 
-/* ---------- editor bar ---------- */
-.editorbar {
-  position: fixed; bottom: 18px; left: 50%; translate: -50% 0; z-index: 60;
-  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
-  background: rgba(23, 25, 28, 0.92); color: #f1f0ec; border-radius: 12px;
-  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-  backdrop-filter: blur(10px); max-width: calc(100vw - 24px); overflow-x: auto;
-}
-.editorbar > * { flex: 0 0 auto; }
-.editorbar .ghost { background: transparent; color: #e7e6e2; border-color: rgba(255, 255, 255, 0.22); }
-.editorbar .ghost:hover { background: rgba(255, 255, 255, 0.08); color: #fff; box-shadow: none; }
-.editorbar .solid { background: #f1f0ec; color: var(--ink); }
-.editorbar .link { color: #c9cdd4; text-decoration-color: rgba(201, 205, 212, 0.4); }
-.status { padding: 0 8px; color: #c4c7cc; }
-.status.s-saving { color: #e9d48b; }
-.status.s-saved { color: #9fd0b3; }
-.status.s-error { color: #f0a493; }
-.shell.editing .stage { padding-bottom: 180px; }
-
 /* ---------- dialog / toasts ---------- */
 .scrim { position: fixed; inset: 0; z-index: 70; background: rgba(23, 25, 28, 0.35); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 16px; }
 .dialog { width: min(560px, 100%); max-height: 88vh; overflow: auto; background: var(--paper); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-3); display: grid; gap: 14px; }
@@ -406,7 +387,6 @@ td.wide { min-width: 220px; max-width: 320px; }
   .brand-sub { display: none; }
   .actions { flex-wrap: wrap; overflow: visible; }
   .actions .sep { display: none; }
-  .editorbar { flex-wrap: wrap; justify-content: center; width: calc(100vw - 20px); }
   :root { --bar-h: 160px; }
   .stage { padding-inline: 16px; }
   .hero { padding: 48px 0 28px; }
@@ -426,7 +406,6 @@ td.wide { min-width: 220px; max-width: 320px; }
   .crumbs-nav button { flex: 1; }
   .layers span:nth-child(1) { transform: translate(-10px, 10px); }
   .layers span:nth-child(2) { transform: translate(-5px, 5px); }
-  .editorbar { bottom: 10px; }
   .foot { flex-direction: column; padding-inline: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {

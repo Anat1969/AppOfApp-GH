@@ -44,8 +44,9 @@ the service role. Actions: check, save_app, delete_app, save_category, delete_ca
 ## Editing
 
 Google sign-in is off in cultura-GH, and email sign-in returns to another app's Site URL, so editing works
-by a personal editor link: `https://<site>/#editor=<KEY>`. Opened once per device, the key is kept in
-localStorage and removed from the address. A floating editor bar appears only for a valid key.
+by a personal editor link: `https://<site>/#editor=<KEY>`, or by pasting that link in the A&I menu
+("חיבור המכשיר לעריכה"). The key is kept in localStorage and removed from the address. The editing actions
+appear in the A&I menu only for a valid key.
 New key: generate a random string, insert its sha256 into `aoa_editor_keys`.
 
 `generate` uses Claude (`ANTHROPIC_API_KEY` secret of cultura-GH). On 2026-10-24 that key returned 401;
@@ -53,7 +54,12 @@ the UI shows a clear error until the secret is replaced.
 
 ## UI rules
 
-- Fixed top bar on every view: app name links home, search, map/table, "העתקת קישור" (copies the full state:
-  `?app=`, `?cat=`, `?q=`, `?view=table`, `?links=1`), "שיחת הפיתוח", "התקנת האפליקציה" when Chrome offers it.
+- A&I LOGO BUTTON (Anat's standing rule, repeated many times): the top bar holds only the app name (links
+  home), search, map/table, and ONE logo button "אד' ענת שטיבלמן A&I". Every editing and development action
+  lives only inside it: מצב עריכה, אפליקציה חדשה, ניסוח, חיבור/ניתוק מכשיר, העתקת קישור (copies the full
+  state: `?app=`, `?cat=`, `?q=`, `?view=table`, `?links=1`), שיחת הפיתוח, פרויקט המחקר, התקנת האפליקציה.
+  No floating editor bar, no loose buttons. The component is `public/ai-menu.js`, served to all of Anat's apps
+  from https://appofapp-gh.vercel.app/ai-menu.js; React wrapper `src/components/AIMenu.tsx`.
+  Standard and paste-ready skill text: `docs/ai-menu-standard.md`. The e2e test fails without it.
 - Sheet numbers (A-001...) follow creation order.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.

@@ -85,6 +85,17 @@ async function setup(context, calls) {
 }
 
 const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
+const menu = async (page, label) => {
+  await page.locator('ai-menu .logo').click();
+  await page.locator('ai-menu .item', { hasText: label }).first().click();
+};
+const editorReady = (page) => page.locator('ai-menu .item', { hasText: 'מצב עריכה' }).count();
+const isEditorDevice = async (page) => {
+  await page.locator('ai-menu .logo').click();
+  const n = await page.locator('ai-menu .item', { hasText: /מצב עריכה|סיום עריכה/ }).count();
+  await page.keyboard.press('Escape');
+  return n > 0;
+};
 const lastOf = (calls, action) => [...calls].reverse().find((c) => c.action === action);
 
 const browser = await chromium.launch();
@@ -103,9 +114,16 @@ const browser = await chromium.launch();
   ok(await page.locator('.hero h1').isVisible(), 'home hero renders');
   ok((await page.locator('.grid .card').count()) === rows.length, `catalog shows all ${rows.length} apps`);
   ok((await page.locator('.room').count()) >= cats.length, 'domain plan shows a room per category');
-  ok(!(await page.locator('.editorbar').count()), 'no editor bar for the public');
+  ok(await page.locator('ai-menu .logo').isVisible(), 'A&I logo button in the top bar');
+  ok((await page.locator('.topbar').getByText('העתקת קישור', { exact: true }).count()) === 0 || !(await page.locator('.topbar >> text=העתקת קישור').first().isVisible()), 'no loose development buttons in the bar');
+  ok(!(await isEditorDevice(page)), 'public sees no editing actions');
   ok(await noHScroll(page), 'desktop home: no horizontal scroll');
-  ok((await page.getAttribute('a:has-text("שיחת הפיתוח")', 'href'))?.includes('claude.ai/code/session_'), 'dev chat button links to the session');
+  await page.locator('ai-menu .logo').click();
+  ok((await page.locator('ai-menu a.item', { hasText: 'שיחת הפיתוח' }).getAttribute('href'))?.includes('claude.ai/code/session_'), 'dev chat item links to the session');
+  ok(await page.locator('ai-menu .item', { hasText: 'חיבור המכשיר לעריכה' }).isVisible(), 'connect-device item for the public');
+  await page.screenshot({ path: SHOTS + 'desktop-menu-public.png' });
+  await page.keyboard.press('Escape');
+  ok(await page.locator('ai-menu .panel').isHidden(), 'Escape closes the menu');
   await page.screenshot({ path: SHOTS + 'desktop-home.png', fullPage: false });
   await page.screenshot({ path: SHOTS + 'desktop-home-full.png', fullPage: true });
 
@@ -150,7 +168,7 @@ const browser = await chromium.launch();
   ok(!page.url().includes('app=app-1'), 'next button moves to another app');
   await page.locator('.crumbs-nav button', { hasText: 'הקודמת' }).click();
   ok(page.url().includes('app=app-1'), 'previous button returns');
-  await page.locator('button:has-text("העתקת קישור")').click();
+  await menu(page, 'העתקת קישור');
   const clip = await page.evaluate(() => navigator.clipboard.readText());
   ok(clip.includes('app=app-1'), 'copy link copies the current state');
   await page.goBack();
@@ -184,7 +202,7 @@ const browser = await chromium.launch();
   // forged key is rejected
   await page.goto(BASE + '/#editor=wrong-key-000000000000');
   await page.waitForTimeout(400);
-  ok(!(await page.locator('.editorbar').count()), 'an invalid editor key does not unlock editing');
+  ok(!(await isEditorDevice(page)), 'an invalid editor key does not unlock editing');
   ok(errors.length === 0, `no console errors (${errors.join(' | ')})`);
   await context.close();
 }
@@ -200,10 +218,15 @@ const browser = await chromium.launch();
     else await d.accept();
   });
   await page.goto(BASE + '/#editor=' + KEY);
-  await page.waitForSelector('.editorbar');
+  await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
   ok(!page.url().includes('editor='), 'editor key removed from the address');
   ok(lastOf(calls, 'check')?.key === KEY, 'key verified by the server');
-  await page.locator('.editorbar button', { hasText: 'עריכה' }).click();
+  await page.locator('ai-menu .logo').click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: SHOTS + 'desktop-menu-editor.png' });
+  await page.locator('ai-menu .item', { hasText: 'מצב עריכה' }).click();
+  await page.waitForTimeout(250);
+  ok((await page.locator('ai-menu .status').textContent()) === 'עריכה פעילה', 'logo shows the editing state');
   ok((await page.locator('.room-tools').count()) > 0, 'edit mode shows category tools');
 
   await page.locator('.room', { hasText: 'כלים' }).locator('button', { hasText: 'שינוי שם' }).click();
@@ -218,8 +241,8 @@ const browser = await chromium.launch();
   await page.screenshot({ path: SHOTS + 'editor-home.png' });
 
   await page.goto(BASE + '/?app=app-1');
-  await page.waitForSelector('.editorbar');
-  await page.locator('.editorbar button', { hasText: 'עריכה' }).click();
+  await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
+  await menu(page, 'מצב עריכה');
   await page.waitForSelector('.app-page.is-editing');
   await page.locator('.form label:has-text("שם בתפריט") input').fill('מחקר: זיקוק DNA 2');
   await page.waitForTimeout(1200);
@@ -249,7 +272,7 @@ const browser = await chromium.launch();
   await page.screenshot({ path: SHOTS + 'editor-app.png', fullPage: true });
 
   // add app
-  await page.locator('.editorbar button', { hasText: 'אפליקציה חדשה' }).click();
+  await menu(page, 'אפליקציה חדשה');
   await page.locator('.dialog input').first().fill('אפליקציה בדיקה');
   await page.locator('.dialog label:has-text("קישור") input').fill('https://x.vercel.app');
   await page.locator('.dialog .solid', { hasText: 'הוספה' }).click();
@@ -265,8 +288,8 @@ const browser = await chromium.launch();
 
   // table edit
   await page.goto(BASE + '/?view=table');
-  await page.waitForSelector('.editorbar');
-  await page.locator('.editorbar button', { hasText: 'עריכה' }).click();
+  await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
+  await menu(page, 'מצב עריכה');
   const purpose = page.locator('tbody tr').filter({ hasText: 'משחק: 6' }).locator('input[aria-label=purpose]');
   await purpose.fill('משחק חשיבה');
   await purpose.blur();
@@ -274,14 +297,21 @@ const browser = await chromium.launch();
   ok(lastOf(calls, 'save_app')?.data?.purpose === 'משחק חשיבה', 'table cell edit saves');
 
   // bulk
-  await page.locator('.editorbar button', { hasText: 'ניסוח תוכן לכולן' }).click();
+  await menu(page, 'ניסוח תוכן לכל');
   await page.locator('.dialog .solid', { hasText: 'התחלה' }).click();
   await page.waitForTimeout(1500);
   ok(calls.filter((c) => c.action === 'generate').length >= rows.length, 'bulk runs generate per app');
   await page.locator('.dialog .link', { hasText: 'סגירה' }).click();
 
-  await page.locator('.editorbar .link', { hasText: 'ניתוק המכשיר' }).click();
-  ok(!(await page.locator('.editorbar').count()), 'disconnect hides the editor bar');
+  await menu(page, 'ניתוק המכשיר');
+  ok(!(await isEditorDevice(page)), 'disconnect removes the editing actions');
+
+  // connect again from the menu by pasting the editor link
+  page.removeAllListeners('dialog');
+  page.once('dialog', (d) => d.accept(`${BASE}/#editor=${KEY}`));
+  await menu(page, 'חיבור המכשיר לעריכה');
+  await page.waitForTimeout(300);
+  ok(await isEditorDevice(page), 'pasting the editor link in the menu connects the device');
   await context.close();
 }
 
@@ -303,12 +333,17 @@ const browser = await chromium.launch();
   await page.waitForSelector('table');
   ok(await noHScroll(page), 'mobile table: page itself does not scroll sideways');
   await page.goto(BASE + '/#editor=' + KEY);
-  await page.waitForSelector('.editorbar');
-  await page.locator('.editorbar button', { hasText: 'עריכה' }).click();
+  await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
+  await page.locator('ai-menu .logo').click();
+  await page.waitForTimeout(300);
+  const box = await page.locator('ai-menu .panel').boundingBox();
+  ok(box && box.x >= 0 && box.x + box.width <= 391, `mobile menu fits the screen (${JSON.stringify(box)})`);
+  await page.screenshot({ path: SHOTS + 'mobile-menu.png' });
+  await page.locator('ai-menu .item', { hasText: 'מצב עריכה' }).click();
   ok(await noHScroll(page), 'mobile editor: no horizontal scroll');
   await page.goto(BASE + '/?app=app-1');
-  await page.waitForSelector('.editorbar');
-  await page.locator('.editorbar button', { hasText: 'עריכה' }).click();
+  await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
+  await menu(page, 'מצב עריכה');
   ok(await noHScroll(page), 'mobile app editing: no horizontal scroll');
   await page.screenshot({ path: SHOTS + 'mobile-edit.png', fullPage: true });
   await context.close();
