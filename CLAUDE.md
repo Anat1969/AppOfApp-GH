@@ -6,6 +6,19 @@
 - Work by the end-to-end-builder skill. Merge every PR to `main` after green checks without asking: Anat gave standing approval.
 - Delivery: final URL plus one line. Every correction Anat makes is added to this file.
 
+## Service quotas (Anat's correction, 2026-10-24)
+
+On 2026-10-24 a run across ~90 repos used up Vercel's free limit of 100 deployments per day in the
+middle of her workday, and she could not deploy anything else. She was not warned beforehand.
+- Before any bulk job, estimate how much of each quota it will use: Vercel deployments, including
+  the preview deploy for every PR; Supabase; API credits; and the paid subscriptions. Tell Anat the
+  number and the risk in one line before starting.
+- A job that would use more than about half of a daily quota is scheduled for a quiet day or hour,
+  or split across days. Cut usage first: skip preview deploys, merge in batches, and deploy only the
+  latest commit of each project.
+- Free and paid quotas are used deliberately: on days she is not working, use spare capacity for
+  heavy jobs. Keep a reserve on days she is working.
+
 ## What this is
 
 APPOFAPP-GH: Anat's app portfolio (109 apps, 21 categories). Upgraded on 2026-10-24 from the Lovable project
