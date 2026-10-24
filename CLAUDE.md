@@ -32,14 +32,16 @@ Playwright comes from the global install: `ln -s "$(npm root -g)/playwright" nod
 | Table / bucket | Purpose |
 |---|---|
 | `aoa_apps` | `id` + `data` jsonb in the original AppData shape (`src/lib/types.ts`) |
-| `aoa_categories` | `value`, `label`, `position` |
+| `aoa_categories` | legacy Lovable categories, kept in `data.category` but no longer shown |
+| `aoa_facets` | controlled vocabulary: `kind` (domain / context), `value`, `label`, `synonyms[]`, `position` |
 | `aoa_editor_keys` | sha256 of editor keys |
 | `aoa_admins` | admin emails (for a future Supabase session) |
 | `aoa-media` | public bucket, covers and logos (`<appId>/cover-<ts>.<ext>`) |
 
 RLS: public read on apps and categories, no write policies. Every write goes through the edge function
 `aoa-edit` (source in `supabase/functions/aoa-edit`), which checks the `x-editor-key` header and writes with
-the service role. Actions: check, save_app, delete_app, save_category, delete_category, sign_upload, generate.
+the service role. Actions: check, save_app, delete_app, save_category, delete_category, save_facet, delete_facet, sign_upload,
+generate.
 
 ## Editing
 
@@ -62,4 +64,16 @@ the UI shows a clear error until the secret is replaced.
   from https://appofapp-gh.vercel.app/ai-menu.js; React wrapper `src/components/AIMenu.tsx`.
   Standard and paste-ready skill text: `docs/ai-menu-standard.md`. The e2e test fails without it.
 - Sheet numbers (A-001...) follow creation order.
+- CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
+  `action` (exactly one of 7, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,
+  השראה, הוראה והצגה, משחק ואימון; rule: what the user walks away with), `domains[]` and `contexts[]`
+  (vocabulary in `aoa_facets`, editable in edit mode with synonyms), `keywords[]` (free).
+  The word "כלי" is not a category: it is a synonym of diagnose and create.
+- Names carry no prefixes ("פנג שואי", not "כלי מדידה: פנג שואי"); the action label is shown above the name.
+  The old name is kept in `originalName` and is searchable. Initial classification of all 109 apps:
+  `supabase/migrations/20261024_aoa_classify_apps.sql`.
+- Finding: search covers name, old name, keywords, text and the vocabulary with synonyms (`src/lib/search.ts`);
+  the empty search box explains what can be searched; filters by the three axes combine in the address
+  (`?action=`, `?domain=`, `?ctx=`); the home matrix is domain x action and shows empty cells as gaps;
+  every app page lists related apps (`related()` in `src/lib/facets.ts`).
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.

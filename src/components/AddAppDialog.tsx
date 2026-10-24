@@ -1,20 +1,23 @@
 import { useState } from 'react';
-import type { AppData, Category } from '../lib/types';
+import type { ActionValue, AppData, Facet } from '../lib/types';
+import { ACTIONS } from '../lib/facets';
 import Dialog from './Dialog';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   apps: AppData[];
-  categories: Category[];
-  defaultCategory?: string | null;
+  facets: Facet[];
+  defaultAction?: ActionValue | null;
+  defaultDomain?: string | null;
   onCreate: (a: AppData) => Promise<boolean>;
 }
 
-export default function AddAppDialog({ open, onClose, apps, categories, defaultCategory, onCreate }: Props) {
+export default function AddAppDialog({ open, onClose, apps, facets, defaultAction, defaultDomain, onCreate }: Props) {
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
-  const [cat, setCat] = useState(defaultCategory ?? '');
+  const [action, setAction] = useState<ActionValue | ''>(defaultAction ?? '');
+  const [domains, setDomains] = useState<string[]>(defaultDomain ? [defaultDomain] : []);
   const [desc, setDesc] = useState('');
   const [busy, setBusy] = useState(false);
   const dup = name.trim() && apps.find((a) => a.name.trim().toLowerCase() === name.trim().toLowerCase());
@@ -32,11 +35,13 @@ export default function AddAppDialog({ open, onClose, apps, categories, defaultC
       problem: '',
       solution: '',
       previewUrl: url.trim(),
-      category: cat || null,
+      action: action || undefined,
+      domains,
+      contexts: [],
+      keywords: [],
       createdAt: now,
       updatedAt: now,
       linkAddedAt: url.trim() ? now : undefined,
-      tags: [],
     };
     const ok = await onCreate(app);
     setBusy(false);
@@ -53,24 +58,38 @@ export default function AddAppDialog({ open, onClose, apps, categories, defaultC
       <div className="form">
         <label>
           <span className="mono">שם</span>
-          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="תחום: שם קצר" />
+          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="שם קצר, בלי קידומת" />
         </label>
         {dup && <p className="warn">כבר קיימת אפליקציה בשם הזה.</p>}
         <label>
           <span className="mono">קישור</span>
           <input dir="ltr" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" />
         </label>
-        <label>
-          <span className="mono">קטגוריה</span>
-          <select value={cat} onChange={(e) => setCat(e.target.value)}>
-            <option value="">ללא קטגוריה</option>
-            {categories.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
+        <div className="form-block">
+          <span className="mono">פעולה: מה יוצאים איתו</span>
+          <div className="facet-chips">
+            {ACTIONS.map((a) => (
+              <button key={a.value} type="button" className={`chip ${action === a.value ? 'on' : ''}`} onClick={() => setAction(a.value)}>
+                {a.label}
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
+        <div className="form-block">
+          <span className="mono">תחום</span>
+          <div className="facet-chips">
+            {facets.filter((f) => f.kind === 'domain').map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                className={`chip ${domains.includes(f.value) ? 'on' : ''}`}
+                onClick={() => setDomains((d) => (d.includes(f.value) ? d.filter((x) => x !== f.value) : [...d, f.value]))}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <label>
           <span className="mono">תיאור קצר</span>
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} />

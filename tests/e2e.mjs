@@ -8,24 +8,33 @@ const KEY = 'test-editor-key-123456';
 const SHOTS = new URL('./shots/', import.meta.url).pathname;
 fs.mkdirSync(SHOTS, { recursive: true });
 
-const cats = [
-  { value: 'tools', label: 'כלים', position: 0 },
-  { value: 'games', label: 'משחקים', position: 1 },
-  { value: 'municipality', label: 'עירייה', position: 2 },
-  { value: 'interest', label: 'עניין', position: 3 },
+const cats = [];
+const facets = [
+  { kind: 'domain', value: 'urban', label: 'תכנון עירוני', synonyms: ['תב"ע', 'היתר'], position: 0 },
+  { kind: 'domain', value: 'municipal', label: 'שירות עירוני', synonyms: ['עירייה'], position: 1 },
+  { kind: 'domain', value: 'architecture', label: 'אדריכלות ועיצוב', synonyms: ['עיצוב'], position: 2 },
+  { kind: 'domain', value: 'sustainability', label: 'קיימות וטבע', synonyms: ['גינה'], position: 3 },
+  { kind: 'domain', value: 'psychology', label: 'פסיכולוגיה וזהות', synonyms: [], position: 4 },
+  { kind: 'domain', value: 'personal', label: 'אישי ופנאי', synonyms: [], position: 5 },
+  { kind: 'context', value: 'work', label: 'עבודה בעירייה', synonyms: [], position: 0 },
+  { kind: 'context', value: 'professional', label: 'אדריכלים ואנשי מקצוע', synonyms: [], position: 1 },
+  { kind: 'context', value: 'public', label: 'ציבור ותושבים', synonyms: [], position: 2 },
+  { kind: 'context', value: 'teaching', label: 'קורסים ותלמידים', synonyms: [], position: 3 },
+  { kind: 'context', value: 'personal', label: 'אישי', synonyms: [], position: 4 },
 ];
 const day = 86_400_000;
+// name, original name, action, domains, contexts, keywords, url
 const names = [
-  ['מחקר: זיקוק DNA', 'tools', 'https://zikuk-dna.vercel.app/dna'],
-  ['השראה: רדאר אקטואליה', 'interest', 'https://radar-aktualya.vercel.app/'],
-  ['משחק: בקשה להיתר', 'games', 'https://bakasha-leheter.vercel.app'],
-  ['עירייה: תואם מתאר', 'municipality', 'https://ashdod-mitar-twin.vercel.app/'],
-  ['כלי: תכנון גינות', null, 'https://garden-gh.vercel.app/'],
-  ['דשבורד: אדריכלית העיר - גרסה ארוכה מאוד עם שם שמתפרש על כמה שורות', 'municipality', 'https://merhav-midbar.lovable.app'],
-  ['משחק: 6 הכובעים', 'games', ''],
-  ['כלי מדידה: פנג שואי', 'tools', 'https://feng-shui-two.vercel.app/#'],
+  ['זיקוק DNA', 'מחקר: זיקוק DNA', 'create', ['architecture'], ['professional'], ['DNA', 'פרומפט'], 'https://zikuk-dna.vercel.app/dna'],
+  ['רדאר אקטואליה', 'השראה: רדאר אקטואליה', 'inspire', ['personal'], ['personal'], ['חדשות'], 'https://radar-aktualya.vercel.app/'],
+  ['בקשה להיתר', 'משחק: בקשה להיתר', 'play', ['urban'], ['public', 'teaching'], ['היתר בנייה'], 'https://bakasha-leheter.vercel.app'],
+  ['תואם מתאר', 'עירייה: תואם מתאר', 'diagnose', ['urban'], ['work'], ['תוכנית מתאר', 'אשדוד'], 'https://ashdod-mitar-twin.vercel.app/'],
+  ['תכנון גינות', 'כלי: תכנון גינות', 'create', ['sustainability', 'architecture'], ['professional'], ['גינה'], 'https://garden-gh.vercel.app/'],
+  ['אדריכלית העיר, גרסה ארוכה מאוד עם שם שמתפרש על כמה שורות', 'דשבורד: אדריכלית העיר', 'manage', ['municipal', 'urban'], ['work'], ['היתרים'], 'https://merhav-midbar.lovable.app'],
+  ['שישה כובעי חשיבה', 'משחק: 6 הכובעים', 'play', ['psychology'], ['teaching'], [], ''],
+  ['פנג שואי', 'כלי מדידה: פנג שואי', 'diagnose', ['architecture'], ['personal'], ['פנג שואי'], 'https://feng-shui-two.vercel.app/#'],
 ];
-const rows = names.map(([name, category, url], i) => ({
+const rows = names.map(([name, originalName, action, domains, contexts, keywords, url], i) => ({
   id: `app-${i + 1}`,
   created_at: new Date(Date.now() - (i + 1) * 9 * day).toISOString(),
   updated_at: new Date(Date.now() - i * day).toISOString(),
@@ -33,7 +42,11 @@ const rows = names.map(([name, category, url], i) => ({
     id: `app-${i + 1}`,
     name,
     title: name,
-    category,
+    originalName,
+    action,
+    domains,
+    contexts,
+    keywords,
     previewUrl: url,
     primaryBtn: '← קישור לאפליקציה - VERCAL',
     desc: i === 0 ? 'מערכת לזיקוק רעיון גולמי ל**קוד גנטי עיצובי**, עם פרומפט ותמונה.' : 'תאר את הרקע והמטרה...',
@@ -67,6 +80,7 @@ async function setup(context, calls) {
   await context.route(/image\.thum\.io|\/storage\/v1\/object\/public\//, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: png }));
   await context.route(/\/rest\/v1\/aoa_apps/, (r) => r.fulfill({ json: rows }));
   await context.route(/\/rest\/v1\/aoa_categories/, (r) => r.fulfill({ json: cats }));
+  await context.route(/\/rest\/v1\/aoa_facets/, (r) => r.fulfill({ json: facets }));
   await context.route(/\/storage\/v1\/object\/upload\/sign\//, (r) => {
     calls.push({ action: 'storage_put', url: r.request().url() });
     r.fulfill({ json: { Key: 'aoa-media/x' } });
@@ -113,7 +127,8 @@ const browser = await chromium.launch();
   await page.waitForSelector('.card');
   ok(await page.locator('.hero h1').isVisible(), 'home hero renders');
   ok((await page.locator('.grid .card').count()) === rows.length, `catalog shows all ${rows.length} apps`);
-  ok((await page.locator('.room').count()) >= cats.length, 'domain plan shows a room per category');
+  ok((await page.locator('.matrix tbody tr').count()) === 6, 'matrix has a row per domain');
+  ok((await page.locator('.matrix .gap').count()) > 0, 'empty cells are shown as gaps');
   ok(await page.locator('ai-menu .logo').isVisible(), 'A&I logo button in the top bar');
   ok((await page.locator('.topbar').getByText('העתקת קישור', { exact: true }).count()) === 0 || !(await page.locator('.topbar >> text=העתקת קישור').first().isVisible()), 'no loose development buttons in the bar');
   ok(!(await isEditorDevice(page)), 'public sees no editing actions');
@@ -127,12 +142,43 @@ const browser = await chromium.launch();
   await page.screenshot({ path: SHOTS + 'desktop-home.png', fullPage: false });
   await page.screenshot({ path: SHOTS + 'desktop-home-full.png', fullPage: true });
 
-  // category room
-  await page.locator('.room-hit', { hasText: 'משחקים' }).click();
-  ok(page.url().includes('cat=games'), 'room click sets ?cat in the address');
-  ok((await page.locator('.grid .card').count()) === 2, 'category filter narrows to 2 apps');
-  await page.locator('.cat-strip .chip', { hasText: 'הכל' }).click();
-  ok(!page.url().includes('cat='), 'chip "הכל" clears the category');
+  // matrix cell: domain x action
+  await page.locator('.matrix .cell[aria-label^="תכנון עירוני, אבחון"]').click();
+  ok(page.url().includes('action=diagnose') && page.url().includes('domain=urban'), 'matrix cell writes action and domain to the address');
+  ok((await page.locator('.grid .card').count()) === 1, 'matrix cell narrows to the one app');
+  await page.locator('.chip', { hasText: 'ניקוי הסינון' }).click();
+  ok(!page.url().includes('action='), 'clearing removes all filters');
+
+  // facet filters combine
+  await page.locator('.matrix .axis', { hasText: 'משחק ואימון' }).click();
+  ok((await page.locator('.grid .card').count()) === 2, 'action column filters to 2 apps');
+  await page.locator('.filters-panel .chip', { hasText: 'תכנון עירוני' }).click();
+  ok((await page.locator('.grid .card').count()) === 1, 'action + domain narrows to 1');
+  ok(await page.locator('.filters-panel .chip', { hasText: 'קיימות וטבע' }).isDisabled(), 'empty combinations are disabled');
+  await page.screenshot({ path: SHOTS + 'desktop-filters.png' });
+  await page.locator('.chip', { hasText: 'ניקוי הסינון' }).click();
+
+  // search help and synonyms
+  await page.locator('.search input').focus();
+  ok(await page.locator('.search-help').isVisible(), 'empty search explains what can be searched');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: SHOTS + 'desktop-search-help.png' });
+  await page.locator('.search-help .tag', { hasText: 'ציבור ותושבים' }).click();
+  ok(page.url().includes('ctx=public') && (await page.locator('.grid .card').count()) === 1, 'help chip applies the context filter');
+  await page.locator('.chip', { hasText: 'ניקוי הסינון' }).click();
+  await page.fill('.search input', 'כלי');
+  await page.keyboard.press('Escape');
+  await page.fill('.search input', 'כלי');
+  await page.locator('.hero').click();
+  ok((await page.locator('.grid .card').count()) >= 4, '"כלי" finds diagnose and create apps');
+  ok(await page.locator('.expand-note').isVisible(), 'the expansion is explained');
+  await page.fill('.search input', 'כלי מדידה');
+  await page.locator('.hero').click();
+  ok((await page.locator('.grid .card-name').allTextContents()).includes('פנג שואי'), 'the old name still finds the app');
+  await page.fill('.search input', 'תב"ע');
+  await page.locator('.hero').click();
+  ok((await page.locator('.grid .card').count()) >= 3, 'a domain synonym finds the domain');
+  await page.fill('.search input', '');
 
   // links-only + sort
   await page.locator('.chip', { hasText: 'רק עם אתר' }).click();
@@ -140,7 +186,7 @@ const browser = await chromium.launch();
   await page.locator('.chip', { hasText: 'רק עם אתר' }).click();
   await page.locator('.seg button', { hasText: 'לפי שם' }).click();
   const first = await page.locator('.grid .card-name').first().textContent();
-  ok(first?.startsWith('דשבורד'), 'alphabetical sort puts "דשבורד" first');
+  ok(first?.startsWith('אדריכלית'), 'alphabetical sort puts "אדריכלית" first');
   await page.locator('.seg button', { hasText: 'לפי תאריך' }).click();
 
   // search + suggestion
@@ -156,7 +202,10 @@ const browser = await chromium.launch();
   await page.locator('.grid .card-name', { hasText: 'זיקוק DNA' }).click();
   await page.waitForSelector('.app-page');
   ok(page.url().includes('app=app-1'), 'card opens ?app=app-1');
-  ok(await page.locator('.app-title').textContent() === 'מחקר: זיקוק DNA', 'app title shown');
+  ok(await page.locator('.app-title').textContent() === 'זיקוק DNA', 'clean name shown');
+  ok(await page.locator('.facet-tags .tag.strong', { hasText: 'יצירה' }).isVisible(), 'action tag shown');
+  ok((await page.locator('.related .card').count()) >= 1, 'related apps shown');
+  await page.screenshot({ path: SHOTS + 'desktop-app-full.png', fullPage: true });
   ok((await page.locator('.rich strong').count()) >= 3, 'bold markers render as strong');
   const btn = await page.locator('.app-links .solid').textContent();
   ok(btn && !/[←→]/.test(btn), `primary button has no arrows ("${btn}")`);
@@ -189,8 +238,8 @@ const browser = await chromium.launch();
   await page.waitForSelector('table');
   ok((await page.locator('tbody tr').count()) === rows.length, 'table lists all apps');
   await page.locator('thead button', { hasText: 'שם' }).click();
-  ok((await page.locator('tbody tr').first().textContent())?.includes('דשבורד'), 'table sorts by name');
-  await page.locator('tbody .tag', { hasText: 'משחקים' }).first().click();
+  ok((await page.locator('tbody tr').first().textContent())?.includes('אדריכלית'), 'table sorts by name');
+  await page.locator('tbody .tag', { hasText: 'משחק' }).first().click();
   ok((await page.locator('tbody tr').count()) === 2, 'tag click filters the table');
   await page.locator('.filters .chip.on').click();
   await page.fill('.table-search', 'זיקוק');
@@ -214,7 +263,10 @@ const browser = await chromium.launch();
   await setup(context, calls);
   const page = await context.newPage();
   page.on('dialog', async (d) => {
-    if (d.type() === 'prompt') await d.accept(d.message().includes('חדש לקטגוריה') ? 'כלים ומדידה' : 'קטגוריה בדיקה');
+    if (d.type() === 'prompt') {
+      const m = d.message();
+      await d.accept(m.includes('מילים נרדפות') ? 'עיר, תכנון' : m.includes('החדש') ? 'תחום בדיקה' : 'תכנון עירוני ומרחבי');
+    }
     else await d.accept();
   });
   await page.goto(BASE + '/#editor=' + KEY);
@@ -227,17 +279,20 @@ const browser = await chromium.launch();
   await page.locator('ai-menu .item', { hasText: 'מצב עריכה' }).click();
   await page.waitForTimeout(250);
   ok((await page.locator('ai-menu .status').textContent()) === 'עריכה פעילה', 'logo shows the editing state');
-  ok((await page.locator('.room-tools').count()) > 0, 'edit mode shows category tools');
-
-  await page.locator('.room', { hasText: 'כלים' }).locator('button', { hasText: 'שינוי שם' }).click();
+  ok(await page.locator('.vocab').isVisible(), 'edit mode shows the vocabulary');
+  const firstDomain = page.locator('.vocab li').first();
+  await firstDomain.locator('button', { hasText: 'שם' }).click();
   await page.waitForTimeout(200);
-  ok(lastOf(calls, 'save_category')?.label === 'כלים ומדידה', 'rename category sends save_category');
-  await page.locator('.room-add').click();
+  ok(lastOf(calls, 'save_facet')?.label === 'תכנון עירוני ומרחבי', 'rename sends save_facet');
+  await page.locator('.vocab li').first().locator('button', { hasText: 'מילים נרדפות' }).click();
   await page.waitForTimeout(200);
-  ok(lastOf(calls, 'save_category')?.label === 'קטגוריה בדיקה', 'new category sends save_category');
-  await page.locator('.room', { hasText: 'קטגוריה בדיקה' }).locator('button', { hasText: 'מחיקה' }).click();
+  ok(JSON.stringify(lastOf(calls, 'save_facet')?.synonyms) === JSON.stringify(['עיר', 'תכנון']), 'synonyms saved as a list');
+  await page.locator('.vocab .ghost', { hasText: 'תחום חדש' }).click();
   await page.waitForTimeout(200);
-  ok(!!lastOf(calls, 'delete_category'), 'delete category sends delete_category');
+  ok(lastOf(calls, 'save_facet')?.label === 'תחום בדיקה' && lastOf(calls, 'save_facet')?.kind === 'domain', 'new domain sends save_facet');
+  await page.locator('.vocab li', { hasText: 'תחום בדיקה' }).locator('button', { hasText: 'מחיקה' }).click();
+  await page.waitForTimeout(200);
+  ok(lastOf(calls, 'delete_facet')?.kind === 'domain', 'delete sends delete_facet');
   await page.screenshot({ path: SHOTS + 'editor-home.png' });
 
   await page.goto(BASE + '/?app=app-1');
@@ -249,6 +304,14 @@ const browser = await chromium.launch();
   const saved = lastOf(calls, 'save_app');
   ok(saved?.data?.name === 'מחקר: זיקוק DNA 2' && saved.id === 'app-1', 'editing the name saves the app (debounced)');
   ok(calls.filter((c) => c.action === 'save_app').length === 1, 'typing produces a single save');
+
+  await page.locator('.facet-edit .chip', { hasText: 'השראה' }).click();
+  await page.locator('.facet-edit .chip', { hasText: 'קיימות וטבע' }).click();
+  await page.locator('.facet-edit .kw-add input').fill('בדיקה, זיקוק');
+  await page.locator('.facet-edit .kw-add .ghost').click();
+  await page.waitForTimeout(1100);
+  const f = lastOf(calls, 'save_app')?.data;
+  ok(f?.action === 'inspire' && f?.domains?.includes('sustainability') && f?.keywords?.includes('זיקוק'), 'action, domain and keywords saved');
 
   await page.locator('.log-add input').fill('בדיקת יומן');
   await page.locator('.log-add .solid').click();
@@ -275,10 +338,13 @@ const browser = await chromium.launch();
   await menu(page, 'אפליקציה חדשה');
   await page.locator('.dialog input').first().fill('אפליקציה בדיקה');
   await page.locator('.dialog label:has-text("קישור") input').fill('https://x.vercel.app');
+  await page.locator('.dialog .chip', { hasText: 'אבחון ומדידה' }).click();
+  await page.locator('.dialog .chip', { hasText: 'תכנון עירוני' }).click();
   await page.locator('.dialog .solid', { hasText: 'הוספה' }).click();
   await page.waitForTimeout(400);
   const added = lastOf(calls, 'save_app');
   ok(added?.data?.name === 'אפליקציה בדיקה' && page.url().includes(`app=${added.id}`), 'new app saved and opened');
+  ok(added?.data?.action === 'diagnose' && added?.data?.domains?.includes('urban'), 'new app carries its classification');
 
   // delete it
   await page.locator('.danger .ghost').click();
@@ -290,7 +356,7 @@ const browser = await chromium.launch();
   await page.goto(BASE + '/?view=table');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
   await menu(page, 'מצב עריכה');
-  const purpose = page.locator('tbody tr').filter({ hasText: 'משחק: 6' }).locator('input[aria-label=purpose]');
+  const purpose = page.locator('tbody tr').filter({ hasText: 'שישה כובעי' }).locator('input[aria-label=purpose]');
   await purpose.fill('משחק חשיבה');
   await purpose.blur();
   await page.waitForTimeout(1000);

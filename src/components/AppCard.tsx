@@ -1,6 +1,7 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import type { AppData } from '../lib/types';
 import { activityOf, fmtDate, siteUrl, thumbOf } from '../lib/format';
+import { actionOf } from '../lib/facets';
 
 interface Props {
   app: AppData;
@@ -51,11 +52,12 @@ export default function AppCard({ app, sheet, category, onOpen, index = 0, compa
         {recent && <span className="card-new mono">חדש</span>}
       </motion.button>
       <div className="card-body">
+        {actionOf(app.action) && <div className="card-action mono">{actionOf(app.action)!.short}</div>}
         <button className="card-name" onClick={onOpen}>
           {app.name}
         </button>
         <div className="card-meta mono">
-          <span>{category || 'ללא קטגוריה'}</span>
+          <span>{category || 'ללא תחום'}</span>
           <span>{fmtDate(activityOf(app), true)}</span>
         </div>
         {site && !compact && (

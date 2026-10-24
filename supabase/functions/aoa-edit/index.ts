@@ -4,6 +4,7 @@
 // stored only as a SHA-256 hash in aoa_editor_keys), or by a Supabase session
 // whose email is in aoa_admins. The key exists because Google sign-in is off in
 // the shared project and email sign-in returns to another app's Site URL.
+// Facets: domains and contexts vocabulary in aoa_facets (save_facet, delete_facet).
 //
 // Writes run with the service role after that check, so the tables stay closed
 // to the public. Uploads get a signed URL and go straight to storage.
@@ -149,6 +150,23 @@ Deno.serve(async (req) => {
       case 'delete_category':
         await rest('DELETE', `aoa_categories?value=eq.${safeId(body.value)}`);
         return json({ ok: true });
+
+      case 'save_facet': {
+        const kind = body.kind === 'context' ? 'context' : 'domain';
+        const value = safeId(body.value);
+        const label = String(body.label ?? '').trim().slice(0, 80);
+        if (!value || !label) return json({ error: 'bad facet' }, 400);
+        const synonyms = (Array.isArray(body.synonyms) ? body.synonyms : [])
+          .map((x: unknown) => String(x).trim().slice(0, 60)).filter(Boolean).slice(0, 40);
+        await rest('POST', 'aoa_facets?on_conflict=kind,value', { kind, value, label, synonyms, position: Number(body.position ?? 0) || 0 }, 'resolution=merge-duplicates,return=minimal');
+        return json({ ok: true });
+      }
+
+      case 'delete_facet': {
+        const kind = body.kind === 'context' ? 'context' : 'domain';
+        await rest('DELETE', `aoa_facets?kind=eq.${kind}&value=eq.${safeId(body.value)}`);
+        return json({ ok: true });
+      }
 
       case 'sign_upload': {
         const path = String(body.path ?? '');
