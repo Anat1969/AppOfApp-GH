@@ -38,6 +38,11 @@ npm run build
 npx vite preview --port 4173 & node tests/e2e.mjs   # Playwright, every Supabase call mocked
 ```
 
+Second address (Anat, 2026-10-24: "קישור ישיר לאפ דרך גיטהב"): GitHub Pages at
+https://anat1969.github.io/AppOfApp-GH/ , built by `.github/workflows/pages.yml` on every push to main
+(branch `gh-pages`, `BASE_PATH=/AppOfApp-GH/`). It does not use the Vercel quota, so it stays current when
+Vercel is rate-limited. Keep every path relative or based on `import.meta.env.BASE_URL`; never a bare `/`.
+
 Playwright comes from the global install: `ln -s "$(npm root -g)/playwright" node_modules/playwright`.
 
 ## Data (Supabase cultura-GH, ktqmwpbzcnzkhjskqisy, shared: prefix `aoa_`)
