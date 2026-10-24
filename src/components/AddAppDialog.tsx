@@ -15,7 +15,10 @@ interface Props {
   onCreate: (a: AppData) => Promise<boolean>;
 }
 
-/** Adding an app is the first purpose of the app of apps, so it opens from anywhere, even on a device not yet connected. */
+/**
+ * Adding an app is the first purpose of the app of apps: the form always opens. On a device not yet
+ * connected, one field for the editor link appears above the save button and is used once.
+ */
 export default function AddAppDialog({ open, onClose, apps, facets, prefill, isEditor, onConnect, onCreate }: Props) {
   const [name, setName] = useState(prefill.name ?? '');
   const [url, setUrl] = useState('');
@@ -29,6 +32,14 @@ export default function AddAppDialog({ open, onClose, apps, facets, prefill, isE
   const submit = async () => {
     if (!name.trim()) return;
     setBusy(true);
+    if (!isEditor) {
+      const v = link.trim();
+      const ok = await onConnect(v.match(/editor=([\w-]{16,})/)?.[1] ?? v);
+      if (!ok) {
+        setBusy(false);
+        return;
+      }
+    }
     const now = new Date().toISOString();
     const app: AppData = {
       id: `app-${Date.now()}`,
@@ -54,35 +65,7 @@ export default function AddAppDialog({ open, onClose, apps, facets, prefill, isE
 
   return (
     <Dialog open={open} title="הוספת אפליקציה חדשה" onClose={onClose}>
-      {!isEditor ? (
-        <div className="form connect">
-          <p>
-            כדי להוסיף, המכשיר הזה צריך להיות מחובר לעריכה. הדביקי כאן את קישור העריכה שלך, פעם אחת בכל מכשיר.
-          </p>
-          <label>
-            <span className="mono">קישור העריכה</span>
-            <input dir="ltr" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://appofapp-gh.vercel.app/#editor=..." autoFocus />
-          </label>
-          <div className="row end">
-            <button className="ghost" onClick={onClose}>
-              ביטול
-            </button>
-            <button
-              className="solid"
-              disabled={!link.trim() || busy}
-              onClick={async () => {
-                const v = link.trim();
-                const key = v.match(/editor=([\w-]{16,})/)?.[1] ?? v;
-                setBusy(true);
-                await onConnect(key);
-                setBusy(false);
-              }}
-            >
-              {busy ? 'בודק...' : 'חיבור והמשך'}
-            </button>
-          </div>
-        </div>
-      ) : (
+      {(
         <div className="form">
           <label>
             <span className="mono">שם</span>
@@ -122,11 +105,23 @@ export default function AddAppDialog({ open, onClose, apps, facets, prefill, isE
             <span className="mono">תיאור קצר</span>
             <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} />
           </label>
+          {!isEditor && (
+            <div className="connect">
+              <label>
+                <span className="mono">קישור העריכה (פעם אחת במכשיר הזה)</span>
+                <input dir="ltr" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://appofapp-gh.vercel.app/#editor=..." />
+              </label>
+              <p className="dim">
+                זה הקישור האישי שקיבלת בשיחה עם Claude. אפשר גם להעתיק אותו מתפריט A&I בכל מכשיר שכבר מחובר. אחרי שמירה אחת, המכשיר
+                זוכר אותו ולא ישאל שוב.
+              </p>
+            </div>
+          )}
           <div className="row end">
             <button className="ghost" onClick={onClose}>
               ביטול
             </button>
-            <button className="solid" onClick={submit} disabled={!name.trim() || busy}>
+            <button className="solid" onClick={submit} disabled={!name.trim() || busy || (!isEditor && !link.trim())}>
               {busy ? 'שומר...' : 'הוספה לתיק'}
             </button>
           </div>

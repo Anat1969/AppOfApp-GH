@@ -63,6 +63,14 @@ by a personal editor link: `https://<site>/#editor=<KEY>`, or by pasting that li
 ("חיבור המכשיר לעריכה"). The key is kept in localStorage and removed from the address. The editing actions
 appear in the A&I menu only for a valid key.
 New key: generate a random string, insert its sha256 into `aoa_editor_keys`.
+Anat chose this over open editing (2026-10-24, option ב): the add form always opens; on a device not yet
+connected one field for the editor link appears above the save button and is used once. A connected device can
+copy the link from the A&I menu ("העתקת קישור העריכה") to connect another device. Open editing for everyone was
+requested first and blocked by the Claude Code safety check; do not remove the key check without her explicit
+approval in the session.
+Safety net in `aoa-edit`: the previous version of an app goes to `aoa_app_versions` before a save (at most one
+per app every 10 minutes); a delete moves the app to `aoa_trash` (action `restore_app`). Both tables are public
+read, written by the function only. Migration: `supabase/migrations/20261024_aoa_versions_trash.sql`.
 
 `generate` uses Claude (`ANTHROPIC_API_KEY` secret of cultura-GH). On 2026-10-24 that key returned 401;
 the UI shows a clear error until the secret is replaced.
