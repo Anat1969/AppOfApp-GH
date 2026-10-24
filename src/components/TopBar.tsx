@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { ActionValue, AppData, Facet } from '../lib/types';
+import type { AppData, Facet } from '../lib/types';
+import type { SearchResult } from '../lib/search';
 import type { Route } from '../lib/route';
 import { ACTIONS, actionOf, facetLabel } from '../lib/facets';
 import { thumbOf } from '../lib/format';
@@ -9,7 +10,7 @@ interface Props {
   route: Route;
   apps: AppData[];
   facets: Facet[];
-  search: (q: string) => { items: AppData[]; vocab: { actions: ActionValue[]; domains: string[]; contexts: string[] } };
+  search: (q: string) => SearchResult;
   onHome: () => void;
   onSearch: (q: string) => void;
   onOpen: (id: string) => void;
@@ -146,7 +147,7 @@ export default function TopBar({ route, apps, facets, search, onHome, onSearch, 
                   <div className="live">
                     <div className="live-head">
                       <span className="mono">
-                        {suggestions.length ? `${suggestions.length} אפליקציות` : 'אין התאמה'}
+                        {!suggestions.length ? 'אין התאמה' : live?.near ? 'לא נמצאה התאמה מדויקת. אולי התכוונת:' : `${suggestions.length} אפליקציות`}
                       </span>
                       {expanded.length > 0 && <span className="dim">כולל: {expanded.join(', ')}</span>}
                     </div>
@@ -179,6 +180,7 @@ export default function TopBar({ route, apps, facets, search, onHome, onSearch, 
                                   </span>
                                   <span className="live-name">{highlight(a.name, q)}</span>
                                   <span className="mono dim">{actionOf(a.action)?.short ?? ''}</span>
+                                  {live?.reasons.get(a.id) && <span className="live-why">דרך: {live.reasons.get(a.id)}</span>}
                                 </button>
                               </motion.li>
                             );

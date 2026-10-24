@@ -9,6 +9,7 @@ import AppPage from './components/AppPage';
 import TableView from './components/TableView';
 import AIMenu from './components/AIMenu';
 import AddAppDialog from './components/AddAppDialog';
+import type { AddPrefill } from './components/Matrix';
 import BulkDialog from './components/BulkDialog';
 import Toasts from './components/Toasts';
 
@@ -18,7 +19,12 @@ export default function App() {
   const store = useStore();
   const { route, go } = useRoute();
   const [editing, setEditing] = useState(false);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<AddPrefill | null>(null);
+  const [addSeq, setAddSeq] = useState(0);
+  const openAdd = (p: AddPrefill = {}) => {
+    setAddSeq((n) => n + 1);
+    setAdding(p);
+  };
   const [bulk, setBulk] = useState(false);
   const [sort, setSortState] = useState<'date' | 'alpha'>(() => {
     try {
@@ -50,7 +56,7 @@ export default function App() {
   }, [apps]);
 
   const search = useSearch(apps, facets);
-  const { items: searched, vocab } = useMemo(() => search(route.q), [search, route.q]);
+  const { items: searched, vocab, reasons, near } = useMemo(() => search(route.q), [search, route.q]);
 
   const results = useMemo(() => {
     const q = route.q.trim();
@@ -90,7 +96,7 @@ export default function App() {
             editing={editing}
             saveState={store.saveState}
             setEditing={setEditing}
-            onAdd={() => setAdding(true)}
+            onAdd={() => openAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}
             onBulk={() => setBulk(true)}
             onConnect={store.connect}
             onLeave={store.leaveEditor}
@@ -152,6 +158,9 @@ export default function App() {
                 searched={searched}
                 facets={facets}
                 vocab={vocab}
+                reasons={reasons}
+                near={near}
+                onAdd={openAdd}
                 sheets={sheets}
                 route={route}
                 go={go}
@@ -171,12 +180,14 @@ export default function App() {
       </footer>
 
       <AddAppDialog
-        open={adding}
-        onClose={() => setAdding(false)}
+        key={addSeq}
+        open={!!adding}
+        onClose={() => setAdding(null)}
         apps={apps}
         facets={facets}
-        defaultAction={route.action}
-        defaultDomain={route.domain}
+        prefill={adding ?? {}}
+        isEditor={store.isEditor}
+        onConnect={store.connect}
         onCreate={async (a) => {
           const ok = await store.addApp(a);
           if (ok) {

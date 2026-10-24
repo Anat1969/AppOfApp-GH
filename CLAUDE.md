@@ -79,4 +79,16 @@ the UI shows a clear error until the secret is replaced.
 - LIVE SEARCH (Anat liked it, keep it): typing shows a live grid of app thumbnails in the search panel that
   narrows with every word (each word must match, `$and` in `src/lib/search.ts`), highlights the typed text,
   and says which vocabulary entries widened the search. Empty box shows the search help.
+- ADDING AN APP is a primary purpose (Anat, 2026-10-24): a prominent "הוספת אפליקציה חדשה" button in the hero,
+  in the catalog header, in empty search results and in every map cell. It is a content action, so it lives in
+  the page, not in the top bar (the A&I rule still holds there). On a device not yet connected, the dialog first
+  asks for the editor link, then shows the form.
+- SEARCH BY MEANING (Anat, 2026-10-24: "משכורת" must find "תלושי שכר"): every app has hidden `data.concepts`
+  (everyday words, synonyms, English; seeded in `supabase/migrations/20261024_aoa_concepts.sql`). Search strips
+  Hebrew prefixes (ה ו ב ל מ ש כ), says on each card which word found it ("נמצא דרך"), and when nothing matches
+  shows the closest apps. When adding an app, add concepts too: the words a person who forgot its name would type.
+- MAP CELLS: hovering a cell opens a window listing its apps one per line; the name links straight to the app,
+  the sheet number opens its page. Every empty cell holds a suggested app (`src/data/gapIdeas.ts`), the apps it
+  can build on (same row and column), "הוספה לתיק מהרעיון" (prefilled dialog) and a ready Claude Code prompt.
+- Square buttons, chips and fields (anat-app-builder), including the shared A&I button.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.

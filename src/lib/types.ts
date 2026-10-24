@@ -64,6 +64,8 @@ export interface AppData {
   domains?: string[];
   contexts?: string[];
   keywords?: string[];
+  /** Hidden search words: everyday terms, synonyms, English. Not shown, only searched. */
+  concepts?: string[];
   /** The name as it was before prefixes were removed, kept for search. */
   originalName?: string;
   [key: string]: unknown;
