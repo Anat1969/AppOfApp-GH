@@ -50,7 +50,7 @@ const rows = names.map(([name, originalName, action, domains, contexts, keywords
     concepts: i === 1 ? ['עיתון', 'אקטואליה', 'news'] : i === 4 ? ['גינון', 'השקיה'] : [],
     previewUrl: url,
     primaryBtn: '← קישור לאפליקציה - VERCAL',
-    desc: i === 0 ? 'מערכת לזיקוק רעיון גולמי ל**קוד גנטי עיצובי**, עם פרומפט ותמונה.' : 'תאר את הרקע והמטרה...',
+    desc: i === 0 ? 'מערכת לזיקוק רעיון גולמי ל**קוד גנטי עיצובי**, עם פרומפט ותמונה.' : i === 4 ? 'תכנון של גינה ביתית מלאה. עם מחירון, השקיה וצמחייה.' : 'תאר את הרקע והמטרה...',
     problem: i === 0 ? 'רעיונות נשארים **מופשטים** ולא מתורגמים לשפה חזותית.' : 'תאר את הבעיה שזיהיתם...',
     solution: i === 0 ? 'זיקוק לשישה גנים, פלטה ו**פרומפט מוכן**.' : '',
     coverImage: i % 3 === 2 ? undefined : `https://ktqmwpbzcnzkhjskqisy.supabase.co/storage/v1/object/public/aoa-media/portfolio-assets/app-${i + 1}/cover.jpg`,
@@ -151,8 +151,11 @@ const browser = await chromium.launch();
   ok(!page.url().includes('action='), 'clearing removes all filters');
 
   // hover window over a filled cell: one app per line, name links to the app, sheet opens the page
+  await page.mouse.move(5, 5);
+  await page.waitForTimeout(250);
   await page.locator('.matrix .cell[aria-label^="תכנון עירוני, אבחון"]').hover();
   await page.waitForSelector('.cell-pop');
+  await page.waitForTimeout(150);
   ok((await page.locator('.cell-pop .pop-list li').count()) === 1, 'hover lists the cell apps one per line');
   ok((await page.locator('.cell-pop a.pop-name').getAttribute('href'))?.includes('ashdod-mitar-twin'), 'the name links straight to the app');
   await page.screenshot({ path: SHOTS + 'desktop-cell-hover.png' });
@@ -257,7 +260,8 @@ const browser = await chromium.launch();
   ok(await page.locator('.facet-tags .tag.strong', { hasText: 'יצירה' }).isVisible(), 'action tag shown');
   ok((await page.locator('.related .card').count()) >= 1, 'related apps shown');
   await page.screenshot({ path: SHOTS + 'desktop-app-full.png', fullPage: true });
-  ok((await page.locator('.rich strong').count()) >= 3, 'bold markers render as strong');
+  ok((await page.locator('.rich mark.hl:not(.auto)').count()) >= 3, 'marked words render as a highlighter mark');
+  ok((await page.locator('.app-desc .lead-line').count()) === 1, 'the first sentence is an insight line');
   const btn = await page.locator('.app-links .solid').textContent();
   ok(btn && !/[←→]/.test(btn), `primary button has no arrows ("${btn}")`);
   ok((await page.locator('.app-links a[href*="github.com"]').count()) === 1, 'GitHub link shown');
@@ -274,6 +278,12 @@ const browser = await chromium.launch();
   await page.goBack();
   await page.goBack();
   ok(true, 'history back works');
+
+  // automatic emphasis from the app's own words when the text has no markers
+  await page.goto(BASE + '/?app=app-5');
+  await page.waitForSelector('.app-page');
+  ok((await page.locator('.app-desc mark.hl.auto').allTextContents()).includes('גינה'), 'keywords in the text are emphasized automatically');
+  await page.screenshot({ path: SHOTS + 'desktop-emphasis.png' });
 
   // placeholder text hidden
   await page.goto(BASE + '/?app=app-2');
@@ -363,6 +373,13 @@ const browser = await chromium.launch();
   await page.waitForTimeout(1100);
   const f = lastOf(calls, 'save_app')?.data;
   ok(f?.action === 'inspire' && f?.domains?.includes('sustainability') && f?.keywords?.includes('זיקוק'), 'action, domain and keywords saved');
+
+  const ta = page.locator('.p-problem textarea');
+  await ta.fill('רעיונות נשארים מופשטים.');
+  await ta.evaluate((el) => el.setSelectionRange(8, 14));
+  await page.locator('.p-problem .marked-tools .ghost').click();
+  await page.waitForTimeout(1100);
+  ok(lastOf(calls, 'save_app')?.data?.problem === 'רעיונות **נשארים** מופשטים.', `the emphasis button wraps the selection (${lastOf(calls, 'save_app')?.data?.problem})`);
 
   await page.locator('.log-add input').fill('בדיקת יומן');
   await page.locator('.log-add .solid').click();

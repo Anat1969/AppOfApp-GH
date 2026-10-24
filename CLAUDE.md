@@ -103,5 +103,9 @@ the UI shows a clear error until the secret is replaced.
 - MAP CELLS: hovering a cell opens a window listing its apps one per line; the name links straight to the app,
   the sheet number opens its page. Every empty cell holds a suggested app (`src/data/gapIdeas.ts`), the apps it
   can build on (same row and column), "הוספה לתיק מהרעיון" (prefilled dialog) and a ready Claude Code prompt.
+- EMPHASIS IN TEXTS (Anat, 2026-10-24): in the description, problem and solution the first sentence is an insight
+  line (larger), `**words**` render as a highlighter mark, and when a text has no markers the app's own keywords,
+  concepts and domain labels found in it are emphasized automatically (up to three). In edit mode every text
+  field has a "הדגשה" button that wraps the selection in `**` (`RichText.tsx`, `MarkedTextarea.tsx`).
 - Square buttons, chips and fields (anat-app-builder), including the shared A&I button.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.
