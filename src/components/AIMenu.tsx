@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { SaveState } from '../lib/types';
+import { readEditorKey } from '../lib/supabase';
+import { toast } from './Toasts';
 
 export const DEV_SESSION_URL = 'https://claude.ai/code/session_01FtP6sty7hczHKPv2RmvypM';
 
@@ -50,6 +52,19 @@ export default function AIMenu({ isEditor, editing, saveState, setEditing, onAdd
           { label: editing ? 'סיום עריכה' : 'מצב עריכה', hint: editing ? 'פעיל' : 'כבוי', pressed: editing, onSelect: () => setEditing(!editing) },
           { label: 'אפליקציה חדשה', onSelect: onAdd },
           { label: 'ניסוח תוכן לכל האפליקציות', onSelect: onBulk },
+          {
+            label: 'העתקת קישור העריכה',
+            hint: 'לחיבור מכשיר נוסף',
+            onSelect: async () => {
+              const link = `${location.origin}/#editor=${readEditorKey()}`;
+              try {
+                await navigator.clipboard.writeText(link);
+                toast('קישור העריכה הועתק. פתחי אותו פעם אחת במכשיר השני.');
+              } catch {
+                prompt('קישור העריכה האישי שלך:', link);
+              }
+            },
+          },
           { label: 'ניתוק המכשיר מהעריכה', onSelect: onLeave },
         ]
       : [
@@ -57,7 +72,11 @@ export default function AIMenu({ isEditor, editing, saveState, setEditing, onAdd
             label: 'חיבור המכשיר לעריכה',
             hint: 'קישור או מפתח',
             onSelect: async () => {
-              const v = prompt('הדביקי את קישור העריכה או את המפתח')?.trim();
+              const v = prompt(
+                'קישור העריכה האישי שלך מתחיל ב-https://appofapp-gh.vercel.app/#editor=\n' +
+                  'קיבלת אותו בשיחה עם Claude, ואפשר להעתיק אותו מתפריט A&I בכל מכשיר שכבר מחובר.\n' +
+                  'הדביקי אותו כאן. המכשיר יזכור אותו.',
+              )?.trim();
               const key = v?.match(/editor=([\w-]{16,})/)?.[1] ?? v;
               if (key) await onConnect(key);
             },

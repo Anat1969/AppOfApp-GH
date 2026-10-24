@@ -173,8 +173,15 @@ const browser = await chromium.launch();
   const prompt = await page.evaluate(() => navigator.clipboard.readText());
   ok(prompt.includes('anat-app-builder') && prompt.includes('uipro init'), 'the gap prompt for Claude Code is copied');
   await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).click();
-  ok(await page.locator('.dialog .connect').isVisible(), 'a device not connected is asked for the editor link first');
-  await page.keyboard.press('Escape');
+  ok(await page.locator('.dialog .connect').isVisible(), 'a device not connected sees one field for the editor link');
+  ok((await page.locator('.dialog input').first().inputValue()).length > 2, 'the form itself opens right away, prefilled');
+  ok(await page.locator('.dialog .solid', { hasText: 'הוספה לתיק' }).isDisabled(), 'saving waits for the link');
+  await page.locator('.dialog .connect input').fill(`${BASE}/#editor=${KEY}`);
+  await page.locator('.dialog .solid', { hasText: 'הוספה לתיק' }).click();
+  await page.waitForTimeout(500);
+  ok(lastOf(calls, 'check')?.key === KEY && lastOf(calls, 'save_app')?.data?.name?.length > 2, 'one save connects the device and adds the app');
+  await page.goto(BASE + '/');
+  await page.waitForSelector('.card');
   ok(await page.locator('.hero-add').isVisible(), 'a prominent add button on the home page');
 
   // facet filters combine
@@ -272,7 +279,7 @@ const browser = await chromium.launch();
   ok(!page.url().includes('app=app-1'), 'next button moves to another app');
   await page.locator('.crumbs-nav button', { hasText: 'הקודמת' }).click();
   ok(page.url().includes('app=app-1'), 'previous button returns');
-  await menu(page, 'העתקת קישור');
+  await menu(page, 'למצב הנוכחי');
   const clip = await page.evaluate(() => navigator.clipboard.readText());
   ok(clip.includes('app=app-1'), 'copy link copies the current state');
   await page.goBack();
@@ -448,6 +455,9 @@ const browser = await chromium.launch();
   ok(calls.filter((c) => c.action === 'generate').length >= rows.length, 'bulk runs generate per app');
   await page.locator('.dialog .link', { hasText: 'סגירה' }).click();
 
+  await page.locator('ai-menu .logo').click();
+  ok(await page.locator('ai-menu .item', { hasText: 'העתקת קישור העריכה' }).isVisible(), 'a connected device can copy the editor link');
+  await page.keyboard.press('Escape');
   await menu(page, 'ניתוק המכשיר');
   ok(!(await isEditorDevice(page)), 'disconnect removes the editing actions');
 

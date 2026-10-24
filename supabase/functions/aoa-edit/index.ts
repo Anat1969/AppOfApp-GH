@@ -5,6 +5,8 @@
 // whose email is in aoa_admins. The key exists because Google sign-in is off in
 // the shared project and email sign-in returns to another app's Site URL.
 // Facets: domains and contexts vocabulary in aoa_facets (save_facet, delete_facet).
+// Safety net: before a save the previous version goes to aoa_app_versions (at most one
+// per app every 10 minutes), and a delete moves the app to aoa_trash (restore_app).
 //
 // Writes run with the service role after that check, so the tables stay closed
 // to the public. Uploads get a signed URL and go straight to storage.
@@ -57,6 +59,10 @@ async function rest(method: string, path: string, body?: unknown, prefer?: strin
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`${path}: ${res.status} ${await res.text()}`);
+}
+async function get(path: string) {
+  const r = await fetch(`${SB}/rest/v1/${path}`, { headers: service });
+  return r.ok ? r.json() : [];
 }
 const upsert = (table: string, row: unknown) => rest('POST', table, row, 'resolution=merge-duplicates,return=minimal');
 const safeId = (v: unknown) => String(v ?? '').replace(/[^\w-]/g, '').slice(0, 160);
@@ -131,13 +137,33 @@ Deno.serve(async (req) => {
         const id = safeId(body.id);
         if (!id) return json({ error: 'bad id' }, 400);
         const data = { ...(body.data as object), id };
+        const [cur] = await get(`aoa_apps?select=data&id=eq.${id}`);
+        if (cur) {
+          const [last] = await get(`aoa_app_versions?select=saved_at&app_id=eq.${id}&order=saved_at.desc&limit=1`);
+          if (!last || Date.now() - new Date(last.saved_at).getTime() > 600_000) {
+            await rest('POST', 'aoa_app_versions', { app_id: id, data: cur.data }, 'return=minimal');
+          }
+        }
         await upsert('aoa_apps', { id, data, updated_at: now });
         return json({ ok: true, updated_at: now });
       }
 
-      case 'delete_app':
-        await rest('DELETE', `aoa_apps?id=eq.${safeId(body.id)}`);
+      case 'delete_app': {
+        const id = safeId(body.id);
+        const [cur] = await get(`aoa_apps?select=data&id=eq.${id}`);
+        if (cur) await upsert('aoa_trash', { app_id: id, data: cur.data, deleted_at: now });
+        await rest('DELETE', `aoa_apps?id=eq.${id}`);
         return json({ ok: true });
+      }
+
+      case 'restore_app': {
+        const id = safeId(body.id);
+        const [t] = await get(`aoa_trash?select=data&app_id=eq.${id}`);
+        if (!t) return json({ error: 'not in trash' }, 404);
+        await upsert('aoa_apps', { id, data: { ...t.data, id }, updated_at: now });
+        await rest('DELETE', `aoa_trash?app_id=eq.${id}`);
+        return json({ ok: true, data: t.data });
+      }
 
       case 'save_category': {
         const value = safeId(body.value);
