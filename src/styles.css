@@ -375,6 +375,19 @@ td.tags { white-space: nowrap; }
 .app-desc { font-size: 1.12rem; color: var(--ink-2); }
 .rich p { margin: 0 0 6px; line-height: 1.7; }
 .rich strong { font-weight: 600; color: var(--ink); }
+/* emphasis: a highlighter stroke under the words that carry the meaning */
+.rich mark.hl {
+  color: var(--ink); font-weight: 600; padding: 0 2px;
+  background: linear-gradient(180deg, transparent 58%, rgba(34, 50, 79, 0.18) 58%, rgba(34, 50, 79, 0.18) 92%, transparent 92%);
+}
+.rich mark.hl.auto { font-weight: 500; background: linear-gradient(180deg, transparent 70%, rgba(34, 50, 79, 0.12) 70%, rgba(34, 50, 79, 0.12) 92%, transparent 92%); }
+/* the first sentence is the insight line */
+.rich p.lead-line { font-size: 1.22em; font-weight: 400; line-height: 1.45; color: var(--ink); margin-bottom: 10px; letter-spacing: -0.005em; }
+.rich.has-lead p:not(.lead-line) { color: var(--ink-2); }
+.marked-area { display: grid; gap: 6px; }
+.marked-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.marked-tools .ghost { padding: 0.3rem 0.8rem; font-size: 0.85rem; font-weight: 600; }
+.marked-tools .dim { font-size: 0.8rem; }
 .app-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; min-width: 0; }
 
 .analysis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 40px; }

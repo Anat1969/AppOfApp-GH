@@ -9,6 +9,7 @@ import { activityOf, clean, fmtDate, platformOf, siteUrl, stripArrows, withProto
 import { edit, uploadImage } from '../lib/supabase';
 import CoverFrame from './CoverFrame';
 import RichText from './RichText';
+import MarkedTextarea from './MarkedTextarea';
 import ChangeLog from './ChangeLog';
 import Notes from './Notes';
 import { toast } from './Toasts';
@@ -44,6 +45,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
   const act = actionOf(app.action);
   const domainLabels = (app.domains ?? []).map((d) => facets.find((f) => f.kind === 'domain' && f.value === d)?.label ?? d);
   const near = related(app, apps);
+  const terms = [...(app.keywords ?? []), ...(app.concepts ?? []), ...domainLabels];
   const set = (p: Partial<AppData>) => onChange({ ...app, ...p });
 
   useEffect(() => {
@@ -90,9 +92,9 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
         )}
       </header>
       {editing ? (
-        <textarea value={app[field] ?? ''} onChange={(e) => set({ [field]: e.target.value })} aria-label={title} rows={4} />
+        <MarkedTextarea value={app[field] ?? ''} onChange={(v) => set({ [field]: v })} label={title} />
       ) : clean(app[field]) ? (
-        <RichText text={app[field]} />
+        <RichText text={app[field]} lead terms={terms} />
       ) : (
         <p className="dim">טרם נכתב.</p>
       )}
@@ -190,10 +192,10 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
                   {gen === 'all' ? 'מנסח...' : 'ניסוח כל השדות עם Claude'}
                 </button>
               </span>
-              <textarea value={app.desc ?? ''} onChange={(e) => set({ desc: e.target.value })} rows={4} />
+              <MarkedTextarea value={app.desc ?? ''} onChange={(v) => set({ desc: v })} label="תיאור" />
             </label>
           ) : (
-            clean(app.desc) && <RichText className="app-desc" text={app.desc} />
+            clean(app.desc) && <RichText className="app-desc" text={app.desc} lead terms={terms} />
           )}
 
           {!editing && (
