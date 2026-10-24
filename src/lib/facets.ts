@@ -28,7 +28,10 @@ export function matchVocabulary(q: string, facets: Facet[]) {
   if (t.length < 2) return { actions: [] as ActionValue[], domains: [] as string[], contexts: [] as string[] };
   const hits = (words: string[]) => words.some((w) => {
     const n = norm(w);
-    return n === t || (t.length >= 3 && (n.startsWith(t) || t.startsWith(n) && n.length >= 3));
+    if (n === t) return true;
+    if (t.length < 3) return false;
+    // "תכנ" completes to "תכנון"; "כלים" is an inflection of "כלי". A longer phrase must narrow, not widen.
+    return n.startsWith(t) || (n.length >= 3 && t.startsWith(n) && t.length - n.length <= 2 && !t.includes(' '));
   });
   return {
     actions: ACTIONS.filter((a) => hits([a.label, a.short, ...a.synonyms])).map((a) => a.value),
