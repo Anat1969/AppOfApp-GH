@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import type { AppData, Category } from '../lib/types';
+import type { AppData, Facet } from '../lib/types';
+import { actionOf } from '../lib/facets';
 import { clean, siteUrl } from '../lib/format';
 import { edit } from '../lib/supabase';
 import Dialog from './Dialog';
@@ -8,12 +9,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   apps: AppData[];
-  categories: Category[];
+  facets: Facet[];
   onChange: (a: AppData, opts?: { stamp?: boolean }) => void;
 }
 
 /** Distills desc / problem / solution for every app that is missing one, one app at a time. */
-export default function BulkDialog({ open, onClose, apps, categories, onChange }: Props) {
+export default function BulkDialog({ open, onClose, apps, facets, onChange }: Props) {
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(0);
@@ -36,7 +37,7 @@ export default function BulkDialog({ open, onClose, apps, categories, onChange }
         const r = await edit<{ desc: string; problem: string; solution: string }>('generate', {
           name: a.name,
           title: a.title,
-          category: categories.find((c) => c.value === a.category)?.label,
+          category: [actionOf(a.action)?.label, ...(a.domains ?? []).map((d) => facets.find((f) => f.kind === 'domain' && f.value === d)?.label)].filter(Boolean).join(', '),
           url: siteUrl(a),
           current: { desc: clean(a.desc), problem: clean(a.problem), solution: clean(a.solution) },
         });

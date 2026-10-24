@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import type { AppData, Category } from '../lib/types';
+import type { AppData, Facet } from '../lib/types';
+import type { Route } from '../lib/route';
+import { actionOf, related } from '../lib/facets';
+import FacetTags from './FacetTags';
+import AppCard from './AppCard';
 import { activityOf, clean, fmtDate, platformOf, siteUrl, stripArrows, withProtocol, createdOf } from '../lib/format';
 import { edit, uploadImage } from '../lib/supabase';
 import CoverFrame from './CoverFrame';
@@ -12,7 +16,10 @@ import { toast } from './Toasts';
 interface Props {
   app: AppData;
   sheet: string;
-  categories: Category[];
+  apps: AppData[];
+  sheets: Map<string, string>;
+  facets: Facet[];
+  go: (p: Partial<Route>) => void;
   prev?: AppData;
   next?: AppData;
   editing: boolean;
@@ -20,7 +27,6 @@ interface Props {
   onOpen: (id: string) => void;
   onChange: (a: AppData) => void;
   onDelete: (id: string) => void;
-  onCategory: (value: string) => void;
 }
 
 type Field = 'desc' | 'problem' | 'solution';
@@ -32,10 +38,12 @@ const LINKS: { url: keyof AppData; label: keyof AppData; fallback: string }[] = 
   { url: 'supabaseProjectUrl', label: 'supabaseUrlLabel', fallback: 'מסד נתונים' },
 ];
 
-export default function AppPage({ app, sheet, categories, prev, next, editing, onBack, onOpen, onChange, onDelete, onCategory }: Props) {
+export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, next, editing, onBack, onOpen, onChange, onDelete }: Props) {
   const [gen, setGen] = useState<Field | 'all' | null>(null);
   const site = siteUrl(app);
-  const cat = categories.find((c) => c.value === app.category);
+  const act = actionOf(app.action);
+  const domainLabels = (app.domains ?? []).map((d) => facets.find((f) => f.kind === 'domain' && f.value === d)?.label ?? d);
+  const near = related(app, apps);
   const set = (p: Partial<AppData>) => onChange({ ...app, ...p });
 
   useEffect(() => {
@@ -48,7 +56,7 @@ export default function AppPage({ app, sheet, categories, prev, next, editing, o
       const r = await edit<Record<Field, string>>('generate', {
         name: app.name,
         title: app.title,
-        category: cat?.label,
+        category: [act?.label, ...domainLabels].filter(Boolean).join(', '),
         url: site,
         current: { desc: clean(app.desc), problem: clean(app.problem), solution: clean(app.solution) },
       });
@@ -103,11 +111,11 @@ export default function AppPage({ app, sheet, categories, prev, next, editing, o
         <button className="link" onClick={onBack}>
           כל האפליקציות
         </button>
-        {cat && (
+        {act && (
           <>
             <span className="dim">/</span>
-            <button className="link" onClick={() => onCategory(cat.value)}>
-              {cat.label}
+            <button className="link" onClick={() => go({ action: act.value, domain: null, ctx: null, app: null, q: '' })}>
+              {act.label}
             </button>
           </>
         )}
@@ -137,6 +145,10 @@ export default function AppPage({ app, sheet, categories, prev, next, editing, o
               <b>{sheet}</b>
             </div>
             <div>
+              <span>פעולה</span>
+              <b>{act?.short ?? '—'}</b>
+            </div>
+            <div>
               <span>פלטפורמה</span>
               <b>{platformOf(app.previewUrl) || '—'}</b>
             </div>
@@ -160,22 +172,13 @@ export default function AppPage({ app, sheet, categories, prev, next, editing, o
                 <span className="mono">כותרת הדף</span>
                 <input value={app.title ?? ''} onChange={(e) => set({ title: e.target.value })} />
               </label>
-              <label>
-                <span className="mono">קטגוריה</span>
-                <select value={app.category ?? ''} onChange={(e) => set({ category: e.target.value || null })}>
-                  <option value="">ללא קטגוריה</option>
-                  {categories.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
             </div>
           ) : (
             <>
-              {cat && <div className="mono kicker">{cat.label}</div>}
-              <h1 className="app-title">{clean(app.title) || app.name}</h1>
+              {domainLabels.length > 0 && <div className="mono kicker">{domainLabels.join(' · ')}</div>}
+              <h1 className="app-title">{app.name}</h1>
+              {clean(app.title) && clean(app.title) !== app.name && clean(app.title) !== app.originalName && <p className="app-subtitle">{app.title}</p>}
+              <FacetTags app={app} facets={facets} editing={false} onChange={onChange} go={go} />
             </>
           )}
 
@@ -209,6 +212,8 @@ export default function AppPage({ app, sheet, categories, prev, next, editing, o
           )}
         </div>
       </div>
+
+      {editing && <FacetTags app={app} facets={facets} editing onChange={onChange} go={go} />}
 
       {editing && (
         <section className="panel links-form">
@@ -262,6 +267,29 @@ export default function AppPage({ app, sheet, categories, prev, next, editing, o
         <ChangeLog app={app} editing={editing} onChange={onChange} />
         <Notes app={app} editing={editing} onChange={onChange} />
       </div>
+
+      {!editing && near.length > 0 && (
+        <section className="band related">
+          <header className="band-head">
+            <span className="mono">R</span>
+            <h2>אפליקציות קשורות</h2>
+            <span className="band-note">לפי תחום, פעולה, הקשר ומילות מפתח משותפים</span>
+          </header>
+          <div className="recent">
+            {near.map((a, i) => (
+              <AppCard
+                key={a.id}
+                app={a}
+                sheet={sheets.get(a.id) ?? ''}
+                category={(a.domains ?? []).map((d) => facets.find((f) => f.kind === 'domain' && f.value === d)?.label ?? d).join(' · ')}
+                onOpen={() => onOpen(a.id)}
+                index={i}
+                compact
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {editing && (
         <div className="danger">

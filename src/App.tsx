@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import Fuse from 'fuse.js';
 import { useStore } from './lib/store';
 import { useRoute } from './lib/route';
+import { useSearch } from './lib/search';
 import { activityOf, createdOf, sheetNo, siteUrl } from './lib/format';
 import TopBar from './components/TopBar';
 import Home from './components/Home';
@@ -40,7 +40,7 @@ export default function App() {
     if (!store.isEditor) setEditing(false);
   }, [store.isEditor]);
 
-  const { apps, categories } = store;
+  const { apps, facets } = store;
 
   // Sheet numbers follow creation order, so A-001 is the first app ever added.
   const sheets = useMemo(() => {
@@ -49,19 +49,19 @@ export default function App() {
     return m;
   }, [apps]);
 
-  const fuse = useMemo(
-    () => new Fuse(apps, { keys: ['name', 'title', 'desc', 'problem', 'solution', 'purpose', 'tags'], threshold: 0.35, ignoreLocation: true, minMatchCharLength: 2 }),
-    [apps],
-  );
+  const search = useSearch(apps, facets);
+  const { items: searched, vocab } = useMemo(() => search(route.q), [search, route.q]);
 
   const results = useMemo(() => {
     const q = route.q.trim();
-    let list = q.length >= 2 ? fuse.search(q).map((r) => r.item) : [...apps];
-    if (route.cat && !q) list = list.filter((a) => a.category === route.cat);
+    let list = [...searched];
+    if (route.action) list = list.filter((a) => a.action === route.action);
+    if (route.domain) list = list.filter((a) => a.domains?.includes(route.domain!));
+    if (route.ctx) list = list.filter((a) => a.contexts?.includes(route.ctx!));
     if (route.links) list = list.filter((a) => !!siteUrl(a));
-    if (!q) list.sort(sort === 'alpha' ? (a, b) => a.name.localeCompare(b.name, 'he') : (a, b) => activityOf(b) - activityOf(a));
+    if (q.length < 2) list.sort(sort === 'alpha' ? (a, b) => a.name.localeCompare(b.name, 'he') : (a, b) => activityOf(b) - activityOf(a));
     return list;
-  }, [apps, fuse, route.q, route.cat, route.links, sort]);
+  }, [searched, route.q, route.action, route.domain, route.ctx, route.links, sort]);
 
   const active = route.app ? apps.find((a) => a.id === route.app) : undefined;
   const idx = active ? results.findIndex((a) => a.id === active.id) : -1;
@@ -77,8 +77,10 @@ export default function App() {
       <TopBar
         route={route}
         apps={apps}
-        categories={categories}
-        onHome={() => go({ app: null, cat: null, q: '', view: 'home', links: false })}
+        facets={facets}
+        search={search}
+        go={go}
+        onHome={() => go({ app: null, action: null, domain: null, ctx: null, q: '', view: 'home', links: false })}
         onSearch={(q) => go({ q, app: null, view: 'home' }, true)}
         onOpen={(id) => go({ app: id, view: 'home' })}
         onView={(view) => go({ view, app: null })}
@@ -126,7 +128,10 @@ export default function App() {
                 key={active.id}
                 app={active}
                 sheet={sheets.get(active.id) ?? ''}
-                categories={categories}
+                apps={apps}
+                sheets={sheets}
+                facets={facets}
+                go={go}
                 prev={pos > 0 ? order[pos - 1] : undefined}
                 next={pos >= 0 && pos < order.length - 1 ? order[pos + 1] : undefined}
                 editing={editing}
@@ -136,24 +141,25 @@ export default function App() {
                 onDelete={async (id) => {
                   if (await store.deleteApp(id)) go({ app: null });
                 }}
-                onCategory={(cat) => go({ app: null, cat, q: '' })}
               />
             ) : route.view === 'table' ? (
-              <TableView key="table" apps={apps} categories={categories} sheets={sheets} editing={editing} onOpen={(id) => go({ app: id, view: 'home' })} onChange={store.updateApp} />
+              <TableView key="table" apps={apps} facets={facets} sheets={sheets} editing={editing} onOpen={(id) => go({ app: id, view: 'home' })} onChange={store.updateApp} />
             ) : (
               <Home
                 key="home"
                 apps={apps}
                 results={results}
-                categories={categories}
+                searched={searched}
+                facets={facets}
+                vocab={vocab}
                 sheets={sheets}
                 route={route}
                 go={go}
                 sort={sort}
                 setSort={setSort}
                 editing={editing}
-                saveCategory={store.saveCategory}
-                deleteCategory={store.deleteCategory}
+                saveFacet={store.saveFacet}
+                deleteFacet={store.deleteFacet}
               />
             )
         )}
@@ -168,8 +174,9 @@ export default function App() {
         open={adding}
         onClose={() => setAdding(false)}
         apps={apps}
-        categories={categories}
-        defaultCategory={route.cat}
+        facets={facets}
+        defaultAction={route.action}
+        defaultDomain={route.domain}
         onCreate={async (a) => {
           const ok = await store.addApp(a);
           if (ok) {
@@ -179,7 +186,7 @@ export default function App() {
           return ok;
         }}
       />
-      <BulkDialog open={bulk} onClose={() => setBulk(false)} apps={apps} categories={categories} onChange={store.updateApp} />
+      <BulkDialog open={bulk} onClose={() => setBulk(false)} apps={apps} facets={facets} onChange={store.updateApp} />
       <Toasts />
     </div>
   );

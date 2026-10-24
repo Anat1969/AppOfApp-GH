@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import type { AppData, Category } from '../lib/types';
+import type { AppData, Facet } from '../lib/types';
+import { actionOf, facetLabel } from '../lib/facets';
 import { createdOf, fmtDate, platformOf, projectName, siteUrl } from '../lib/format';
 import { toast } from './Toasts';
 
-type Col = 'sheet' | 'name' | 'project' | 'purpose' | 'platform' | 'category' | 'supabase' | 'github' | 'hasApi' | 'created';
+type Col = 'sheet' | 'name' | 'project' | 'purpose' | 'platform' | 'action' | 'domains' | 'contexts' | 'supabase' | 'github' | 'hasApi' | 'created';
 
 interface Props {
   apps: AppData[];
-  categories: Category[];
+  facets: Facet[];
   sheets: Map<string, string>;
   editing: boolean;
   onOpen: (id: string) => void;
@@ -18,11 +19,10 @@ interface Props {
 const short = (url: string, kind: 'github' | 'supabase') =>
   kind === 'github' ? url.replace(/^https?:\/\/github\.com\//, '') : url.match(/\/project\/([^/?#]+)/)?.[1] ?? url;
 
-export default function TableView({ apps, categories, sheets, editing, onOpen, onChange }: Props) {
+export default function TableView({ apps, facets, sheets, editing, onOpen, onChange }: Props) {
   const [sort, setSort] = useState<{ col: Col; dir: 1 | -1 }>({ col: 'sheet', dir: 1 });
   const [filter, setFilter] = useState<{ col: Col; value: string } | null>(null);
   const [q, setQ] = useState('');
-  const label = (v?: string | null) => categories.find((c) => c.value === v)?.label ?? '';
 
   const rows = useMemo(() => {
     let list = apps.map((a) => ({
@@ -32,23 +32,25 @@ export default function TableView({ apps, categories, sheets, editing, onOpen, o
       project: projectName(a.previewUrl),
       purpose: a.purpose ?? '',
       platform: platformOf(a.previewUrl),
-      category: label(a.category),
+      action: actionOf(a.action)?.short ?? '',
+      domains: (a.domains ?? []).map((d) => facetLabel(facets, 'domain', d)),
+      contexts: (a.contexts ?? []).map((c) => facetLabel(facets, 'context', c)),
       supabase: a.supabaseProjectUrl ?? '',
       github: a.githubUrl ?? '',
       hasApi: a.hasApi === true ? 'כן' : a.hasApi === false ? 'לא' : '',
       created: createdOf(a),
     }));
     const t = q.trim().toLowerCase();
-    if (t) list = list.filter((r) => [r.name, r.project, r.purpose, r.platform, r.category, r.github, r.supabase].join(' ').toLowerCase().includes(t));
-    if (filter) list = list.filter((r) => String(r[filter.col]) === filter.value);
+    if (t) list = list.filter((r) => [r.name, r.app.originalName, r.project, r.purpose, r.platform, r.action, ...r.domains, ...r.contexts, ...(r.app.keywords ?? []), r.github, r.supabase].join(' ').toLowerCase().includes(t));
+    if (filter) list = list.filter((r) => { const v = r[filter.col]; return Array.isArray(v) ? v.includes(filter.value) : String(v) === filter.value; });
     return list.sort((a, b) => {
-      const x = a[sort.col];
-      const y = b[sort.col];
+      const x = Array.isArray(a[sort.col]) ? (a[sort.col] as string[]).join(' ') : a[sort.col];
+      const y = Array.isArray(b[sort.col]) ? (b[sort.col] as string[]).join(' ') : b[sort.col];
       const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'he');
       return c * sort.dir;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apps, sheets, categories, sort, filter, q]);
+  }, [apps, sheets, facets, sort, filter, q]);
 
   const th = (col: Col, text: string) => (
     <th>
@@ -109,7 +111,9 @@ export default function TableView({ apps, categories, sheets, editing, onOpen, o
               {th('project', 'פרויקט')}
               {th('purpose', 'מטרה')}
               {th('platform', 'פלטפורמה')}
-              {th('category', 'קטגוריה')}
+              {th('action', 'פעולה')}
+              {th('domains', 'תחום')}
+              {th('contexts', 'הקשר')}
               {th('supabase', 'Supabase')}
               {th('github', 'GitHub')}
               {th('hasApi', 'API')}
@@ -131,7 +135,9 @@ export default function TableView({ apps, categories, sheets, editing, onOpen, o
                   <td className="mono">{r.project ? (site ? <a href={site} target="_blank" rel="noopener noreferrer" dir="ltr">{r.project}</a> : r.project) : <span className="dim">—</span>}</td>
                   <td className="wide">{cell(r.app, 'purpose', r.purpose)}</td>
                   <td>{tag('platform', r.platform)}</td>
-                  <td>{tag('category', r.category)}</td>
+                  <td>{tag('action', r.action)}</td>
+                  <td className="tags">{r.domains.length ? r.domains.map((d) => <span key={d}>{tag('domains', d)}</span>) : <span className="dim">—</span>}</td>
+                  <td className="tags">{r.contexts.length ? r.contexts.map((c) => <span key={c}>{tag('contexts', c)}</span>) : <span className="dim">—</span>}</td>
                   <td>{cell(r.app, 'supabaseProjectUrl', r.supabase, 'supabase')}</td>
                   <td>{cell(r.app, 'githubUrl', r.github, 'github')}</td>
                   <td>

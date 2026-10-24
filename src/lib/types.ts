@@ -1,3 +1,15 @@
+export type ActionValue = 'diagnose' | 'create' | 'explore' | 'manage' | 'inspire' | 'teach' | 'play';
+
+export type FacetKind = 'domain' | 'context';
+
+export interface Facet {
+  kind: FacetKind;
+  value: string;
+  label: string;
+  synonyms: string[];
+  position: number;
+}
+
 export type ChangeType = 'feature' | 'fix' | 'design' | 'content' | 'deploy';
 
 export interface ChangeLogEntry {
@@ -47,6 +59,13 @@ export interface AppData {
   changeNote?: string;
   changeNoteDate?: string;
   redNotes?: Note[];
+  /** Facets: one action, several domains and contexts, free keywords. */
+  action?: ActionValue;
+  domains?: string[];
+  contexts?: string[];
+  keywords?: string[];
+  /** The name as it was before prefixes were removed, kept for search. */
+  originalName?: string;
   [key: string]: unknown;
 }
 

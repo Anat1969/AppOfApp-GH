@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { edit, readEditorKey, storeEditorKey, supabase } from './supabase';
-import type { AppData, Category, SaveState } from './types';
+import type { AppData, Category, Facet, SaveState } from './types';
 import { toast } from '../components/Toasts';
 
 const SAVE_DELAY = 800;
@@ -8,6 +8,7 @@ const SAVE_DELAY = 800;
 export function useStore() {
   const [apps, setApps] = useState<AppData[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [facets, setFacets] = useState<Facet[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [isEditor, setIsEditor] = useState(false);
@@ -18,11 +19,12 @@ export function useStore() {
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError('');
-    const [a, c] = await Promise.all([
+    const [a, c, f] = await Promise.all([
       supabase.from('aoa_apps').select('id,data,created_at,updated_at'),
       supabase.from('aoa_categories').select('value,label,position').order('position'),
+      supabase.from('aoa_facets').select('kind,value,label,synonyms,position').order('position'),
     ]);
-    if (a.error || c.error) {
+    if (a.error || c.error || f.error) {
       setLoadError('לא ניתן לטעון את הנתונים כרגע.');
     } else {
       setApps(
@@ -33,6 +35,7 @@ export function useStore() {
         })),
       );
       setCategories((c.data ?? []) as Category[]);
+      setFacets(((f.data ?? []) as Facet[]).map((x) => ({ ...x, synonyms: x.synonyms ?? [] })));
     }
     setLoading(false);
   }, []);
@@ -147,6 +150,31 @@ export function useStore() {
     }
   }, []);
 
+  const saveFacet = useCallback(async (f: Facet) => {
+    try {
+      await edit('save_facet', { ...f });
+      setFacets((prev) => {
+        const has = prev.some((x) => x.kind === f.kind && x.value === f.value);
+        return has ? prev.map((x) => (x.kind === f.kind && x.value === f.value ? f : x)) : [...prev, f];
+      });
+      return true;
+    } catch (e) {
+      toast(`שמירת המילון נכשלה: ${(e as Error).message}`, 'error');
+      return false;
+    }
+  }, []);
+
+  const deleteFacet = useCallback(async (f: Facet) => {
+    try {
+      await edit('delete_facet', { kind: f.kind, value: f.value });
+      setFacets((prev) => prev.filter((x) => !(x.kind === f.kind && x.value === f.value)));
+      return true;
+    } catch (e) {
+      toast(`המחיקה נכשלה: ${(e as Error).message}`, 'error');
+      return false;
+    }
+  }, []);
+
   const leaveEditor = useCallback(() => {
     storeEditorKey('');
     setIsEditor(false);
@@ -154,9 +182,9 @@ export function useStore() {
   }, []);
 
   return {
-    apps, categories, loading, loadError, reload: load,
+    apps, categories, facets, loading, loadError, reload: load,
     isEditor, connect, leaveEditor, saveState,
-    updateApp, addApp, deleteApp, saveCategory, deleteCategory,
+    updateApp, addApp, deleteApp, saveCategory, deleteCategory, saveFacet, deleteFacet,
   };
 }
 
