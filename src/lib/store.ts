@@ -98,17 +98,23 @@ export function useStore() {
     [flush],
   );
 
-  const addApp = useCallback(async (app: AppData) => {
+  const addApp = useCallback(async (app: AppData, key?: string) => {
     setSaveState('saving');
     try {
-      await edit('save_app', { id: app.id, data: app });
+      await edit('save_app', { id: app.id, data: app }, key || readEditorKey());
       setApps((prev) => [app, ...prev]);
       setSaveState('saved');
       toast('האפליקציה נוספה');
       return true;
     } catch (e) {
       setSaveState('error');
-      toast(`ההוספה נכשלה: ${(e as Error).message}`, 'error');
+      const denied = (e as Error).message === 'not editor';
+      if (denied) {
+        // Show the link field again instead of a dead end; the form keeps what was typed.
+        storeEditorKey('');
+        setIsEditor(false);
+      }
+      toast(denied ? 'קישור העריכה לא התקבל. הדביקי אותו שוב בשדה ולחצי שמירה.' : `ההוספה נכשלה: ${(e as Error).message}`, 'error');
       return false;
     }
   }, []);
