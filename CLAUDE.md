@@ -16,7 +16,8 @@ and is no longer the source of truth.
 ## Stack
 
 Vite + React 18 + TypeScript + framer-motion + fuse.js. Plain CSS (`src/styles.css`), Hebrew RTL,
-IBM Plex Sans Hebrew / IBM Plex Mono. Deployed on Vercel from `main`.
+IBM Plex Sans Hebrew / IBM Plex Mono. Deployed on Vercel (project appofapp-gh) from `main`:
+https://appofapp-gh.vercel.app
 
 ```bash
 npm run dev
