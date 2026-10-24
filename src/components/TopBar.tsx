@@ -1,14 +1,15 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { AppData, Facet } from '../lib/types';
+import type { ActionValue, AppData, Facet } from '../lib/types';
 import type { Route } from '../lib/route';
-import { ACTIONS, actionOf } from '../lib/facets';
+import { ACTIONS, actionOf, facetLabel } from '../lib/facets';
+import { thumbOf } from '../lib/format';
 
 interface Props {
   route: Route;
   apps: AppData[];
   facets: Facet[];
-  search: (q: string) => { items: AppData[] };
+  search: (q: string) => { items: AppData[]; vocab: { actions: ActionValue[]; domains: string[]; contexts: string[] } };
   onHome: () => void;
   onSearch: (q: string) => void;
   onOpen: (id: string) => void;
@@ -17,12 +18,33 @@ interface Props {
   menu: ReactNode;
 }
 
+/** Marks the typed text inside a name. */
+function highlight(name: string, q: string) {
+  const i = name.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return name;
+  return (
+    <>
+      {name.slice(0, i)}
+      <mark>{name.slice(i, i + q.length)}</mark>
+      {name.slice(i + q.length)}
+    </>
+  );
+}
+
 export default function TopBar({ route, apps, facets, search, onHome, onSearch, onOpen, onView, go, menu }: Props) {
   const [focus, setFocus] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const q = route.q.trim();
 
-  const suggestions = useMemo(() => (q.length >= 2 ? search(q).items.slice(0, 7) : []), [q, search]);
+  const live = useMemo(() => (q.length >= 2 ? search(q) : null), [q, search]);
+  const suggestions = live?.items ?? [];
+  const expanded = live
+    ? [
+        ...live.vocab.actions.map((v) => actionOf(v)?.label),
+        ...live.vocab.domains.map((v) => facetLabel(facets, 'domain', v)),
+        ...live.vocab.contexts.map((v) => facetLabel(facets, 'context', v)),
+      ].filter(Boolean)
+    : [];
   const topKeywords = useMemo(() => {
     const count = new Map<string, number>();
     for (const a of apps) for (const k of a.keywords ?? []) count.set(k, (count.get(k) ?? 0) + 1);
@@ -69,7 +91,8 @@ export default function TopBar({ route, apps, facets, search, onHome, onSearch, 
             }}
           />
           <AnimatePresence>
-            {focus && (q.length < 2 || suggestions.length > 0) && (
+            {focus && (
+
               <motion.div className="suggest" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} onMouseDown={(e) => e.preventDefault()}>
                 {q.length < 2 ? (
                   <div className="search-help">
@@ -120,21 +143,55 @@ export default function TopBar({ route, apps, facets, search, onHome, onSearch, 
                     )}
                   </div>
                 ) : (
-                  <ul>
-                    {suggestions.map((a) => (
-                      <li key={a.id}>
-                        <button
-                          onClick={() => {
-                            onOpen(a.id);
-                            input.current?.blur();
-                          }}
-                        >
-                          <span>{a.name}</span>
-                          <span className="mono dim">{actionOf(a.action)?.short ?? ''}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="live">
+                    <div className="live-head">
+                      <span className="mono">
+                        {suggestions.length ? `${suggestions.length} אפליקציות` : 'אין התאמה'}
+                      </span>
+                      {expanded.length > 0 && <span className="dim">כולל: {expanded.join(', ')}</span>}
+                    </div>
+                    {suggestions.length === 0 ? (
+                      <p className="dim live-empty">נסי מילה אחרת, או תחום כמו "תכנון עירוני".</p>
+                    ) : (
+                      <motion.ul className="live-grid" layout>
+                        <AnimatePresence initial={false}>
+                          {suggestions.slice(0, 12).map((a) => {
+                            const t = thumbOf(a);
+                            return (
+                              <motion.li
+                                key={a.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.92 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.92 }}
+                                transition={{ duration: 0.22, ease: [0.2, 0.7, 0.2, 1] }}
+                              >
+                                <button
+                                  className="live-card"
+                                  onClick={() => {
+                                    onOpen(a.id);
+                                    input.current?.blur();
+                                  }}
+                                  title={a.name}
+                                >
+                                  <span className="live-thumb">
+                                    {t ? <img src={t} alt="" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} /> : <span className="live-initial">{a.name.slice(0, 1)}</span>}
+                                  </span>
+                                  <span className="live-name">{highlight(a.name, q)}</span>
+                                  <span className="mono dim">{actionOf(a.action)?.short ?? ''}</span>
+                                </button>
+                              </motion.li>
+                            );
+                          })}
+                        </AnimatePresence>
+                      </motion.ul>
+                    )}
+                    {suggestions.length > 12 && (
+                      <button className="link live-all" onClick={() => input.current?.blur()}>
+                        הצגת כל {suggestions.length} התוצאות בעמוד
+                      </button>
+                    )}
+                  </div>
                 )}
               </motion.div>
             )}

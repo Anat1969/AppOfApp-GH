@@ -76,4 +76,7 @@ the UI shows a clear error until the secret is replaced.
   the empty search box explains what can be searched; filters by the three axes combine in the address
   (`?action=`, `?domain=`, `?ctx=`); the home matrix is domain x action and shows empty cells as gaps;
   every app page lists related apps (`related()` in `src/lib/facets.ts`).
+- LIVE SEARCH (Anat liked it, keep it): typing shows a live grid of app thumbnails in the search panel that
+  narrows with every word (each word must match, `$and` in `src/lib/search.ts`), highlights the typed text,
+  and says which vocabulary entries widened the search. Empty box shows the search help.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.

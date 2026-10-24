@@ -44,7 +44,13 @@ export function useSearch(apps: AppData[], facets: Facet[]) {
           a.domains?.some((d) => vocab.domains.includes(d)) ||
           a.contexts?.some((c) => vocab.contexts.includes(c)),
       );
-      const fuzzy = fuse.search(t).map((r) => r.item.app);
+      // Every word typed must match somewhere, so each added word narrows the results.
+      const words = t.split(/\s+/).filter((w) => w.length >= 2);
+      const keys = ['name', 'originalName', 'keywords', 'title', 'facets', 'text'];
+      const fuzzy = (words.length > 1
+        ? fuse.search({ $and: words.map((w) => ({ $or: keys.map((k) => ({ [k]: w })) })) })
+        : fuse.search(words[0] ?? t)
+      ).map((r) => r.item.app);
       const seen = new Set(fuzzy.map((a) => a.id));
       return { items: [...fuzzy, ...byVocab.filter((a) => !seen.has(a.id))], vocab };
     },
