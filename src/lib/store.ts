@@ -41,25 +41,29 @@ export function useStore() {
     load();
   }, [load]);
 
+  /** Verifies a key with the server and, if valid, keeps it on this device. */
+  const connect = useCallback(async (key: string, announce = true) => {
+    try {
+      await edit('check', {}, key);
+      storeEditorKey(key);
+      setIsEditor(true);
+      if (announce) toast('המכשיר הזה מחובר לעריכה');
+      return true;
+    } catch {
+      storeEditorKey('');
+      setIsEditor(false);
+      if (announce) toast('מפתח העריכה אינו תקף', 'error');
+      return false;
+    }
+  }, []);
+
   // A key arrives once as #editor=KEY, is kept on this device and removed from the address.
   useEffect(() => {
     const m = location.hash.match(/editor=([\w-]{16,})/);
-    if (m) {
-      storeEditorKey(m[1]);
-      history.replaceState(null, '', location.pathname + location.search);
-    }
+    if (m) history.replaceState(null, '', location.pathname + location.search);
     const key = m?.[1] ?? readEditorKey();
-    if (!key) return;
-    edit('check', {}, key)
-      .then(() => {
-        setIsEditor(true);
-        if (m) toast('המכשיר הזה מחובר לעריכה');
-      })
-      .catch(() => {
-        storeEditorKey('');
-        if (m) toast('קישור העריכה אינו תקף', 'error');
-      });
-  }, []);
+    if (key) connect(key, !!m);
+  }, [connect]);
 
   const flush = useCallback(async (id: string) => {
     const app = latest.current.get(id);
@@ -151,7 +155,7 @@ export function useStore() {
 
   return {
     apps, categories, loading, loadError, reload: load,
-    isEditor, leaveEditor, saveState,
+    isEditor, connect, leaveEditor, saveState,
     updateApp, addApp, deleteApp, saveCategory, deleteCategory,
   };
 }

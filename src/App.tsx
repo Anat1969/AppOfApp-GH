@@ -7,7 +7,7 @@ import TopBar from './components/TopBar';
 import Home from './components/Home';
 import AppPage from './components/AppPage';
 import TableView from './components/TableView';
-import EditorBar from './components/EditorBar';
+import AIMenu from './components/AIMenu';
 import AddAppDialog from './components/AddAppDialog';
 import BulkDialog from './components/BulkDialog';
 import Toasts from './components/Toasts';
@@ -82,6 +82,18 @@ export default function App() {
         onSearch={(q) => go({ q, app: null, view: 'home' }, true)}
         onOpen={(id) => go({ app: id, view: 'home' })}
         onView={(view) => go({ view, app: null })}
+        menu={
+          <AIMenu
+            isEditor={store.isEditor}
+            editing={editing}
+            saveState={store.saveState}
+            setEditing={setEditing}
+            onAdd={() => setAdding(true)}
+            onBulk={() => setBulk(true)}
+            onConnect={store.connect}
+            onLeave={store.leaveEditor}
+          />
+        }
       />
 
       <main className="stage">
@@ -151,10 +163,6 @@ export default function App() {
         <span>APPOFAPP · {apps.length} גיליונות</span>
         <span>{store.isEditor ? 'מכשיר עריכה' : 'תצוגה ציבורית'}</span>
       </footer>
-
-      {store.isEditor && (
-        <EditorBar editing={editing} setEditing={setEditing} saveState={store.saveState} onAdd={() => setAdding(true)} onBulk={() => setBulk(true)} onLeave={store.leaveEditor} />
-      )}
 
       <AddAppDialog
         open={adding}
