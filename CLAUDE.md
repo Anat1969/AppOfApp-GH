@@ -110,8 +110,8 @@ the UI shows a clear error until the secret is replaced.
   and says which vocabulary entries widened the search. Empty box shows the search help.
 - ADDING AN APP is a primary purpose (Anat, 2026-10-24): a prominent "הוספת אפליקציה חדשה" button in the hero,
   in the catalog header, in empty search results and in every map cell. It is a content action, so it lives in
-  the page, not in the top bar (the A&I rule still holds there). On a device not yet connected, the dialog first
-  asks for the editor link, then shows the form.
+  the page, not in the top bar (the A&I rule still holds there). The form always opens; on a device not yet
+  connected one editor-link field sits above the save button (see Editing).
 - SEARCH BY MEANING (Anat, 2026-10-24: "משכורת" must find "תלושי שכר"): every app has hidden `data.concepts`
   (everyday words, synonyms, English; seeded in `supabase/migrations/20261024_aoa_concepts.sql`). Search strips
   Hebrew prefixes (ה ו ב ל מ ש כ), says on each card which word found it ("נמצא דרך"), and when nothing matches
