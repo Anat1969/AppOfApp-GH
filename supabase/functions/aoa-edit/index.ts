@@ -68,19 +68,33 @@ async function get(path: string) {
 const upsert = (table: string, row: unknown) => rest('POST', table, row, 'resolution=merge-duplicates,return=minimal');
 const safeId = (v: unknown) => String(v ?? '').replace(/[^\w-]/g, '').slice(0, 160);
 
+// The model answers in parts (insight line + explanation) so the hierarchy of the text standard is kept every time;
+// the server joins them into "insight. explanation" for desc / problem / solution.
+const PART = { type: 'object', additionalProperties: false, required: ['insight', 'detail'], properties: { insight: { type: 'string' }, detail: { type: 'string' } } };
 const GEN_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: ['desc', 'problem', 'solution'],
-  properties: { desc: { type: 'string' }, problem: { type: 'string' }, solution: { type: 'string' } },
+  properties: { desc: PART, problem: PART, solution: PART },
 };
+const G_PART = { type: 'OBJECT', required: ['insight', 'detail'], properties: { insight: { type: 'STRING' }, detail: { type: 'STRING' } } };
+type Part = { insight?: string; detail?: string };
+const joinPart = (p: Part | string | undefined) => {
+  if (!p) return '';
+  if (typeof p === 'string') return p.trim();
+  const a = (p.insight ?? '').trim().replace(/[.:]+$/, '');
+  const b = (p.detail ?? '').trim();
+  return a && b ? `${a}. ${b}` : a || b;
+};
+const compose = (o: Record<string, Part | string>) => ({ desc: joinPart(o.desc), problem: joinPart(o.problem), solution: joinPart(o.solution) });
+
 // The text standard of all of Anat's apps: docs/ai-text-standard.md (keep the two identical).
 const GEN_SYSTEM = `את/ה כותב/ת תוכן בעברית לתיק עבודות של אפליקציות שבנתה אדריכלית.
 זקק, אל תתאר. עברית טבעית, קצרה ומקצועית, בגוף שלישי. בלי סימני קריאה, בלי אימוג'י, בלי מילים ריקות.
 
-מבנה קבוע לכל שדה, בהיררכיה:
-1. שורת תובנה: עד 8 מילים, כמו כותרת שמבטאת את העיקר. מסתיימת בנקודה.
-2. משפט הסבר אחד: עד 20 מילים, שמפרט את התובנה.
+מבנה קבוע לכל שדה, בהיררכיה (insight ו-detail):
+1. שורת תובנה (insight): עד 8 מילים, כמו כותרת שמבטאת את העיקר. לא חוזרת על שם האפליקציה.
+2. משפט הסבר אחד (detail): עד 20 מילים, שמפרט את התובנה ומוסיף מידע חדש.
 
 הבלטות ב-**כוכביות כפולות**:
 - בשורת התובנה: המושג המרכזי בלבד.
@@ -118,8 +132,11 @@ async function siteText(url: string): Promise<string> {
 
 type Gen = { desc: string; problem: string; solution: string };
 
-async function viaGemini(key: string, user: string): Promise<Gen> {
-  const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-flash-latest';
+// Free Gemini models can be busy (503) or slow. Try the configured model, then lighter ones, each with its own
+// time limit, so one click still ends with text (Anat's key, 2026-10-27: first call returned 503).
+const GEMINI_MODELS = [...new Set([Deno.env.get('GEMINI_MODEL') ?? 'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'])];
+
+async function geminiOnce(key: string, model: string, user: string): Promise<Gen> {
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -131,79 +148,31 @@ async function viaGemini(key: string, user: string): Promise<Gen> {
         responseSchema: {
           type: 'OBJECT',
           required: ['desc', 'problem', 'solution'],
-          properties: { desc: { type: 'STRING' }, problem: { type: 'STRING' }, solution: { type: 'STRING' } },
+          properties: { desc: G_PART, problem: G_PART, solution: G_PART },
         },
       },
     }),
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(25000),
   });
-  if (!r.ok) throw new Error(`Gemini ${r.status}`);
+  if (!r.ok) throw Object.assign(new Error(`Gemini ${model} ${r.status}`), { status: r.status });
   const j = await r.json();
   const text = j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-  return JSON.parse(text);
+  return compose(JSON.parse(text));
 }
 
-async function viaClaude(key: string, user: string): Promise<Gen> {
-  const client = new Anthropic({ apiKey: key });
-  const response = await client.beta.messages.create({
-    model: 'claude-opus-5-5',
-    max_tokens: 4000,
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
-    system: GEN_SYSTEM,
-    output_config: { effort: 'low', format: { type: 'json_schema', schema: GEN_SCHEMA } },
-    messages: [{ role: 'user', content: user }],
-  } as never);
-  if (response.stop_reason === 'refusal') throw new Error('הבקשה נדחתה');
-  const text = response.content.filter((b: { type: string }) => b.type === 'text').map((b: { text: string }) => b.text).join('');
-  return JSON.parse(text);
-}
-
-/** Title, descriptions and headings of the app's own site: facts for the model, so it does not invent. */
-async function siteText(url: string): Promise<string> {
-  if (!/^https?:\/\//.test(url)) return '';
-  try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(6000), headers: { 'user-agent': 'Mozilla/5.0 appofapp' } });
-    if (!r.ok) return '';
-    const html = (await r.text()).slice(0, 400_000);
-    const pick = (re: RegExp) => [...html.matchAll(re)].map((m) => m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
-    const parts = [
-      ...pick(/<title[^>]*>([^<]*)<\/title>/gi),
-      ...pick(/<meta[^>]+(?:name|property)=["'](?:description|og:description|og:title)["'][^>]+content=["']([^"']*)["']/gi),
-      ...pick(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi).slice(0, 8),
-    ];
-    const generic = /lovable (app|generated)|^vite|^react app$/i;
-    return [...new Set(parts)].filter((t) => !generic.test(t)).join(' | ').slice(0, 1200);
-  } catch {
-    return '';
+async function viaGemini(key: string, user: string): Promise<Gen> {
+  let last: unknown;
+  for (const model of GEMINI_MODELS) {
+    try {
+      return await geminiOnce(key, model, user);
+    } catch (err) {
+      last = err;
+      const status = (err as { status?: number }).status;
+      // a wrong key will not work with another model either
+      if (status === 400 || status === 401 || status === 403) throw err;
+    }
   }
-}
-
-type Gen = { desc: string; problem: string; solution: string };
-
-async function viaGemini(key: string, user: string): Promise<Gen> {
-  const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-flash-latest';
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: GEN_SYSTEM }] },
-      contents: [{ role: 'user', parts: [{ text: user }] }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: 'OBJECT',
-          required: ['desc', 'problem', 'solution'],
-          properties: { desc: { type: 'STRING' }, problem: { type: 'STRING' }, solution: { type: 'STRING' } },
-        },
-      },
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
-  if (!r.ok) throw new Error(`Gemini ${r.status}`);
-  const j = await r.json();
-  const text = j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-  return JSON.parse(text);
+  throw last;
 }
 
 async function viaClaude(key: string, user: string): Promise<Gen> {
@@ -219,7 +188,7 @@ async function viaClaude(key: string, user: string): Promise<Gen> {
   } as never);
   if (response.stop_reason === 'refusal') throw new Error('הבקשה נדחתה');
   const text = response.content.filter((b: { type: string }) => b.type === 'text').map((b: { text: string }) => b.text).join('');
-  return JSON.parse(text);
+  return compose(JSON.parse(text));
 }
 
 async function generate(body: Record<string, unknown>) {

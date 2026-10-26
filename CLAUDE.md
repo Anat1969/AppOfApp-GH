@@ -89,6 +89,9 @@ TEXT STANDARD (Anat, 2026-10-26, "חשוב ביותר", for every app and every 
 distilled and emphasized in a hierarchy: an insight line of up to 8 words, one explanation sentence of up to 20 words,
 and `**` on the main concept, the parameters and the numbers. The paste-ready instruction is in `docs/ai-text-standard.md`;
 `GEN_SYSTEM` in `aoa-edit` is identical to it. Gemini free first, Claude only as a fallback.
+Gemini (2026-10-27): Anat's key starts with `AQ.` (the newer Google key format, works). Free models answer 503 or slowly at
+times, so `aoa-edit` tries `gemini-flash-latest`, then lighter models, 25s each. The model answers each field as
+{insight, detail} and the server joins them, so the hierarchy is kept every time.
 `generate` (Anat, 2026-10-26: "חינמי") reads the app's own site (title, meta, headings) so the model does not
 invent, then asks Gemini first (`GEMINI_API_KEY`, free tier, model `GEMINI_MODEL` default `gemini-flash-latest`)
 and falls back to Claude (`ANTHROPIC_API_KEY`, returned 401 since 2026-10-24). Without a Gemini key the error says
@@ -140,5 +143,12 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   line (larger), `**words**` render as a highlighter mark, and when a text has no markers the app's own keywords,
   concepts and domain labels found in it are emphasized automatically (up to three). In edit mode every text
   field has a "הדגשה" button that wraps the selection in `**` (`RichText.tsx`, `MarkedTextarea.tsx`).
+- TABLE (Anat, 2026-10-27): a big "עודכן" column (the date she last changed the app, `data.updatedAt`, with "היום / לפני N
+  ימים"), default sort newest first. Sorting any column colours that column only by group (dates by age, links by
+  present/missing, labels by value) with a legend above the table.
+- EDIT MODE IS LIT (Anat, 2026-10-27): an amber frame around the screen while editing, pulsing while saving, red while a
+  save is retried; the tag on it says every change is saved automatically. There is no save button: each edit is saved
+  online after a pause, a failed save is kept on the device (`aoa-pending-edits`) and retried (2s, 5s, 15s, then 30s),
+  and closing the tab with an unsaved change asks first. The A&I status shows "נשמר HH:MM".
 - Square buttons, chips and fields (anat-app-builder), including the shared A&I button.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.

@@ -80,6 +80,13 @@ export default function App() {
 
   return (
     <div className={`shell ${editing ? 'editing' : ''}`}>
+      {editing && (
+        <div className={`edit-light save-${store.saveState}`} aria-live="polite">
+          <span className="edit-light-tag mono">
+            מצב עריכה · {store.saveState === 'error' ? 'לא נשמר, מנסה שוב' : store.saveState === 'saving' ? 'שומר...' : 'כל שינוי נשמר אוטומטית'}
+          </span>
+        </div>
+      )}
       <TopBar
         route={route}
         apps={apps}
@@ -95,6 +102,7 @@ export default function App() {
             isEditor={store.isEditor}
             editing={editing}
             saveState={store.saveState}
+            lastSaved={store.lastSaved}
             setEditing={setEditing}
             onAdd={() => openAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}
             onBulk={() => setBulk(true)}

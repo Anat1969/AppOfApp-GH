@@ -27,12 +27,14 @@ declare global {
   }
 }
 
-const STATUS: Record<SaveState, string> = { idle: 'עריכה פעילה', saving: 'שומר...', saved: 'נשמר', error: 'שגיאה בשמירה' };
+const STATUS: Record<SaveState, string> = { idle: 'עריכה פעילה, שמירה אוטומטית', saving: 'שומר אוטומטית...', saved: 'נשמר', error: 'לא נשמר, מנסה שוב' };
+const hhmm = (t: number) => new Date(t).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
 
 interface Props {
   isEditor: boolean;
   editing: boolean;
   saveState: SaveState;
+  lastSaved?: number | null;
   setEditing: (v: boolean) => void;
   onAdd: () => void;
   onBulk: () => void;
@@ -41,7 +43,7 @@ interface Props {
 }
 
 /** The A&I logo button (public/ai-menu.js). Every editing and development action lives inside it. */
-export default function AIMenu({ isEditor, editing, saveState, setEditing, onAdd, onBulk, onConnect, onLeave }: Props) {
+export default function AIMenu({ isEditor, editing, saveState, lastSaved, setEditing, onAdd, onBulk, onConnect, onLeave }: Props) {
   const ref = useRef<MenuElement>(null);
 
   useEffect(() => {
@@ -82,8 +84,8 @@ export default function AIMenu({ isEditor, editing, saveState, setEditing, onAdd
             },
           },
         ];
-    el.status = editing ? STATUS[saveState] : saveState === 'error' ? STATUS.error : '';
-  }, [isEditor, editing, saveState, setEditing, onAdd, onBulk, onConnect, onLeave]);
+    el.status = editing ? (saveState === 'saved' && lastSaved ? `נשמר ${hhmm(lastSaved)}` : STATUS[saveState]) : saveState === 'error' ? STATUS.error : '';
+  }, [isEditor, editing, saveState, lastSaved, setEditing, onAdd, onBulk, onConnect, onLeave]);
 
   return <ai-menu ref={ref} chat={DEV_SESSION_URL} />;
 }
