@@ -30,6 +30,13 @@ function relative(t: number): string {
   const m = Math.round(d / 30);
   return m < 12 ? `לפני ${m === 1 ? 'חודש' : `${m} חודשים`}` : `לפני ${Math.round(d / 365) === 1 ? 'שנה' : `${Math.round(d / 365)} שנים`}`;
 }
+/** A new name. The page title follows when it was the same as the name, and the first old name stays searchable. */
+const renamed = (a: AppData, name: string): AppData => ({
+  ...a,
+  name,
+  title: !a.title || a.title.trim() === a.name.trim() ? name : a.title,
+  originalName: a.originalName || a.name,
+});
 const time = (v?: string) => (v ? new Date(v).getTime() || 0 : 0);
 
 interface Props {
@@ -209,10 +216,34 @@ export default function TableView({ apps, facets, sheets, editing, onOpen, onCha
               return (
                 <tr key={r.app.id}>
                   <td className={`mono dim ${grouped('sheet')}`} style={tint('sheet', r)}>{r.sheet}</td>
-                  <td className={grouped('name')} style={tint('name', r)}>
-                    <button className="link strong" onClick={() => onOpen(r.app.id)}>
-                      {r.name}
-                    </button>
+                  <td className={`${grouped('name')} ${editing ? 'name-edit' : ''}`} style={tint('name', r)}>
+                    {editing ? (
+                      <>
+                        {/* Renaming here renames the app everywhere: one name in the data, read by every page (Anat, 2026-10-27). */}
+                        <input
+                          key={r.app.id + r.name}
+                          className="cell-input name-input"
+                          defaultValue={r.name}
+                          aria-label="שם האפליקציה"
+                          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                          onBlur={(e) => {
+                            const v = e.target.value.trim();
+                            if (!v) {
+                              e.target.value = r.name;
+                              return;
+                            }
+                            if (v !== r.name) onChange(renamed(r.app, v));
+                          }}
+                        />
+                        <button className="link mono" onClick={() => onOpen(r.app.id)}>
+                          פתיחה
+                        </button>
+                      </>
+                    ) : (
+                      <button className="link strong" onClick={() => onOpen(r.app.id)}>
+                        {r.name}
+                      </button>
+                    )}
                   </td>
                   <td className={`updated ${grouped('updated')}`} style={tint('updated', r)}>
                     <b className="mono">{fmtDate(r.updated)}</b>
