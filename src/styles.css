@@ -578,14 +578,10 @@ td.wide { min-width: 220px; max-width: 320px; }
 .cr-problem { border-color: var(--p-red); color: var(--p-red-ink); }
 .cr-solution { border-color: var(--s-green); color: var(--s-green-ink); }
 
-/* variant B, "full colour": tinted panels (preview: ?look=b) */
-[data-look='b'] .text-panel.p-problem { background: var(--p-red-wash); border-color: rgba(178, 58, 42, 0.35); }
-[data-look='b'] .text-panel.p-solution { background: var(--s-green-wash); border-color: rgba(47, 138, 87, 0.35); }
-[data-look='b'] .p-problem h3 .step-no { background: var(--p-red); color: #fff; border-color: var(--p-red); }
-[data-look='b'] .p-solution h3 .step-no { background: var(--s-green); color: #fff; border-color: var(--s-green); }
-[data-look='b'] .ess-problem { background: var(--p-red-wash); }
-[data-look='b'] .ess-solution { background: var(--s-green-wash); }
-[data-look='b'] .card-read p { border-inline-start-width: 0; padding: 4px 8px; border-radius: 3px; }
-[data-look='b'] .cr-problem { background: var(--p-red-wash); }
-[data-look='b'] .cr-solution { background: var(--s-green-wash); }
-.card.compact .card-read p { -webkit-line-clamp: 1; font-size: 0.78rem; }
+/* Combination chosen by Anat (2026-10-26): the app page is full colour (tinted panels), home and cards stay light. */
+.app-page .text-panel.p-problem { background: var(--p-red-wash); border-color: rgba(178, 58, 42, 0.35); }
+.app-page .text-panel.p-solution { background: var(--s-green-wash); border-color: rgba(47, 138, 87, 0.35); }
+.app-page .p-problem h3 .step-no { background: var(--p-red); color: #fff; border-color: var(--p-red); }
+.app-page .p-solution h3 .step-no { background: var(--s-green); color: #fff; border-color: var(--s-green); }
+.app-page .ess-problem { background: var(--p-red-wash); }
+.app-page .ess-solution { background: var(--s-green-wash); }

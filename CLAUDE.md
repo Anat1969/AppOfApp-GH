@@ -16,6 +16,11 @@ middle of her workday, and she could not deploy anything else. She was not warne
 - A job that would use more than about half of a daily quota is scheduled for a quiet day or hour,
   or split across days. Cut usage first: skip preview deploys, merge in batches, and deploy only the
   latest commit of each project.
+- DEPLOY WINDOWS (Anat, 2026-10-26: "פרוס בשלוש בבוקר ושעתיים לפני ניצול מכסת הפריסות"): work is merged to `main`
+  only in two night windows, Israel time: 01:00 (uses what is left before the 24-hour count rolls over) and 03:00
+  (the new count). A scheduled task in the development session does it: tests, merge, check Vercel and Pages, one
+  Hebrew line. During her day nothing is deployed unless she asks, so the quota is always free for her work.
+  Branches `claude/*` make no Vercel preview (`vercel.json` git.deploymentEnabled); previews are screenshots.
 - Free and paid quotas are used deliberately: on days she is not working, use spare capacity for
   heavy jobs. Keep a reserve on days she is working.
 
@@ -126,6 +131,11 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 - MAP CELLS: hovering a cell opens a window listing its apps one per line; the name links straight to the app,
   the sheet number opens its page. Every empty cell holds a suggested app (`src/data/gapIdeas.ts`), the apps it
   can build on (same row and column), "הוספה לתיק מהרעיון" (prefilled dialog) and a ready Claude Code prompt.
+- READING AT A GLANCE (Anat, 2026-10-26: "בעיה באדום פתרון בירוק"): meaning has a colour. Problem red (underline
+  stroke), solution green (marker), description yellow marker; panels numbered 01 / 02 with "ולכן" between;
+  numbers become figures, "label:" becomes a short heading, list lines become numbered steps; under the description
+  an essence strip (problem and solution insight lines, click to jump); every card shows the two insight lines.
+  Combination she chose: the app page is full colour (tinted panels), home and cards stay light.
 - EMPHASIS IN TEXTS (Anat, 2026-10-24): in the description, problem and solution the first sentence is an insight
   line (larger), `**words**` render as a highlighter mark, and when a text has no markers the app's own keywords,
   concepts and domain labels found in it are emphasized automatically (up to three). In edit mode every text

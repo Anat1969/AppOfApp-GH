@@ -1,12 +1,36 @@
 {
-  "rewrites": [{ "source": "/((?!assets/|sw.js|ai-menu.js|manifest.webmanifest|icon).*)", "destination": "/index.html" }],
+  "git": {
+    "deploymentEnabled": {
+      "claude/*": false
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!assets/|sw.js|ai-menu.js|manifest.webmanifest|icon).*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
-    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
     {
       "source": "/ai-menu.js",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, must-revalidate"
+        }
       ]
     }
   ]
