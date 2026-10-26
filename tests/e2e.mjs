@@ -396,7 +396,7 @@ const browser = await chromium.launch();
   ok(s2?.data?.changeLog?.[0]?.text === 'בדיקת יומן', 'work log entry saved');
   ok(s2?.data?.redNotes?.length === 2, 'note added and saved');
 
-  await page.locator('.p-problem .link', { hasText: 'ניסוח עם Claude' }).click();
+  await page.locator('.p-problem .link', { hasText: 'ניסוח אוטומטי' }).click();
   await page.waitForTimeout(300);
   ok(lastOf(calls, 'generate')?.name?.includes('זיקוק'), 'generate request sent');
   ok((await page.locator('.p-problem textarea').inputValue()) === 'בעיה **חדשה**.', 'generated text fills the field');

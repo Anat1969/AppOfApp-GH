@@ -80,8 +80,11 @@ Safety net in `aoa-edit`: the previous version of an app goes to `aoa_app_versio
 per app every 10 minutes); a delete moves the app to `aoa_trash` (action `restore_app`). Both tables are public
 read, written by the function only. Migration: `supabase/migrations/20261024_aoa_versions_trash.sql`.
 
-`generate` uses Claude (`ANTHROPIC_API_KEY` secret of cultura-GH). On 2026-10-24 that key returned 401;
-the UI shows a clear error until the secret is replaced.
+`generate` (Anat, 2026-10-26: "חינמי") reads the app's own site (title, meta, headings) so the model does not
+invent, then asks Gemini first (`GEMINI_API_KEY`, free tier, model `GEMINI_MODEL` default `gemini-flash-latest`)
+and falls back to Claude (`ANTHROPIC_API_KEY`, returned 401 since 2026-10-24). Without a Gemini key the error says
+how to add one. The 67 apps that still had Lovable placeholders were filled once by hand from name, keywords and
+site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 
 ## UI rules
 

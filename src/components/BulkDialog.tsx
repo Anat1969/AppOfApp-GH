@@ -54,7 +54,7 @@ export default function BulkDialog({ open, onClose, apps, facets, onChange }: Pr
 
   return (
     <Dialog open={open} title="ניסוח תוכן לכל האפליקציות" onClose={() => !running && onClose()}>
-      <p className="dim">Claude מזקק לכל אפליקציה תיאור, בעיה ופתרון במשפט אחד, ושומר על המשמעות של מה שכבר כתוב. תאריכי העדכון לא משתנים.</p>
+      <p className="dim">הניסוח האוטומטי מזקק לכל אפליקציה תיאור, בעיה ופתרון במשפט אחד, ושומר על המשמעות של מה שכבר כתוב. תאריכי העדכון לא משתנים.</p>
       <label className="row">
         <input type="checkbox" checked={onlyMissing} onChange={(e) => setOnlyMissing(e.target.checked)} disabled={running} />
         <span>רק אפליקציות שחסר בהן תוכן</span>

@@ -87,7 +87,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
         <h3>{title}</h3>
         {editing && (
           <button className="link" onClick={() => generate(field)} disabled={!!gen}>
-            {gen === field || gen === 'all' ? 'מנסח...' : 'ניסוח עם Claude'}
+            {gen === field || gen === 'all' ? 'מנסח...' : 'ניסוח אוטומטי'}
           </button>
         )}
       </header>
@@ -189,7 +189,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
               <span className="mono">
                 תיאור
                 <button className="link" onClick={() => generate()} disabled={!!gen}>
-                  {gen === 'all' ? 'מנסח...' : 'ניסוח כל השדות עם Claude'}
+                  {gen === 'all' ? 'מנסח...' : 'ניסוח אוטומטי של כל השדות'}
                 </button>
               </span>
               <MarkedTextarea value={app.desc ?? ''} onChange={(v) => set({ desc: v })} label="תיאור" />
