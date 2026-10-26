@@ -80,6 +80,22 @@ export default function App() {
 
   return (
     <div className={`shell ${editing ? 'editing' : ''}`}>
+      {/* Where am I (Anat, 2026-10-27, "ב + ג"): the portfolio is framed like a drawing sheet with a title stamp,
+          under a dark blue bar, so it never looks like one of the apps it lists. */}
+      <div className="sheet-frame" aria-hidden>
+        <div className="sheet-stamp">
+          <b>תיק האפליקציות</b>
+          <span>{active ? `גיליון ${sheets.get(active.id) ?? ''}` : route.view === 'table' ? 'טבלה' : 'מפה'}</span>
+          <span className="mono">A&amp;I · אד׳ ענת שטיבלמן</span>
+        </div>
+      </div>
+      {editing && (
+        <div className={`edit-light save-${store.saveState}`} aria-live="polite">
+          <span className="edit-light-tag mono">
+            מצב עריכה · {store.saveState === 'error' ? 'לא נשמר, מנסה שוב' : store.saveState === 'saving' ? 'שומר...' : 'כל שינוי נשמר אוטומטית'}
+          </span>
+        </div>
+      )}
       <TopBar
         route={route}
         apps={apps}
@@ -95,6 +111,7 @@ export default function App() {
             isEditor={store.isEditor}
             editing={editing}
             saveState={store.saveState}
+            lastSaved={store.lastSaved}
             setEditing={setEditing}
             onAdd={() => openAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}
             onBulk={() => setBulk(true)}

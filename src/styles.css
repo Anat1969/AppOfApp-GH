@@ -521,3 +521,116 @@ td.wide { min-width: 220px; max-width: 320px; }
 .solid:active:not(:disabled), .ghost:active:not(:disabled), .chip:active:not(:disabled), .tag:active { transform: translateY(1px); box-shadow: none; }
 .chip, .tag { box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 1px 2px rgba(20, 22, 26, 0.08); }
 .chip:hover:not(:disabled):not(.on), .tag:hover:not(.on) { transform: translateY(-1px); box-shadow: var(--shadow-1); }
+
+/* ===== Reading at a glance (Anat, 2026-10-26): meaning has a colour =====
+   desc = yellow marker, problem = red, solution = green. Insight line first, numbers as figures,
+   "label:" as a short heading, numbered steps when the text is a list. */
+:root {
+  --p-red: #b23a2a; --p-red-ink: #7d2418; --p-red-tint: rgba(178, 58, 42, 0.10); --p-red-wash: #fbf0ed;
+  --s-green: #2f8a57; --s-green-ink: #1d5a37; --s-green-tint: rgba(47, 138, 87, 0.16); --s-green-wash: #eef6f0;
+  --marker: rgba(255, 208, 0, 0.55);
+}
+.rich .num { font-family: var(--mono); font-weight: 600; font-size: 0.92em; color: var(--ink); background: rgba(23, 25, 28, 0.07); padding: 0 4px; border-radius: 2px; }
+.rich .lbl { font-weight: 600; color: var(--ink); margin-inline-end: 6px; }
+.rich .lbl::after { content: ':'; }
+.rich ol.steps { margin: 8px 0 0; padding: 0; list-style: none; counter-reset: st; display: grid; gap: 6px; }
+.rich ol.steps li { counter-increment: st; position: relative; padding-inline-start: 34px; line-height: 1.6; }
+.rich ol.steps li::before { content: counter(st, decimal-leading-zero); position: absolute; inset-inline-start: 0; top: 2px; font-family: var(--mono); font-size: 0.75rem; border: 1px solid currentColor; padding: 0 4px; border-radius: 2px; }
+
+/* desc: classic yellow highlighter */
+.rich.tone-desc mark.hl { background: linear-gradient(180deg, transparent 52%, var(--marker) 52%, var(--marker) 94%, transparent 94%); }
+/* problem: red underline stroke */
+.rich.tone-problem p.lead-line { color: var(--p-red-ink); font-weight: 500; }
+.rich.tone-problem mark.hl, .rich.tone-problem mark.hl.auto { background: var(--p-red-tint); color: var(--p-red-ink); text-decoration: underline; text-decoration-color: var(--p-red); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.rich.tone-problem ol.steps li::before { color: var(--p-red); }
+/* solution: green marker */
+.rich.tone-solution p.lead-line { color: var(--s-green-ink); font-weight: 500; }
+.rich.tone-solution mark.hl, .rich.tone-solution mark.hl.auto { background: linear-gradient(180deg, transparent 50%, var(--s-green-tint) 50%, var(--s-green-tint) 96%, transparent 96%); color: var(--s-green-ink); }
+.rich.tone-solution ol.steps li::before { color: var(--s-green); }
+
+/* story: 01 problem, then "ולכן", 02 solution */
+.analysis.story { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0; align-items: stretch; }
+.story-link { align-self: center; padding: 6px 10px; margin: 0 -6px; z-index: 2; background: var(--paper); border: 1px solid var(--line-2); border-radius: 3px; color: var(--ink-2); font-size: 0.78rem; letter-spacing: 0.06em; box-shadow: var(--shadow-1); }
+.step-no { display: inline-grid; place-items: center; min-width: 30px; height: 26px; margin-inline-end: 10px; border: 1.5px solid currentColor; border-radius: 3px; font-size: 0.8rem; vertical-align: 3px; }
+.p-problem h3 { color: var(--p-red-ink); }
+.p-solution h3 { color: var(--s-green-ink); }
+.text-panel.p-problem::before, .text-panel.p-solution::before { inset-inline: 0; width: auto; height: 4px; border-radius: 8px 8px 0 0; }
+.text-panel.p-problem::before { background: var(--p-red); }
+.text-panel.p-solution::before { background: var(--s-green); }
+@media (max-width: 760px) {
+  .analysis.story { grid-template-columns: minmax(0, 1fr); }
+  .story-link { justify-self: center; margin: -8px 0; }
+}
+
+/* essence: the two insight lines under the description, readable without scrolling */
+.essence { display: grid; gap: 8px; margin-top: 18px; }
+.ess { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; padding: 10px 14px; border-radius: 4px; text-decoration: none; color: var(--ink); line-height: 1.5; border-inline-start: 4px solid; background: #fff; box-shadow: var(--shadow-1); transition: transform 0.15s ease; }
+.ess:hover { transform: translateX(-3px); }
+.ess .mono { font-size: 0.72rem; letter-spacing: 0.1em; padding: 2px 6px; border-radius: 2px; color: #fff; }
+.ess-problem { border-color: var(--p-red); }
+.ess-problem .mono { background: var(--p-red); }
+.ess-solution { border-color: var(--s-green); }
+.ess-solution .mono { background: var(--s-green); }
+
+/* cards: problem and solution in one glance, without opening the app */
+.card-read { display: grid; gap: 4px; margin-top: 8px; }
+.card-read p { margin: 0; font-size: 0.84rem; line-height: 1.45; padding-inline-start: 10px; border-inline-start: 3px solid; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cr-problem { border-color: var(--p-red); color: var(--p-red-ink); }
+.cr-solution { border-color: var(--s-green); color: var(--s-green-ink); }
+
+/* Combination chosen by Anat (2026-10-26): the app page is full colour (tinted panels), home and cards stay light. */
+.app-page .text-panel.p-problem { background: var(--p-red-wash); border-color: rgba(178, 58, 42, 0.35); }
+.app-page .text-panel.p-solution { background: var(--s-green-wash); border-color: rgba(47, 138, 87, 0.35); }
+.app-page .p-problem h3 .step-no { background: var(--p-red); color: #fff; border-color: var(--p-red); }
+.app-page .p-solution h3 .step-no { background: var(--s-green); color: #fff; border-color: var(--s-green); }
+.app-page .ess-problem { background: var(--p-red-wash); }
+.app-page .ess-solution { background: var(--s-green-wash); }
+
+/* Edit mode is lit (Anat, 2026-10-27): an amber frame around the whole screen while editing; it pulses while
+   saving and turns red when a save is being retried. No buttons in it: actions stay in the A&I menu. */
+.edit-light { position: fixed; inset: 0; z-index: 90; pointer-events: none; border: 4px solid #e8a317; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), inset 0 0 38px rgba(232, 163, 23, 0.35); }
+.edit-light.save-saving { animation: edit-pulse 1.1s ease-in-out infinite; }
+.edit-light.save-error { border-color: var(--p-red); box-shadow: inset 0 0 38px rgba(178, 58, 42, 0.35); }
+.edit-light-tag { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); background: #e8a317; color: #1b1d20; padding: 5px 14px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; white-space: nowrap; }
+.edit-light.save-error .edit-light-tag { background: var(--p-red); color: #fff; }
+@keyframes edit-pulse { 50% { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), inset 0 0 64px rgba(232, 163, 23, 0.6); } }
+@media (prefers-reduced-motion: reduce) { .edit-light.save-saving { animation: none; } }
+
+/* Table: the update date is big; the sorted column is coloured by group, with a legend (Anat, 2026-10-27). */
+td.updated { white-space: nowrap; }
+td.updated b { display: block; font-size: 1.02rem; font-weight: 600; color: var(--ink); letter-spacing: 0.02em; }
+td.updated span { display: block; font-size: 0.78rem; color: var(--mid); margin-top: 2px; }
+td.grouped { background: color-mix(in srgb, var(--g) 13%, transparent); box-shadow: inset -4px 0 0 var(--g); }
+td.grouped .tag { border-color: color-mix(in srgb, var(--g) 55%, transparent); }
+td.grouped.updated b, td.grouped .link.strong { color: color-mix(in srgb, var(--g) 70%, #111); }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; padding: 10px 14px; background: var(--paper); border: 1px solid var(--line); }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; color: var(--ink); }
+.legend-item i { width: 14px; height: 14px; background: var(--g); display: inline-block; }
+.legend-item .mono { font-size: 0.74rem; }
+tbody td:first-child { white-space: nowrap; }
+
+/* Where am I (Anat, 2026-10-27, "ב + ג"): a drawing-sheet frame with a title stamp, and a dark blue top bar with an
+   amber line. Only the portfolio has them, so it is never mistaken for one of the apps it lists. */
+:root { --frame: 8px; --bar-navy: #1f3354; --amber: #e8a317; }
+.sheet-frame { position: fixed; inset: var(--frame); z-index: 85; pointer-events: none; border: 2px solid #1b1d20; outline: 1px solid #1b1d20; outline-offset: -7px; }
+.sheet-stamp { position: absolute; left: -2px; bottom: -2px; display: grid; grid-template-columns: auto auto auto; align-items: center; background: var(--paper); border: 2px solid #1b1d20; font-size: 0.78rem; color: #1b1d20; }
+.sheet-stamp > * { padding: 6px 12px; white-space: nowrap; }
+.sheet-stamp > * + * { border-inline-start: 1px solid #1b1d20; }
+.sheet-stamp b { font-weight: 600; letter-spacing: 0.02em; }
+.sheet-stamp .mono { font-size: 0.7rem; letter-spacing: 0.06em; }
+.shell { padding: var(--frame); }
+.topbar { top: var(--frame); background: var(--bar-navy); border-bottom: 3px solid var(--amber); }
+.topbar .brand-name, .topbar .tab { color: #f3f5f9; }
+.topbar .brand-sub { color: var(--amber); }
+.topbar .tab:hover { color: #fff; }
+.topbar .tab.on { color: #fff; background: rgba(255, 255, 255, 0.14); box-shadow: inset 0 -2px 0 var(--amber); }
+.topbar .views-sep, .topbar .sep { background: rgba(255, 255, 255, 0.3); }
+.foot { padding-bottom: 44px; }
+@media (max-width: 760px) {
+  :root { --frame: 4px; }
+  .sheet-frame { outline-offset: -5px; }
+  .sheet-stamp { grid-template-columns: auto auto; font-size: 0.7rem; }
+  .sheet-stamp .mono { display: none; }
+}
+@media print { .sheet-frame { display: none; } }
+@media (max-width: 760px) { .shell.editing .sheet-stamp { display: none; } }

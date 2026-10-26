@@ -16,6 +16,11 @@ middle of her workday, and she could not deploy anything else. She was not warne
 - A job that would use more than about half of a daily quota is scheduled for a quiet day or hour,
   or split across days. Cut usage first: skip preview deploys, merge in batches, and deploy only the
   latest commit of each project.
+- DEPLOY WINDOWS (Anat, 2026-10-26: "פרוס בשלוש בבוקר ושעתיים לפני ניצול מכסת הפריסות"): work is merged to `main`
+  only in two night windows, Israel time: 01:00 (uses what is left before the 24-hour count rolls over) and 03:00
+  (the new count). A scheduled task in the development session does it: tests, merge, check Vercel and Pages, one
+  Hebrew line. During her day nothing is deployed unless she asks, so the quota is always free for her work.
+  Branches `claude/*` make no Vercel preview (`vercel.json` git.deploymentEnabled); previews are screenshots.
 - Free and paid quotas are used deliberately: on days she is not working, use spare capacity for
   heavy jobs. Keep a reserve on days she is working.
 
@@ -84,6 +89,9 @@ TEXT STANDARD (Anat, 2026-10-26, "חשוב ביותר", for every app and every 
 distilled and emphasized in a hierarchy: an insight line of up to 8 words, one explanation sentence of up to 20 words,
 and `**` on the main concept, the parameters and the numbers. The paste-ready instruction is in `docs/ai-text-standard.md`;
 `GEN_SYSTEM` in `aoa-edit` is identical to it. Gemini free first, Claude only as a fallback.
+Gemini (2026-10-27): Anat's key starts with `AQ.` (the newer Google key format, works). Free models answer 503 or slowly at
+times, so `aoa-edit` tries `gemini-flash-latest`, then lighter models, 25s each. The model answers each field as
+{insight, detail} and the server joins them, so the hierarchy is kept every time.
 `generate` (Anat, 2026-10-26: "חינמי") reads the app's own site (title, meta, headings) so the model does not
 invent, then asks Gemini first (`GEMINI_API_KEY`, free tier, model `GEMINI_MODEL` default `gemini-flash-latest`)
 and falls back to Claude (`ANTHROPIC_API_KEY`, returned 401 since 2026-10-24). Without a Gemini key the error says
@@ -126,9 +134,24 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 - MAP CELLS: hovering a cell opens a window listing its apps one per line; the name links straight to the app,
   the sheet number opens its page. Every empty cell holds a suggested app (`src/data/gapIdeas.ts`), the apps it
   can build on (same row and column), "הוספה לתיק מהרעיון" (prefilled dialog) and a ready Claude Code prompt.
+- READING AT A GLANCE (Anat, 2026-10-26: "בעיה באדום פתרון בירוק"): meaning has a colour. Problem red (underline
+  stroke), solution green (marker), description yellow marker; panels numbered 01 / 02 with "ולכן" between;
+  numbers become figures, "label:" becomes a short heading, list lines become numbered steps; under the description
+  an essence strip (problem and solution insight lines, click to jump); every card shows the two insight lines.
+  Combination she chose: the app page is full colour (tinted panels), home and cards stay light.
 - EMPHASIS IN TEXTS (Anat, 2026-10-24): in the description, problem and solution the first sentence is an insight
   line (larger), `**words**` render as a highlighter mark, and when a text has no markers the app's own keywords,
   concepts and domain labels found in it are emphasized automatically (up to three). In edit mode every text
   field has a "הדגשה" button that wraps the selection in `**` (`RichText.tsx`, `MarkedTextarea.tsx`).
+- TABLE (Anat, 2026-10-27): a big "עודכן" column (the date she last changed the app, `data.updatedAt`, with "היום / לפני N
+  ימים"), default sort newest first. Sorting any column colours that column only by group (dates by age, links by
+  present/missing, labels by value) with a legend above the table.
+- EDIT MODE IS LIT (Anat, 2026-10-27): an amber frame around the screen while editing, pulsing while saving, red while a
+  save is retried; the tag on it says every change is saved automatically. There is no save button: each edit is saved
+  online after a pause, a failed save is kept on the device (`aoa-pending-edits`) and retried (2s, 5s, 15s, then 30s),
+  and closing the tab with an unsaved change asks first. The A&I status shows "נשמר HH:MM".
+- WHERE AM I (Anat, 2026-10-27, chose "ב + ג"): the portfolio is framed like a drawing sheet (double border around the
+  screen) with a title stamp at the bottom left ("תיק האפליקציות", the current view or sheet number, "A&I · אד׳ ענת
+  שטיבלמן"), under a dark blue top bar with an amber line. Only the portfolio has these; do not copy them into the apps.
 - Square buttons, chips and fields (anat-app-builder), including the shared A&I button.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.
