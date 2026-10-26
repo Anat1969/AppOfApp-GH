@@ -8,7 +8,7 @@ import AppCard from './AppCard';
 import { activityOf, clean, fmtDate, platformOf, siteUrl, stripArrows, withProtocol, createdOf } from '../lib/format';
 import { edit, uploadImage } from '../lib/supabase';
 import CoverFrame from './CoverFrame';
-import RichText from './RichText';
+import RichText, { insightOf } from './RichText';
 import MarkedTextarea from './MarkedTextarea';
 import ChangeLog from './ChangeLog';
 import Notes from './Notes';
