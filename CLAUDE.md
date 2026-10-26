@@ -136,8 +136,9 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   can build on (same row and column), "הוספה לתיק מהרעיון" (prefilled dialog) and a ready Claude Code prompt.
 - READING AT A GLANCE (Anat, 2026-10-26: "בעיה באדום פתרון בירוק"): meaning has a colour. Problem red (underline
   stroke), solution green (marker), description yellow marker; panels numbered 01 / 02 with "ולכן" between;
-  numbers become figures, "label:" becomes a short heading, list lines become numbered steps; under the description
-  an essence strip (problem and solution insight lines, click to jump); every card shows the two insight lines.
+  numbers become figures, "label:" becomes a short heading, list lines become numbered steps; every card on the home
+  page shows the two insight lines. On the app page problem and solution appear once, in the panels under the image
+  (Anat, 2026-10-27: "למה צריך בעיה ופתרון פעמיים?", the essence strip under the description was removed).
   Combination she chose: the app page is full colour (tinted panels), home and cards stay light.
 - EMPHASIS IN TEXTS (Anat, 2026-10-24): in the description, problem and solution the first sentence is an insight
   line (larger), `**words**` render as a highlighter mark, and when a text has no markers the app's own keywords,
