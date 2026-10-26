@@ -41,6 +41,7 @@ ${idea}
 פעולה: ${action}. תחום: ${domain}.
 ${refs ? `אפליקציות קיימות שלי שאפשר להישען עליהן ולקשר אליהן:\n${refs}\n` : ''}
 עבוד לפי הסקיל anat-app-builder: אפיון קצר בתוך התשובה, ואז בנייה מקצה לקצה. עברית ו-RTL, בלי אייקונים, כפתור הלוגו A&I, התקנה מ-Chrome, בדיקות Playwright, פריסה ל-Vercel ומיזוג ל-main.
+AI בתוך האפליקציה: Gemini החינמי (GEMINI_API_KEY) דרך פונקציית Edge, Claude רק כגיבוי. כל טקסט שה-AI כותב לפי תקן הזיקוק: שורת תובנה עד 8 מילים, משפט הסבר עד 20 מילים, והבלטות ב-** למושג המרכזי, לפרמטרים ולמספרים (https://github.com/Anat1969/AppOfApp-GH/blob/main/docs/ai-text-standard.md).
 לפני הבנייה: uipro init --ai claude
 בסוף: הוסף את האפליקציה לתיק העבודות https://appofapp-gh.vercel.app עם פעולה "${action}" ותחום "${domain}".`;
 }

@@ -74,13 +74,90 @@ const GEN_SCHEMA = {
   required: ['desc', 'problem', 'solution'],
   properties: { desc: { type: 'string' }, problem: { type: 'string' }, solution: { type: 'string' } },
 };
+// The text standard of all of Anat's apps: docs/ai-text-standard.md (keep the two identical).
 const GEN_SYSTEM = `את/ה כותב/ת תוכן בעברית לתיק עבודות של אפליקציות שבנתה אדריכלית.
-עברית טבעית, קצרה ומקצועית, בגוף שלישי. לא פיוטית ולא מתורגמת. בלי סימני קריאה ובלי אימוג'י.
-כל שדה הוא משפט אחד בלבד, עד 18 מילים. עוטפים 2 עד 3 מילות מפתח ב-**כוכביות כפולות**.
-- desc: מה האפליקציה עושה.
-- problem: הבעיה המרכזית שהיא פותרת.
-- solution: איך היא פותרת אותה.
-כשיש תוכן קיים: לזקק אותו ולשמור על המשמעות. לא להמציא עובדות שאינן בו.`;
+זקק, אל תתאר. עברית טבעית, קצרה ומקצועית, בגוף שלישי. בלי סימני קריאה, בלי אימוג'י, בלי מילים ריקות.
+
+מבנה קבוע לכל שדה, בהיררכיה:
+1. שורת תובנה: עד 8 מילים, כמו כותרת שמבטאת את העיקר. מסתיימת בנקודה.
+2. משפט הסבר אחד: עד 20 מילים, שמפרט את התובנה.
+
+הבלטות ב-**כוכביות כפולות**:
+- בשורת התובנה: המושג המרכזי בלבד.
+- במשפט ההסבר: 2 עד 3 הבלטות, לפרמטרים, מספרים, שמות שיטות ומושגי מפתח.
+- לא מבליטים מילות קישור ולא משפט שלם.
+
+השדות:
+- desc: מה האפליקציה עושה ולמי.
+- problem: הבעיה המרכזית שהיא פותרת, כפער או כמחיר ממשי.
+- solution: איך היא פותרת אותה, במנגנון או בפעולה.
+
+עובדות: רק מה שמופיע בשם, בסיווג, באתר האפליקציה או בתוכן הקיים. כשיש תוכן קיים, מזקקים אותו ושומרים על המשמעות.
+לא ממציאים נתונים, מספרים או שמות.
+`;
+
+/** Title, descriptions and headings of the app's own site: facts for the model, so it does not invent. */
+async function siteText(url: string): Promise<string> {
+  if (!/^https?:\/\//.test(url)) return '';
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000), headers: { 'user-agent': 'Mozilla/5.0 appofapp' } });
+    if (!r.ok) return '';
+    const html = (await r.text()).slice(0, 400_000);
+    const pick = (re: RegExp) => [...html.matchAll(re)].map((m) => m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const parts = [
+      ...pick(/<title[^>]*>([^<]*)<\/title>/gi),
+      ...pick(/<meta[^>]+(?:name|property)=["'](?:description|og:description|og:title)["'][^>]+content=["']([^"']*)["']/gi),
+      ...pick(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi).slice(0, 8),
+    ];
+    const generic = /lovable (app|generated)|^vite|^react app$/i;
+    return [...new Set(parts)].filter((t) => !generic.test(t)).join(' | ').slice(0, 1200);
+  } catch {
+    return '';
+  }
+}
+
+type Gen = { desc: string; problem: string; solution: string };
+
+async function viaGemini(key: string, user: string): Promise<Gen> {
+  const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-flash-latest';
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: GEN_SYSTEM }] },
+      contents: [{ role: 'user', parts: [{ text: user }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          required: ['desc', 'problem', 'solution'],
+          properties: { desc: { type: 'STRING' }, problem: { type: 'STRING' }, solution: { type: 'STRING' } },
+        },
+      },
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!r.ok) throw new Error(`Gemini ${r.status}`);
+  const j = await r.json();
+  const text = j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
+  return JSON.parse(text);
+}
+
+async function viaClaude(key: string, user: string): Promise<Gen> {
+  const client = new Anthropic({ apiKey: key });
+  const response = await client.beta.messages.create({
+    model: 'claude-opus-5-5',
+    max_tokens: 4000,
+    betas: ['server-side-fallback-2026-07-01'],
+    fallbacks: 'default',
+    system: GEN_SYSTEM,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: GEN_SCHEMA } },
+    messages: [{ role: 'user', content: user }],
+  } as never);
+  if (response.stop_reason === 'refusal') throw new Error('הבקשה נדחתה');
+  const text = response.content.filter((b: { type: string }) => b.type === 'text').map((b: { text: string }) => b.text).join('');
+  return JSON.parse(text);
+}
 
 /** Title, descriptions and headings of the app's own site: facts for the model, so it does not invent. */
 async function siteText(url: string): Promise<string> {
