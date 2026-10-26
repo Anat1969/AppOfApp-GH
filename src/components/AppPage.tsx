@@ -201,22 +201,6 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
             clean(app.desc) && <RichText className="app-desc" text={app.desc} lead terms={terms} tone="desc" />
           )}
 
-          {!editing && (clean(app.problem) || clean(app.solution)) && (
-            <div className="essence" aria-label="תמצית">
-              {clean(app.problem) && (
-                <a href="#read-problem" className="ess ess-problem">
-                  <span className="mono">בעיה</span>
-                  {insightOf(app.problem)}
-                </a>
-              )}
-              {clean(app.solution) && (
-                <a href="#read-solution" className="ess ess-solution">
-                  <span className="mono">פתרון</span>
-                  {insightOf(app.solution)}
-                </a>
-              )}
-            </div>
-          )}
 
           {!editing && (
             <div className="app-links">
