@@ -521,3 +521,71 @@ td.wide { min-width: 220px; max-width: 320px; }
 .solid:active:not(:disabled), .ghost:active:not(:disabled), .chip:active:not(:disabled), .tag:active { transform: translateY(1px); box-shadow: none; }
 .chip, .tag { box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 1px 2px rgba(20, 22, 26, 0.08); }
 .chip:hover:not(:disabled):not(.on), .tag:hover:not(.on) { transform: translateY(-1px); box-shadow: var(--shadow-1); }
+
+/* ===== Reading at a glance (Anat, 2026-10-26): meaning has a colour =====
+   desc = yellow marker, problem = red, solution = green. Insight line first, numbers as figures,
+   "label:" as a short heading, numbered steps when the text is a list. */
+:root {
+  --p-red: #b23a2a; --p-red-ink: #7d2418; --p-red-tint: rgba(178, 58, 42, 0.10); --p-red-wash: #fbf0ed;
+  --s-green: #2f8a57; --s-green-ink: #1d5a37; --s-green-tint: rgba(47, 138, 87, 0.16); --s-green-wash: #eef6f0;
+  --marker: rgba(255, 208, 0, 0.55);
+}
+.rich .num { font-family: var(--mono); font-weight: 600; font-size: 0.92em; color: var(--ink); background: rgba(23, 25, 28, 0.07); padding: 0 4px; border-radius: 2px; }
+.rich .lbl { font-weight: 600; color: var(--ink); margin-inline-end: 6px; }
+.rich .lbl::after { content: ':'; }
+.rich ol.steps { margin: 8px 0 0; padding: 0; list-style: none; counter-reset: st; display: grid; gap: 6px; }
+.rich ol.steps li { counter-increment: st; position: relative; padding-inline-start: 34px; line-height: 1.6; }
+.rich ol.steps li::before { content: counter(st, decimal-leading-zero); position: absolute; inset-inline-start: 0; top: 2px; font-family: var(--mono); font-size: 0.75rem; border: 1px solid currentColor; padding: 0 4px; border-radius: 2px; }
+
+/* desc: classic yellow highlighter */
+.rich.tone-desc mark.hl { background: linear-gradient(180deg, transparent 52%, var(--marker) 52%, var(--marker) 94%, transparent 94%); }
+/* problem: red underline stroke */
+.rich.tone-problem p.lead-line { color: var(--p-red-ink); font-weight: 500; }
+.rich.tone-problem mark.hl, .rich.tone-problem mark.hl.auto { background: var(--p-red-tint); color: var(--p-red-ink); text-decoration: underline; text-decoration-color: var(--p-red); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.rich.tone-problem ol.steps li::before { color: var(--p-red); }
+/* solution: green marker */
+.rich.tone-solution p.lead-line { color: var(--s-green-ink); font-weight: 500; }
+.rich.tone-solution mark.hl, .rich.tone-solution mark.hl.auto { background: linear-gradient(180deg, transparent 50%, var(--s-green-tint) 50%, var(--s-green-tint) 96%, transparent 96%); color: var(--s-green-ink); }
+.rich.tone-solution ol.steps li::before { color: var(--s-green); }
+
+/* story: 01 problem, then "ולכן", 02 solution */
+.analysis.story { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0; align-items: stretch; }
+.story-link { align-self: center; padding: 6px 10px; margin: 0 -6px; z-index: 2; background: var(--paper); border: 1px solid var(--line-2); border-radius: 3px; color: var(--ink-2); font-size: 0.78rem; letter-spacing: 0.06em; box-shadow: var(--shadow-1); }
+.step-no { display: inline-grid; place-items: center; min-width: 30px; height: 26px; margin-inline-end: 10px; border: 1.5px solid currentColor; border-radius: 3px; font-size: 0.8rem; vertical-align: 3px; }
+.p-problem h3 { color: var(--p-red-ink); }
+.p-solution h3 { color: var(--s-green-ink); }
+.text-panel.p-problem::before, .text-panel.p-solution::before { inset-inline: 0; width: auto; height: 4px; border-radius: 8px 8px 0 0; }
+.text-panel.p-problem::before { background: var(--p-red); }
+.text-panel.p-solution::before { background: var(--s-green); }
+@media (max-width: 760px) {
+  .analysis.story { grid-template-columns: minmax(0, 1fr); }
+  .story-link { justify-self: center; margin: -8px 0; }
+}
+
+/* essence: the two insight lines under the description, readable without scrolling */
+.essence { display: grid; gap: 8px; margin-top: 18px; }
+.ess { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; padding: 10px 14px; border-radius: 4px; text-decoration: none; color: var(--ink); line-height: 1.5; border-inline-start: 4px solid; background: #fff; box-shadow: var(--shadow-1); transition: transform 0.15s ease; }
+.ess:hover { transform: translateX(-3px); }
+.ess .mono { font-size: 0.72rem; letter-spacing: 0.1em; padding: 2px 6px; border-radius: 2px; color: #fff; }
+.ess-problem { border-color: var(--p-red); }
+.ess-problem .mono { background: var(--p-red); }
+.ess-solution { border-color: var(--s-green); }
+.ess-solution .mono { background: var(--s-green); }
+
+/* cards: problem and solution in one glance, without opening the app */
+.card-read { display: grid; gap: 4px; margin-top: 8px; }
+.card-read p { margin: 0; font-size: 0.84rem; line-height: 1.45; padding-inline-start: 10px; border-inline-start: 3px solid; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cr-problem { border-color: var(--p-red); color: var(--p-red-ink); }
+.cr-solution { border-color: var(--s-green); color: var(--s-green-ink); }
+
+/* variant B, "full colour": tinted panels (preview: ?look=b) */
+[data-look='b'] .text-panel.p-problem { background: var(--p-red-wash); border-color: rgba(178, 58, 42, 0.35); }
+[data-look='b'] .text-panel.p-solution { background: var(--s-green-wash); border-color: rgba(47, 138, 87, 0.35); }
+[data-look='b'] .p-problem h3 .step-no { background: var(--p-red); color: #fff; border-color: var(--p-red); }
+[data-look='b'] .p-solution h3 .step-no { background: var(--s-green); color: #fff; border-color: var(--s-green); }
+[data-look='b'] .ess-problem { background: var(--p-red-wash); }
+[data-look='b'] .ess-solution { background: var(--s-green-wash); }
+[data-look='b'] .card-read p { border-inline-start-width: 0; padding: 4px 8px; border-radius: 3px; }
+[data-look='b'] .cr-problem { background: var(--p-red-wash); }
+[data-look='b'] .cr-solution { background: var(--s-green-wash); }
+.card.compact .card-read p { -webkit-line-clamp: 1; font-size: 0.78rem; }

@@ -8,7 +8,7 @@ import AppCard from './AppCard';
 import { activityOf, clean, fmtDate, platformOf, siteUrl, stripArrows, withProtocol, createdOf } from '../lib/format';
 import { edit, uploadImage } from '../lib/supabase';
 import CoverFrame from './CoverFrame';
-import RichText from './RichText';
+import RichText, { insightOf } from './RichText';
 import MarkedTextarea from './MarkedTextarea';
 import ChangeLog from './ChangeLog';
 import Notes from './Notes';
@@ -81,10 +81,13 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
     }
   };
 
-  const text = (field: Field, title: string) => (
-    <section className={`panel text-panel p-${field}`}>
+  const text = (field: Field, title: string, no: string) => (
+    <section className={`panel text-panel p-${field}`} id={`read-${field}`}>
       <header className="panel-head">
-        <h3>{title}</h3>
+        <h3>
+          <span className="step-no mono">{no}</span>
+          {title}
+        </h3>
         {editing && (
           <button className="link" onClick={() => generate(field)} disabled={!!gen}>
             {gen === field || gen === 'all' ? 'מנסח...' : 'ניסוח אוטומטי'}
@@ -94,7 +97,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
       {editing ? (
         <MarkedTextarea value={app[field] ?? ''} onChange={(v) => set({ [field]: v })} label={title} />
       ) : clean(app[field]) ? (
-        <RichText text={app[field]} lead terms={terms} />
+        <RichText text={app[field]} lead terms={terms} tone={field === 'desc' ? 'desc' : field} />
       ) : (
         <p className="dim">טרם נכתב.</p>
       )}
@@ -195,7 +198,24 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
               <MarkedTextarea value={app.desc ?? ''} onChange={(v) => set({ desc: v })} label="תיאור" />
             </label>
           ) : (
-            clean(app.desc) && <RichText className="app-desc" text={app.desc} lead terms={terms} />
+            clean(app.desc) && <RichText className="app-desc" text={app.desc} lead terms={terms} tone="desc" />
+          )}
+
+          {!editing && (clean(app.problem) || clean(app.solution)) && (
+            <div className="essence" aria-label="תמצית">
+              {clean(app.problem) && (
+                <a href="#read-problem" className="ess ess-problem">
+                  <span className="mono">בעיה</span>
+                  {insightOf(app.problem)}
+                </a>
+              )}
+              {clean(app.solution) && (
+                <a href="#read-solution" className="ess ess-solution">
+                  <span className="mono">פתרון</span>
+                  {insightOf(app.solution)}
+                </a>
+              )}
+            </div>
           )}
 
           {!editing && (
@@ -260,9 +280,12 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
         </section>
       )}
 
-      <div className="analysis">
-        {text('problem', 'הבעיה')}
-        {text('solution', 'הפתרון')}
+      <div className="analysis story">
+        {text('problem', 'הבעיה', '01')}
+        <span className="story-link mono" aria-hidden>
+          ולכן
+        </span>
+        {text('solution', 'הפתרון', '02')}
       </div>
 
       <div className="analysis">

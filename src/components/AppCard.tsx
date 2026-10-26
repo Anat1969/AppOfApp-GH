@@ -2,6 +2,8 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import type { AppData } from '../lib/types';
 import { activityOf, fmtDate, siteUrl, thumbOf } from '../lib/format';
 import { actionOf } from '../lib/facets';
+import { insightOf } from './RichText';
+import { clean } from '../lib/format';
 
 interface Props {
   app: AppData;
@@ -58,6 +60,12 @@ export default function AppCard({ app, sheet, category, onOpen, index = 0, compa
           {app.name}
         </button>
         {why && <div className="card-why">נמצא דרך: {why}</div>}
+        {(clean(app.problem) || clean(app.solution)) && (
+          <div className="card-read">
+            {clean(app.problem) && <p className="cr-problem">{insightOf(app.problem)}</p>}
+            {clean(app.solution) && <p className="cr-solution">{insightOf(app.solution)}</p>}
+          </div>
+        )}
         <div className="card-meta mono">
           <span>{category || 'ללא תחום'}</span>
           <span>{fmtDate(activityOf(app), true)}</span>
