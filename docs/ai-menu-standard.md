@@ -72,3 +72,13 @@ ok(!(await page.locator('header >> text=העתקת קישור').first().isVisibl
 ## כפתור הלוגו A&I (חובה בכל אפליקציה)
 בסרגל העליון כפתור לוגו אחד "אד' ענת שטיבלמן A&I". כל כפתורי העריכה והפיתוח (העתקת קישור, שיחת הפיתוח, פרויקט המחקר, התקנה, מצב עריכה, הוספה, מחיקה) נמצאים רק בתוכו. מימוש: <script src="https://appofapp-gh.vercel.app/ai-menu.js"></script> ו-<ai-menu>. ב-Base44 או בכלי שלא מאפשר סקריפט חיצוני: לבנות כפתור זהה לפי github.com/Anat1969/AppOfApp-GH/blob/main/docs/ai-menu-standard.md
 ```
+
+## Municipal apps (2026-10-27)
+
+Apps that belong to Ashdod Municipality show the municipality logo instead of the A&I mark. Same component, same menu:
+
+```html
+<ai-menu brand="ashdod" chat="..." research="..."></ai-menu>
+```
+
+At the start of every build, ask Anat whose app it is (municipality or hers) and record it in the repo's CLAUDE.md under "בעלות ולוגו".

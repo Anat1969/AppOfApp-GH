@@ -12,12 +12,18 @@
  * Without a top bar, add data-auto to the script tag and the button mounts itself
  * at the top left corner.
  *
+ * Municipal apps (Anat, 2026-10-27): brand="ashdod" shows the Ashdod Municipality logo
+ * instead of the A&I mark; the menu inside is the same.
+ *   <ai-menu brand="ashdod" chat="..."></ai-menu>
+ *
  * App editing actions (optional):
  *   menu.items = [{ label: 'מצב עריכה', pressed: true, onSelect() {...} }, ...]
  *   menu.status = 'נשמר'   // short state shown under the name
  */
 (function () {
   if (customElements.get('ai-menu')) return;
+  const BASE = (document.currentScript && document.currentScript.src) || 'https://appofapp-gh.vercel.app/ai-menu.js';
+  const ASHDOD_LOGO = new URL('ashdod-logo.png', BASE).href;
 
   // Chrome fires this once, early; keep it for the install item.
   let installEvent = null;
@@ -83,7 +89,11 @@
     .item.solid { background: linear-gradient(180deg, #2a2d32, #17191c); color: #f4f3f0; }
     .note { padding: 6px 10px 4px; font-size: 12.5px; color: #2f5d46; }
     .note:empty { display: none; }
+    .brandimg { display: block; height: 36px; width: auto; }
+    :host([brand='ashdod']) .logo { padding: 4px 8px; background: #fff; }
+    .head .brandimg { height: 30px; }
     @media (max-width: 700px) {
+      .brandimg { height: 30px; }
       .text { display: none; }
       .logo { padding: 3px; }
     }
@@ -116,6 +126,24 @@
       this._panel = root.querySelector('.panel');
       this._statusEl = root.querySelector('.status');
       this._btn.addEventListener('click', () => (this._open ? this.close() : this.openMenu()));
+      this._applyBrand();
+    }
+
+    static get observedAttributes() { return ['brand']; }
+    attributeChangedCallback() { this._applyBrand(); }
+    get _ashdod() { return this.getAttribute('brand') === 'ashdod'; }
+    _applyBrand() {
+      if (!this._btn) return;
+      if (this._ashdod) {
+        this._btn.title = 'עיריית אשדוד';
+        this._btn.innerHTML = `<img class="brandimg" src="${ASHDOD_LOGO}" alt="עיריית אשדוד"><span class="status" hidden></span>`;
+      } else {
+        this._btn.title = "אד' ענת שטיבלמן A&I";
+        this._btn.innerHTML = `<span class="mark" aria-hidden="true">A&amp;I</span><span class="text"><span class="name">אד' ענת שטיבלמן</span><span class="status"></span></span>`;
+      }
+      this._statusEl = this.shadowRoot.querySelector('.status');
+      if (this._statusEl) this._statusEl.textContent = this._status || '';
+      if (this._open) this._render();
     }
 
     connectedCallback() {
@@ -187,7 +215,9 @@
       p.replaceChildren();
       const head = document.createElement('div');
       head.className = 'head';
-      head.innerHTML = `<span class="mark" aria-hidden="true">A&amp;I</span><div><b>אד' ענת שטיבלמן</b><span>ARCHITECTURE &amp; INTELLIGENCE</span></div>`;
+      head.innerHTML = this._ashdod
+        ? `<img class="brandimg" src="${ASHDOD_LOGO}" alt=""><div><b>עיריית אשדוד</b><span>ASHDOD MUNICIPALITY</span></div>`
+        : `<span class="mark" aria-hidden="true">A&amp;I</span><div><b>אד' ענת שטיבלמן</b><span>ARCHITECTURE &amp; INTELLIGENCE</span></div>`;
       p.append(head);
       for (const g of groups) {
         const box = document.createElement('div');
