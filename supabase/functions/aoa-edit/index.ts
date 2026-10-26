@@ -10,7 +10,8 @@
 //
 // Writes run with the service role after that check, so the tables stay closed
 // to the public. Uploads get a signed URL and go straight to storage.
-// "generate" distills desc / problem / solution with Claude (ANTHROPIC_API_KEY).
+// "generate" distills desc / problem / solution. It reads the app's own site first, then asks
+// Gemini (GEMINI_API_KEY, free tier) and falls back to Claude (ANTHROPIC_API_KEY).
 import Anthropic from 'npm:@anthropic-ai/sdk';
 
 const BUCKET = 'aoa-media';
@@ -81,38 +82,100 @@ const GEN_SYSTEM = `את/ה כותב/ת תוכן בעברית לתיק עבוד�
 - solution: איך היא פותרת אותה.
 כשיש תוכן קיים: לזקק אותו ולשמור על המשמעות. לא להמציא עובדות שאינן בו.`;
 
+/** Title, descriptions and headings of the app's own site: facts for the model, so it does not invent. */
+async function siteText(url: string): Promise<string> {
+  if (!/^https?:\/\//.test(url)) return '';
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000), headers: { 'user-agent': 'Mozilla/5.0 appofapp' } });
+    if (!r.ok) return '';
+    const html = (await r.text()).slice(0, 400_000);
+    const pick = (re: RegExp) => [...html.matchAll(re)].map((m) => m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const parts = [
+      ...pick(/<title[^>]*>([^<]*)<\/title>/gi),
+      ...pick(/<meta[^>]+(?:name|property)=["'](?:description|og:description|og:title)["'][^>]+content=["']([^"']*)["']/gi),
+      ...pick(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi).slice(0, 8),
+    ];
+    const generic = /lovable (app|generated)|^vite|^react app$/i;
+    return [...new Set(parts)].filter((t) => !generic.test(t)).join(' | ').slice(0, 1200);
+  } catch {
+    return '';
+  }
+}
+
+type Gen = { desc: string; problem: string; solution: string };
+
+async function viaGemini(key: string, user: string): Promise<Gen> {
+  const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-flash-latest';
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: GEN_SYSTEM }] },
+      contents: [{ role: 'user', parts: [{ text: user }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          required: ['desc', 'problem', 'solution'],
+          properties: { desc: { type: 'STRING' }, problem: { type: 'STRING' }, solution: { type: 'STRING' } },
+        },
+      },
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!r.ok) throw new Error(`Gemini ${r.status}`);
+  const j = await r.json();
+  const text = j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
+  return JSON.parse(text);
+}
+
+async function viaClaude(key: string, user: string): Promise<Gen> {
+  const client = new Anthropic({ apiKey: key });
+  const response = await client.beta.messages.create({
+    model: 'claude-opus-5-5',
+    max_tokens: 4000,
+    betas: ['server-side-fallback-2026-07-01'],
+    fallbacks: 'default',
+    system: GEN_SYSTEM,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: GEN_SCHEMA } },
+    messages: [{ role: 'user', content: user }],
+  } as never);
+  if (response.stop_reason === 'refusal') throw new Error('הבקשה נדחתה');
+  const text = response.content.filter((b: { type: string }) => b.type === 'text').map((b: { text: string }) => b.text).join('');
+  return JSON.parse(text);
+}
+
 async function generate(body: Record<string, unknown>) {
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')?.trim();
-  if (!apiKey) return json({ error: 'ANTHROPIC_API_KEY is not configured' }, 500);
   const name = String(body.name ?? '').trim().slice(0, 300);
   if (!name) return json({ error: 'חסר שם אפליקציה' }, 400);
+  const url = String(body.url ?? '').trim().slice(0, 300);
   const cur = (body.current ?? {}) as Record<string, string>;
-  const lines = [
+  const site = await siteText(url);
+  const user = [
     `שם: ${name}`,
     body.title ? `כותרת: ${String(body.title).slice(0, 300)}` : '',
-    body.category ? `קטגוריה: ${String(body.category).slice(0, 100)}` : '',
-    body.url ? `כתובת: ${String(body.url).slice(0, 300)}` : '',
+    body.category ? `סיווג: ${String(body.category).slice(0, 200)}` : '',
+    url ? `כתובת: ${url}` : '',
+    site ? `מהאתר של האפליקציה: ${site}` : '',
     ...(['desc', 'problem', 'solution'] as const).map((k) => (cur[k]?.trim() ? `${k} קיים: ${cur[k].trim().slice(0, 2000)}` : '')),
-  ].filter(Boolean);
-  const client = new Anthropic({ apiKey });
-  try {
-    const response = await client.beta.messages.create({
-      model: 'claude-opus-5-5',
-      max_tokens: 4000,
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      system: GEN_SYSTEM,
-      output_config: { effort: 'low', format: { type: 'json_schema', schema: GEN_SCHEMA } },
-      messages: [{ role: 'user', content: lines.join('\n') }],
-    } as never);
-    if (response.stop_reason === 'refusal') return json({ error: 'הבקשה נדחתה' }, 422);
-    const text = response.content.filter((b: { type: string }) => b.type === 'text').map((b: { text: string }) => b.text).join('');
-    return json(JSON.parse(text));
-  } catch (err) {
-    if (err instanceof Anthropic.RateLimitError) return json({ error: 'עומס זמני, נסו שוב בעוד דקה' }, 429);
-    if (err instanceof Anthropic.APIError) return json({ error: `Claude API ${err.status}` }, 502);
-    return json({ error: String(err) }, 500);
+  ].filter(Boolean).join('\n');
+
+  const gemini = Deno.env.get('GEMINI_API_KEY')?.trim();
+  const claude = Deno.env.get('ANTHROPIC_API_KEY')?.trim();
+  const errors: string[] = [];
+  for (const [label, key, run] of [['Gemini', gemini, viaGemini], ['Claude', claude, viaClaude]] as const) {
+    if (!key) continue;
+    try {
+      const out = await run(key, user);
+      if (out?.desc && out?.problem && out?.solution) return json(out);
+      errors.push(`${label}: תשובה חסרה`);
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      errors.push(status ? `${label} ${status}` : String((err as Error).message ?? err));
+    }
   }
+  const hint = gemini ? '' : ' כדי שהניסוח יעבוד בחינם צריך להגדיר מפתח Gemini חינמי (GEMINI_API_KEY) ב-Supabase.';
+  return json({ error: `${errors.join(', ') || 'אין מפתח ניסוח'}.${hint}` }, 502);
 }
 
 Deno.serve(async (req) => {
