@@ -80,6 +80,10 @@ Safety net in `aoa-edit`: the previous version of an app goes to `aoa_app_versio
 per app every 10 minutes); a delete moves the app to `aoa_trash` (action `restore_app`). Both tables are public
 read, written by the function only. Migration: `supabase/migrations/20261024_aoa_versions_trash.sql`.
 
+TEXT STANDARD (Anat, 2026-10-26, "חשוב ביותר", for every app and every AI connection): every text an AI writes is
+distilled and emphasized in a hierarchy: an insight line of up to 8 words, one explanation sentence of up to 20 words,
+and `**` on the main concept, the parameters and the numbers. The paste-ready instruction is in `docs/ai-text-standard.md`;
+`GEN_SYSTEM` in `aoa-edit` is identical to it. Gemini free first, Claude only as a fallback.
 `generate` (Anat, 2026-10-26: "חינמי") reads the app's own site (title, meta, headings) so the model does not
 invent, then asks Gemini first (`GEMINI_API_KEY`, free tier, model `GEMINI_MODEL` default `gemini-flash-latest`)
 and falls back to Claude (`ANTHROPIC_API_KEY`, returned 401 since 2026-10-24). Without a Gemini key the error says
