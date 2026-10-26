@@ -80,6 +80,15 @@ export default function App() {
 
   return (
     <div className={`shell ${editing ? 'editing' : ''}`}>
+      {/* Where am I (Anat, 2026-10-27, "ב + ג"): the portfolio is framed like a drawing sheet with a title stamp,
+          under a dark blue bar, so it never looks like one of the apps it lists. */}
+      <div className="sheet-frame" aria-hidden>
+        <div className="sheet-stamp">
+          <b>תיק האפליקציות</b>
+          <span>{active ? `גיליון ${sheets.get(active.id) ?? ''}` : route.view === 'table' ? 'טבלה' : 'מפה'}</span>
+          <span className="mono">A&amp;I · אד׳ ענת שטיבלמן</span>
+        </div>
+      </div>
       {editing && (
         <div className={`edit-light save-${store.saveState}`} aria-live="polite">
           <span className="edit-light-tag mono">

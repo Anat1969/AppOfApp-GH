@@ -608,3 +608,29 @@ td.grouped.updated b, td.grouped .link.strong { color: color-mix(in srgb, var(--
 .legend-item i { width: 14px; height: 14px; background: var(--g); display: inline-block; }
 .legend-item .mono { font-size: 0.74rem; }
 tbody td:first-child { white-space: nowrap; }
+
+/* Where am I (Anat, 2026-10-27, "ב + ג"): a drawing-sheet frame with a title stamp, and a dark blue top bar with an
+   amber line. Only the portfolio has them, so it is never mistaken for one of the apps it lists. */
+:root { --frame: 8px; --bar-navy: #1f3354; --amber: #e8a317; }
+.sheet-frame { position: fixed; inset: var(--frame); z-index: 85; pointer-events: none; border: 2px solid #1b1d20; outline: 1px solid #1b1d20; outline-offset: -7px; }
+.sheet-stamp { position: absolute; left: -2px; bottom: -2px; display: grid; grid-template-columns: auto auto auto; align-items: center; background: var(--paper); border: 2px solid #1b1d20; font-size: 0.78rem; color: #1b1d20; }
+.sheet-stamp > * { padding: 6px 12px; white-space: nowrap; }
+.sheet-stamp > * + * { border-inline-start: 1px solid #1b1d20; }
+.sheet-stamp b { font-weight: 600; letter-spacing: 0.02em; }
+.sheet-stamp .mono { font-size: 0.7rem; letter-spacing: 0.06em; }
+.shell { padding: var(--frame); }
+.topbar { top: var(--frame); background: var(--bar-navy); border-bottom: 3px solid var(--amber); }
+.topbar .brand-name, .topbar .tab { color: #f3f5f9; }
+.topbar .brand-sub { color: var(--amber); }
+.topbar .tab:hover { color: #fff; }
+.topbar .tab.on { color: #fff; background: rgba(255, 255, 255, 0.14); box-shadow: inset 0 -2px 0 var(--amber); }
+.topbar .views-sep, .topbar .sep { background: rgba(255, 255, 255, 0.3); }
+.foot { padding-bottom: 44px; }
+@media (max-width: 760px) {
+  :root { --frame: 4px; }
+  .sheet-frame { outline-offset: -5px; }
+  .sheet-stamp { grid-template-columns: auto auto; font-size: 0.7rem; }
+  .sheet-stamp .mono { display: none; }
+}
+@media print { .sheet-frame { display: none; } }
+@media (max-width: 760px) { .shell.editing .sheet-stamp { display: none; } }

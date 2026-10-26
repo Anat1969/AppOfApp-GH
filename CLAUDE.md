@@ -150,5 +150,8 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   save is retried; the tag on it says every change is saved automatically. There is no save button: each edit is saved
   online after a pause, a failed save is kept on the device (`aoa-pending-edits`) and retried (2s, 5s, 15s, then 30s),
   and closing the tab with an unsaved change asks first. The A&I status shows "נשמר HH:MM".
+- WHERE AM I (Anat, 2026-10-27, chose "ב + ג"): the portfolio is framed like a drawing sheet (double border around the
+  screen) with a title stamp at the bottom left ("תיק האפליקציות", the current view or sheet number, "A&I · אד׳ ענת
+  שטיבלמן"), under a dark blue top bar with an amber line. Only the portfolio has these; do not copy them into the apps.
 - Square buttons, chips and fields (anat-app-builder), including the shared A&I button.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.
