@@ -634,3 +634,5 @@ tbody td:first-child { white-space: nowrap; }
 }
 @media print { .sheet-frame { display: none; } }
 @media (max-width: 760px) { .shell.editing .sheet-stamp { display: none; } }
+td.name-edit { display: flex; align-items: center; gap: 8px; min-width: 220px; }
+.name-input { font-weight: 600; min-width: 180px; }

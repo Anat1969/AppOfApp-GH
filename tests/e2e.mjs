@@ -446,11 +446,26 @@ const browser = await chromium.launch();
   await page.goto(BASE + '/?view=table');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
   await menu(page, 'מצב עריכה');
-  const purpose = page.locator('tbody tr').filter({ hasText: 'שישה כובעי' }).locator('input[aria-label=purpose]');
+  const purpose = page.locator('tbody tr').filter({ has: page.locator('input[aria-label="שם האפליקציה"][value*="שישה כובעי"]') }).locator('input[aria-label=purpose]');
   await purpose.fill('משחק חשיבה');
   await purpose.blur();
   await page.waitForTimeout(1000);
   ok(lastOf(calls, 'save_app')?.data?.purpose === 'משחק חשיבה', 'table cell edit saves');
+  const nameInput = page.locator('input[aria-label="שם האפליקציה"]').first();
+  const oldName = await nameInput.inputValue();
+  await nameInput.fill('חשיבה: שישה כובעים');
+  await nameInput.press('Enter');
+  await page.waitForTimeout(1000);
+  const renamedSave = lastOf(calls, 'save_app')?.data;
+  ok(renamedSave?.name === 'חשיבה: שישה כובעים' && renamedSave?.originalName, 'table rename saves the name and keeps the old one searchable');
+  await page.locator('tbody tr').filter({ has: page.locator('input[value*="חשיבה: שישה"]') }).locator('button', { hasText: 'פתיחה' }).click();
+  await page.waitForTimeout(800);
+  const shown = [await page.title(), ...(await page.locator('.app-page input').evaluateAll((els) => els.map((e) => e.value)))].join(' | ');
+  ok(shown.includes('חשיבה: שישה כובעים'), 'the new name shows on the app page (' + shown.slice(0, 80) + ')');
+  await page.goto(BASE + '/?view=table');
+  await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
+  await menu(page, 'מצב עריכה');
+  void oldName;
 
   // bulk
   await menu(page, 'ניסוח תוכן לכל');
