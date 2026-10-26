@@ -48,6 +48,11 @@ https://anat1969.github.io/AppOfApp-GH/ , built by `.github/workflows/pages.yml`
 (branch `gh-pages`, `BASE_PATH=/AppOfApp-GH/`). It does not use the Vercel quota, so it stays current when
 Vercel is rate-limited. Keep every path relative or based on `import.meta.env.BASE_URL`; never a bare `/`.
 
+Branch hygiene (2026-10-27, two broken builds): after a squash merge, restart `claude/zealous-shannon-mz9acg` from
+`origin/main`; when the remote branch has old history, record it with `git merge -s ours` (never `-X ours`, which
+mixed old lines back in: duplicated functions in `aoa-edit`, an unused import that failed `tsc -b` on Pages and Vercel).
+Run `npm run build` again after every merge, right before pushing.
+
 Playwright comes from the global install: `ln -s "$(npm root -g)/playwright" node_modules/playwright`.
 
 ## Data (Supabase cultura-GH, ktqmwpbzcnzkhjskqisy, shared: prefix `aoa_`)
