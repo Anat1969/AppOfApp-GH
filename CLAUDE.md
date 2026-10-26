@@ -155,4 +155,8 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   screen) with a title stamp at the bottom left ("תיק האפליקציות", the current view or sheet number, "A&I · אד׳ ענת
   שטיבלמן"), under a dark blue top bar with an amber line. Only the portfolio has these; do not copy them into the apps.
 - Square buttons, chips and fields (anat-app-builder), including the shared A&I button.
+- OWNER AND LOGO (Anat, 2026-10-27): every app is either the municipality's or hers. `data.owner = "ashdod"` marks the
+  39 municipal apps she ticked (the rest are hers). Municipal apps use `<ai-menu brand="ashdod">`, which shows the Ashdod
+  Municipality logo (`public/ashdod-logo.png`, complete, transparent, approved by her) with the same menu inside.
+  At the start of every build, ask her whose app it is.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.
