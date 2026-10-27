@@ -356,7 +356,13 @@ td.tags { white-space: nowrap; }
   position: relative; display: block; padding: 10px; border-radius: 8px; overflow: hidden;
   background: linear-gradient(170deg, #fdfcfa, #eeece8); box-shadow: var(--shadow-3); text-decoration: none;
 }
-.cover img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; border-radius: 4px; border: 1px solid var(--line); }
+/* The frame takes the proportions of the image itself (a screenshot stays whole, never cropped). Very tall images are
+   limited to the screen height and shown whole inside it (Anat, 2026-10-27). */
+.cover img { display: block; width: auto; max-width: 100%; height: auto; max-height: 82vh; border-radius: 4px; border: 1px solid var(--line); background: #fff; }
+/* the frame and the paper layers behind it wrap the image, whatever its shape */
+.app-visual { width: fit-content; max-width: 100%; }
+.app-visual:has(.cover-empty) { width: auto; }
+.cover img.uploading { opacity: 0.55; }
 .cover-empty { display: grid; place-items: center; aspect-ratio: 16 / 10; border: 1px dashed var(--line-2); border-radius: 4px; color: var(--dim); font-size: 1rem; }
 .cover-cta { position: absolute; bottom: 22px; inset-inline-end: 22px; background: rgba(23, 25, 28, 0.85); color: #f4f3f0; padding: 6px 12px; border-radius: 4px; opacity: 0; transform: translateY(6px); transition: 0.3s; }
 .cover:hover .cover-cta, .cover:focus-visible .cover-cta { opacity: 1; transform: none; }
