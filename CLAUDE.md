@@ -155,6 +155,10 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 - RENAME IN THE TABLE (Anat, 2026-10-27, consistent names by subject): in edit mode the name cell is a field (Enter or
   leaving it saves). The name lives once in `data.name`, so every page shows the new one; the page title follows when it
   equalled the old name, and the first old name stays in `originalName` for search. "פתיחה" next to it opens the app.
+- COVER IMAGE (Anat, 2026-10-27): the frame takes the image's own proportions (a screenshot is never cropped; very tall
+  ones are limited to 82vh and the frame narrows to them). In edit mode a screenshot pasted anywhere on the app page
+  (Ctrl+V, unless text is pasted into a field) becomes the cover, shows at once as a preview, and uploads once even if
+  pasted again while uploading. A pasted image address is used as is.
 - EDIT MODE IS LIT (Anat, 2026-10-27): an amber frame around the screen while editing, pulsing while saving, red while a
   save is retried; the tag on it says every change is saved automatically. There is no save button: each edit is saved
   online after a pause, a failed save is kept on the device (`aoa-pending-edits`) and retried (2s, 5s, 15s, then 30s),

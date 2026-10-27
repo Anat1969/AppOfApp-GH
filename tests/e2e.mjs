@@ -411,6 +411,20 @@ const browser = await chromium.launch();
   ok(calls.some((c) => c.action === 'storage_put'), 'file sent to storage');
   await page.waitForTimeout(1000);
   ok(lastOf(calls, 'save_app')?.data?.coverImage?.includes('/aoa-media/app-1/cover-'), 'new cover saved on the app');
+  // a screenshot pasted anywhere on the page (nothing focused) becomes the cover, once, even when pasted twice fast
+  const signsBefore = calls.filter((c) => c.action === 'sign_upload').length;
+  await page.evaluate(async (b64) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    for (let i = 0; i < 2; i++) {
+      const dt = new DataTransfer();
+      dt.items.add(new File([bytes], 'shot.png', { type: 'image/png' }));
+      (document.activeElement || document.body).blur?.();
+      document.body.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true }));
+    }
+  }, png.toString('base64'));
+  ok((await page.locator('.app-visual .cover img').getAttribute('src'))?.startsWith('blob:'), 'pasted image shows at once');
+  await page.waitForTimeout(800);
+  ok(calls.filter((c) => c.action === 'sign_upload').length === signsBefore + 1, 'paste anywhere uploads one copy');
   await page.screenshot({ path: SHOTS + 'editor-app.png', fullPage: true });
 
   // add from a gap idea: the dialog is prefilled

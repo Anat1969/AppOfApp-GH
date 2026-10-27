@@ -140,7 +140,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
             <span />
             <span />
           </div>
-          <CoverFrame src={app.coverImage} alt={app.name} href={site} editing={editing} onFile={upload('cover')} />
+          <CoverFrame src={app.coverImage} alt={app.name} href={site} editing={editing} onFile={upload('cover')} pasteAnywhere onUrl={(url) => set({ coverImage: url })} />
         </div>
 
         <div className="app-summary">
