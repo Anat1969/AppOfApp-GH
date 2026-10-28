@@ -159,6 +159,15 @@ const browser = await chromium.launch();
   ok((await page.locator('.cell-pop .pop-list li').count()) === 1, 'hover lists the cell apps one per line');
   ok((await page.locator('.cell-pop a.pop-name').getAttribute('href'))?.includes('ashdod-mitar-twin'), 'the name links straight to the app');
   await page.screenshot({ path: SHOTS + 'desktop-cell-hover.png' });
+  // crossing another cell on the way to the window must not switch it (the link would open another app)
+  const popHead = await page.locator('.cell-pop .pop-head').textContent();
+  const other = page.locator('.matrix .cell:not(.on), .matrix .gap').first();
+  await other.hover();
+  await page.waitForTimeout(120);
+  ok((await page.locator('.cell-pop .pop-head').textContent()) === popHead, 'passing over another cell keeps the open window');
+  await page.locator('.cell-pop').hover();
+  await page.waitForTimeout(500);
+  ok((await page.locator('.cell-pop .pop-head').textContent()) === popHead && (await page.locator('.cell-pop a.pop-name').getAttribute('href'))?.includes('ashdod-mitar-twin'), 'the window still links to its own app after the pointer arrives');
   await page.locator('.cell-pop .pop-sheet').click();
   ok(page.url().includes('app=app-4'), 'the sheet number opens the app page');
   await page.locator('.brand').click();

@@ -137,7 +137,9 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   Hebrew prefixes (ה ו ב ל מ ש כ), says on each card which word found it ("נמצא דרך"), and when nothing matches
   shows the closest apps. When adding an app, add concepts too: the words a person who forgot its name would type.
 - MAP CELLS: hovering a cell opens a window listing its apps one per line; the name links straight to the app,
-  the sheet number opens its page. Every empty cell holds a suggested app (`src/data/gapIdeas.ts`), the apps it
+  the sheet number opens its page. Hover intent (Anat, 2026-10-28, "לפעמים הוא שולח אותי לאפליקציה אחרת"): crossing other
+  cells on the way to the window never switches it; it switches only after the pointer rests 280ms on another cell, never
+  while the pointer is inside it, and a clicked window stays; the window that is leaving takes no clicks. Every empty cell holds a suggested app (`src/data/gapIdeas.ts`), the apps it
   can build on (same row and column), "הוספה לתיק מהרעיון" (prefilled dialog) and a ready Claude Code prompt.
 - READING AT A GLANCE (Anat, 2026-10-26: "בעיה באדום פתרון בירוק"): meaning has a colour. Problem red (underline
   stroke), solution green (marker), description yellow marker; panels numbered 01 / 02 with "ולכן" between;

@@ -55,17 +55,39 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
   const closeTimer = useRef<ReturnType<typeof setTimeout>>();
   const pop = useRef<HTMLDivElement>(null);
 
-  const show = (domain: string, action: ActionValue, el: HTMLElement, pinned = false) => {
-    clearTimeout(closeTimer.current);
+  // Hover intent (Anat, 2026-10-28: "לפעמים הוא שולח אותי לאפליקציה אחרת"): on the way from a cell to its window the
+  // pointer crosses other cells. The open window does not switch while the pointer is inside it, switches to another
+  // cell only after the pointer rests there, and a window opened by a click stays until a click elsewhere.
+  const switchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const inPop = useRef(false);
+  const openRef = useRef<Open | null>(null);
+  openRef.current = open;
+  const place = (domain: string, action: ActionValue, el: HTMLElement, pinned: boolean) => {
     const r = el.getBoundingClientRect();
     const below = innerHeight - r.bottom - 16;
     const above = below < 320 && r.top > below;
     setOpen({ domain, action, x: r.left + r.width / 2, y: above ? r.top - 8 : r.bottom + 8, above, room: Math.max(160, (above ? r.top : below) - 16), pinned });
   };
+  const show = (domain: string, action: ActionValue, el: HTMLElement, pinned = false) => {
+    clearTimeout(closeTimer.current);
+    clearTimeout(switchTimer.current);
+    const cur = openRef.current;
+    if (pinned || !cur) return place(domain, action, el, pinned);
+    if (cur.domain === domain && cur.action === action) return;
+    if (cur.pinned || inPop.current) return;
+    switchTimer.current = setTimeout(() => {
+      if (!inPop.current && !openRef.current?.pinned) place(domain, action, el, false);
+    }, 280);
+  };
   const hideSoon = () => {
     clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setOpen((o) => (o?.pinned ? o : null)), 180);
+    clearTimeout(switchTimer.current);
+    closeTimer.current = setTimeout(() => setOpen((o) => (o?.pinned || inPop.current ? o : null)), 220);
   };
+
+  useEffect(() => {
+    if (!open) inPop.current = false;
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -180,10 +202,17 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
             }}
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4 }}
+            exit={{ opacity: 0, y: -4, pointerEvents: 'none' }}
             transition={{ duration: 0.16 }}
-            onPointerEnter={() => clearTimeout(closeTimer.current)}
-            onPointerLeave={hideSoon}
+            onPointerEnter={() => {
+              inPop.current = true;
+              clearTimeout(closeTimer.current);
+              clearTimeout(switchTimer.current);
+            }}
+            onPointerLeave={() => {
+              inPop.current = false;
+              hideSoon();
+            }}
           >
             <div className="pop-head mono">
               {d.label} · {a.label}
