@@ -21,8 +21,8 @@ interface Props {
   sheets: Map<string, string>;
   facets: Facet[];
   go: (p: Partial<Route>) => void;
-  prev?: AppData;
-  next?: AppData;
+  /** Paging: the neighbours in the list the app was opened from, and which list that is. */
+  seq: { prev?: AppData; next?: AppData; pos: number; total: number; label: string };
   editing: boolean;
   onBack: () => void;
   onOpen: (id: string) => void;
@@ -39,7 +39,7 @@ const LINKS: { url: keyof AppData; label: keyof AppData; fallback: string }[] = 
   { url: 'supabaseProjectUrl', label: 'supabaseUrlLabel', fallback: 'מסד נתונים' },
 ];
 
-export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, next, editing, onBack, onOpen, onChange, onDelete }: Props) {
+export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, editing, onBack, onOpen, onChange, onDelete }: Props) {
   const [gen, setGen] = useState<Field | 'all' | null>(null);
   const site = siteUrl(app);
   const act = actionOf(app.action);
@@ -124,14 +124,6 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
             </button>
           </>
         )}
-        <span className="crumbs-nav">
-          <button className="ghost" disabled={!prev} onClick={() => prev && onOpen(prev.id)} title={prev?.name}>
-            הקודמת
-          </button>
-          <button className="ghost" disabled={!next} onClick={() => next && onOpen(next.id)} title={next?.name}>
-            הבאה
-          </button>
-        </span>
       </div>
 
       <div className="app-hero">
@@ -298,6 +290,30 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, prev, ne
             ))}
           </div>
         </section>
+      )}
+
+      {seq.total > 1 && (
+        <nav className="sheet-seq" aria-label="דפדוף בין האפליקציות">
+          <div className="seq-head mono">
+            {seq.pos} מתוך {seq.total} · {seq.label}
+          </div>
+          <div className="seq-links">
+            {seq.prev ? (
+              <button className="seq-link prev" onClick={() => onOpen(seq.prev!.id)}>
+                <span className="mono">הקודמת · {sheets.get(seq.prev.id)}</span>
+                <b>{seq.prev.name}</b>
+              </button>
+            ) : (
+              <span />
+            )}
+            {seq.next && (
+              <button className="seq-link next" onClick={() => onOpen(seq.next!.id)}>
+                <span className="mono">הבאה · {sheets.get(seq.next.id)}</span>
+                <b>{seq.next.name}</b>
+              </button>
+            )}
+          </div>
+        </nav>
       )}
 
       {editing && (

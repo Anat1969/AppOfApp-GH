@@ -30,6 +30,14 @@ function pastedImage(data: DataTransfer | null): File | null {
 }
 const imageUrl = (t: string) => (/^https?:\/\/\S+\.(png|jpe?g|webp|gif|avif)(\?\S*)?$/i.test(t.trim()) ? t.trim() : '');
 
+const hostOf = (url: string) => {
+  try {
+    return new URL(url).host.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+};
+
 /** Cover image that links to the app; in edit mode it accepts drop, paste or a file. */
 export default function CoverFrame({ src, alt, href, editing, onFile, className = '', label = 'תמונת שער', pasteAnywhere, onUrl }: Props) {
   const [busy, setBusy] = useState(false);
@@ -87,9 +95,12 @@ export default function CoverFrame({ src, alt, href, editing, onFile, className 
 
   if (!editing) {
     return href ? (
-      <motion.a className={`cover ${className}`} href={href} target="_blank" rel="noopener noreferrer" whileHover={{ y: -4 }} title="פתיחת האפליקציה">
+      <motion.a className={`cover ${className}`} href={href} target="_blank" rel="noopener noreferrer" whileHover={{ y: -4 }} title={`פתיחת האפליקציה בכרטיסייה חדשה: ${href}`}>
         {img}
-        <span className="cover-cta mono">פתיחת האפליקציה</span>
+        <span className="cover-bar">
+          <span className="cover-open">פתיחת האפליקציה</span>
+          <span className="cover-host mono">{hostOf(href)}</span>
+        </span>
       </motion.a>
     ) : (
       <div className={`cover ${className}`}>{img}</div>

@@ -343,7 +343,6 @@ td.tags { white-space: nowrap; }
 /* ---------- app page ---------- */
 .app-page { padding-top: 28px; }
 .crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; min-width: 0; }
-.crumbs-nav { margin-inline-start: auto; display: flex; gap: 8px; }
 .app-hero { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 48px; align-items: start; }
 .app-visual { position: relative; perspective: 1400px; }
 .layers span {
@@ -364,8 +363,17 @@ td.tags { white-space: nowrap; }
 .app-visual:has(.cover-empty) { width: auto; }
 .cover img.uploading { opacity: 0.55; }
 .cover-empty { display: grid; place-items: center; aspect-ratio: 16 / 10; border: 1px dashed var(--line-2); border-radius: 4px; color: var(--dim); font-size: 1rem; }
-.cover-cta { position: absolute; bottom: 22px; inset-inline-end: 22px; background: rgba(23, 25, 28, 0.85); color: #f4f3f0; padding: 6px 12px; border-radius: 4px; opacity: 0; transform: translateY(6px); transition: 0.3s; }
-.cover:hover .cover-cta, .cover:focus-visible .cover-cta { opacity: 1; transform: none; }
+/* The cover has one action, and says so on the frame itself (touch screens have no hover): it opens the app.
+   Paging to other apps lives at the foot of the page, away from the image (Anat, 2026-10-29). The bar takes no part
+   in the frame's width, so the frame still follows the image. */
+.cover-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 0; min-width: 100%;
+  margin-top: 8px; padding: 7px 10px; border: 1px solid var(--line-2); background: #fff; color: var(--navy); transition: background 0.2s, color 0.2s;
+}
+.cover-open { font-weight: 600; white-space: nowrap; }
+.cover-host { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; font-size: 0.8rem; color: var(--dim); }
+.cover:hover .cover-bar, .cover:focus-visible .cover-bar { background: var(--navy); color: #fff; border-color: var(--navy); }
+.cover:hover .cover-host, .cover:focus-visible .cover-host { color: rgba(255, 255, 255, 0.75); }
 .cover.editing { outline: 2px dashed var(--ink-2); outline-offset: 4px; }
 .cover.editing.over { outline-color: var(--navy); background: #e9ecf2; }
 .cover-tools { position: absolute; bottom: 20px; inset-inline-end: 20px; display: flex; gap: 8px; align-items: center; background: var(--paper); padding: 6px 10px; border-radius: 6px; box-shadow: var(--shadow-2); }
@@ -448,6 +456,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink-2); }
 textarea { resize: vertical; line-height: 1.6; }
 .form-block { margin-top: 6px; }
 .links-form { margin-top: 32px; }
+/* paging between apps, at the foot of the page: it names where it goes and through which list */
+.sheet-seq { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); }
+.seq-head { color: var(--dim); font-size: 0.8rem; margin-bottom: 12px; }
+.seq-links { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.seq-link { display: grid; gap: 4px; padding: 12px 16px; border: 1px solid var(--line-2); background: rgba(247, 246, 243, 0.6); text-align: start; min-width: 0; }
+.seq-link.next { text-align: end; }
+.seq-link span { color: var(--dim); font-size: 0.78rem; }
+.seq-link b { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seq-link:hover { border-color: var(--navy); background: #fff; }
+.seq-link:hover b { color: var(--navy); }
 .danger { margin-top: 32px; display: flex; justify-content: flex-end; }
 .danger .ghost { color: var(--warn); border-color: rgba(138, 59, 46, 0.4); }
 .warn { margin: -6px 0 0; color: var(--warn); font-size: 0.9rem; }
@@ -508,8 +526,6 @@ td.wide { min-width: 220px; max-width: 320px; }
   .titleblock > div:nth-child(4) { border-inline-start: 0; }
   .titleblock > div:nth-child(n + 4) { border-top: 1px solid var(--line-2); }
   .filters { margin-inline-start: 0; }
-  .crumbs-nav { margin-inline-start: 0; width: 100%; }
-  .crumbs-nav button { flex: 1; }
   .layers span:nth-child(1) { transform: translate(-10px, 10px); }
   .layers span:nth-child(2) { transform: translate(-5px, 5px); }
   .foot { flex-direction: column; padding-inline: 16px; }
@@ -523,7 +539,7 @@ td.wide { min-width: 220px; max-width: 320px; }
 
 /* square controls (anat-app-builder: buttons, chips and fields have no rounded corners) */
 .solid, .ghost, .tab, .chip, .seg, .tag, .search input, input:not([type='checkbox']):not([type='range']), select, textarea,
-.cover-tools, .cover-tools button, .suggest, .suggest ul button, .table-search, .dialog, .toast, .room-tools button, .badge, .axis { border-radius: 0; }
+.cover-bar, .seq-link, .cover-tools, .cover-tools button, .suggest, .suggest ul button, .table-search, .dialog, .toast, .room-tools button, .badge, .axis { border-radius: 0; }
 .solid:active:not(:disabled), .ghost:active:not(:disabled), .chip:active:not(:disabled), .tag:active { transform: translateY(1px); box-shadow: none; }
 .chip, .tag { box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 1px 2px rgba(20, 22, 26, 0.08); }
 .chip:hover:not(:disabled):not(.on), .tag:hover:not(.on) { transform: translateY(-1px); box-shadow: var(--shadow-1); }
