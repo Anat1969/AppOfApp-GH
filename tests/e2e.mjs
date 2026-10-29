@@ -4,7 +4,6 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 
 const BASE = process.env.BASE ?? 'http://localhost:4173';
-const KEY = 'test-editor-key-123456';
 const SHOTS = new URL('./shots/', import.meta.url).pathname;
 fs.mkdirSync(SHOTS, { recursive: true });
 
@@ -89,10 +88,8 @@ async function setup(context, calls) {
   await context.route(/\/functions\/v1\/aoa-edit/, async (r) => {
     if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' } });
     const body = JSON.parse(r.request().postData() ?? '{}');
-    const key = r.request().headers()['x-editor-key'];
-    calls.push({ ...body, key });
+    calls.push(body);
     const h = { 'access-control-allow-origin': '*' };
-    if (key !== KEY) return r.fulfill({ status: 403, headers: h, json: { error: 'not editor' } });
     if (body.action === 'sign_upload') return r.fulfill({ headers: h, json: { path: body.path, token: 'tok', publicUrl: `https://ktqmwpbzcnzkhjskqisy.supabase.co/storage/v1/object/public/aoa-media/${body.path}` } });
     if (body.action === 'generate') return r.fulfill({ headers: h, json: { desc: 'תיאור **חדש**.', problem: 'בעיה **חדשה**.', solution: 'פתרון **חדש**.' } });
     return r.fulfill({ headers: h, json: { ok: true } });
@@ -104,7 +101,6 @@ const menu = async (page, label) => {
   await page.locator('ai-menu .logo').click();
   await page.locator('ai-menu .item', { hasText: label }).first().click();
 };
-const editorReady = (page) => page.locator('ai-menu .item', { hasText: 'מצב עריכה' }).count();
 const isEditorDevice = async (page) => {
   await page.locator('ai-menu .logo').click();
   const n = await page.locator('ai-menu .item', { hasText: /מצב עריכה|סיום עריכה/ }).count();
@@ -132,11 +128,11 @@ const browser = await chromium.launch();
   ok((await page.locator('.matrix .gap').count()) > 0, 'empty cells are shown as gaps');
   ok(await page.locator('ai-menu .logo').isVisible(), 'A&I logo button in the top bar');
   ok((await page.locator('.topbar').getByText('העתקת קישור', { exact: true }).count()) === 0 || !(await page.locator('.topbar >> text=העתקת קישור').first().isVisible()), 'no loose development buttons in the bar');
-  ok(!(await isEditorDevice(page)), 'public sees no editing actions');
+  ok(await isEditorDevice(page), 'every device edits, no link needed');
   ok(await noHScroll(page), 'desktop home: no horizontal scroll');
   await page.locator('ai-menu .logo').click();
   ok((await page.locator('ai-menu a.item', { hasText: 'שיחת הפיתוח' }).getAttribute('href'))?.includes('claude.ai/code/session_'), 'dev chat item links to the session');
-  ok(await page.locator('ai-menu .item', { hasText: 'חיבור המכשיר לעריכה' }).isVisible(), 'connect-device item for the public');
+  ok((await page.locator('ai-menu .item', { hasText: /חיבור המכשיר|קישור העריכה|ניתוק/ }).count()) === 0, 'no connect, copy-link or disconnect items');
   await page.screenshot({ path: SHOTS + 'desktop-menu-public.png' });
   await page.keyboard.press('Escape');
   ok(await page.locator('ai-menu .panel').isHidden(), 'Escape closes the menu');
@@ -182,13 +178,11 @@ const browser = await chromium.launch();
   const prompt = await page.evaluate(() => navigator.clipboard.readText());
   ok(prompt.includes('anat-app-builder') && prompt.includes('uipro init'), 'the gap prompt for Claude Code is copied');
   await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).click();
-  ok(await page.locator('.dialog .connect').isVisible(), 'a device not connected sees one field for the editor link');
+  ok((await page.locator('.dialog .connect').count()) === 0, 'no editor link field in the add form');
   ok((await page.locator('.dialog input').first().inputValue()).length > 2, 'the form itself opens right away, prefilled');
-  ok(await page.locator('.dialog .solid', { hasText: 'הוספה לתיק' }).isDisabled(), 'saving waits for the link');
-  await page.locator('.dialog .connect input').fill(`${BASE}/#editor=${KEY}`);
   await page.locator('.dialog .solid', { hasText: 'הוספה לתיק' }).click();
   await page.waitForTimeout(500);
-  ok(lastOf(calls, 'check')?.key === KEY && lastOf(calls, 'save_app')?.data?.name?.length > 2, 'one save connects the device and adds the app');
+  ok(lastOf(calls, 'save_app')?.data?.name?.length > 2, 'one click adds the app, on any device');
   await page.goto(BASE + '/');
   await page.waitForSelector('.card');
   ok(await page.locator('.hero-add').isVisible(), 'a prominent add button on the home page');
@@ -342,10 +336,6 @@ const browser = await chromium.launch();
   await page.locator('tbody .link.strong').first().click();
   ok(page.url().includes('app=app-1') && !page.url().includes('view=table'), 'table name opens the app page');
 
-  // forged key is rejected
-  await page.goto(BASE + '/#editor=wrong-key-000000000000');
-  await page.waitForTimeout(400);
-  ok(!(await isEditorDevice(page)), 'an invalid editor key does not unlock editing');
   ok(errors.length === 0, `no console errors (${errors.join(' | ')})`);
   await context.close();
 }
@@ -363,10 +353,8 @@ const browser = await chromium.launch();
     }
     else await d.accept();
   });
-  await page.goto(BASE + '/#editor=' + KEY);
+  await page.goto(BASE + '/');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
-  ok(!page.url().includes('editor='), 'editor key removed from the address');
-  ok(lastOf(calls, 'check')?.key === KEY, 'key verified by the server');
   await page.locator('ai-menu .logo').click();
   await page.waitForTimeout(300);
   await page.screenshot({ path: SHOTS + 'desktop-menu-editor.png' });
@@ -511,18 +499,6 @@ const browser = await chromium.launch();
   ok(calls.filter((c) => c.action === 'generate').length >= rows.length, 'bulk runs generate per app');
   await page.locator('.dialog .link', { hasText: 'סגירה' }).click();
 
-  await page.locator('ai-menu .logo').click();
-  ok(await page.locator('ai-menu .item', { hasText: 'העתקת קישור העריכה' }).isVisible(), 'a connected device can copy the editor link');
-  await page.keyboard.press('Escape');
-  await menu(page, 'ניתוק המכשיר');
-  ok(!(await isEditorDevice(page)), 'disconnect removes the editing actions');
-
-  // connect again from the menu by pasting the editor link
-  page.removeAllListeners('dialog');
-  page.once('dialog', (d) => d.accept(`${BASE}/#editor=${KEY}`));
-  await menu(page, 'חיבור המכשיר לעריכה');
-  await page.waitForTimeout(300);
-  ok(await isEditorDevice(page), 'pasting the editor link in the menu connects the device');
   await context.close();
 }
 
@@ -553,7 +529,7 @@ const browser = await chromium.launch();
   await page.goto(BASE + '/?view=table');
   await page.waitForSelector('table');
   ok(await noHScroll(page), 'mobile table: page itself does not scroll sideways');
-  await page.goto(BASE + '/#editor=' + KEY);
+  await page.goto(BASE + '/');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
   await page.locator('ai-menu .logo').click();
   await page.waitForTimeout(300);

@@ -43,10 +43,6 @@ export default function App() {
     }
   };
 
-  useEffect(() => {
-    if (!store.isEditor) setEditing(false);
-  }, [store.isEditor]);
-
   const { apps, facets } = store;
 
   // Sheet numbers follow creation order, so A-001 is the first app ever added.
@@ -123,15 +119,12 @@ export default function App() {
         onView={(view) => go({ view, app: null })}
         menu={
           <AIMenu
-            isEditor={store.isEditor}
             editing={editing}
             saveState={store.saveState}
             lastSaved={store.lastSaved}
             setEditing={setEditing}
             onAdd={() => openAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}
             onBulk={() => setBulk(true)}
-            onConnect={store.connect}
-            onLeave={store.leaveEditor}
           />
         }
       />
@@ -207,7 +200,7 @@ export default function App() {
 
       <footer className="foot mono">
         <span>APPOFAPP · {apps.length} גיליונות</span>
-        <span>{store.isEditor ? 'מכשיר עריכה' : 'תצוגה ציבורית'}</span>
+        <span>עריכה פתוחה בכל מכשיר</span>
       </footer>
 
       <AddAppDialog
@@ -217,10 +210,8 @@ export default function App() {
         apps={apps}
         facets={facets}
         prefill={adding ?? {}}
-        isEditor={store.isEditor}
-        onConnect={store.connect}
-        onCreate={async (a, key) => {
-          const ok = await store.addApp(a, key);
+        onCreate={async (a) => {
+          const ok = await store.addApp(a);
           if (ok) {
             setEditing(true);
             go({ app: a.id, view: 'home' });
