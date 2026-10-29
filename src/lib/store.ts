@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { edit, readEditorKey, storeEditorKey, supabase } from './supabase';
+import { edit, supabase } from './supabase';
 import type { AppData, Category, Facet, SaveState } from './types';
 import { toast } from '../components/Toasts';
 
@@ -11,7 +11,6 @@ export function useStore() {
   const [facets, setFacets] = useState<Facet[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [isEditor, setIsEditor] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const latest = useRef(new Map<string, AppData>());
@@ -43,30 +42,6 @@ export function useStore() {
   useEffect(() => {
     load();
   }, [load]);
-
-  /** Verifies a key with the server and, if valid, keeps it on this device. */
-  const connect = useCallback(async (key: string, announce = true) => {
-    try {
-      await edit('check', {}, key);
-      storeEditorKey(key);
-      setIsEditor(true);
-      if (announce) toast('המכשיר הזה מחובר לעריכה');
-      return true;
-    } catch {
-      storeEditorKey('');
-      setIsEditor(false);
-      if (announce) toast('מפתח העריכה אינו תקף', 'error');
-      return false;
-    }
-  }, []);
-
-  // A key arrives once as #editor=KEY, is kept on this device and removed from the address.
-  useEffect(() => {
-    const m = location.hash.match(/editor=([\w-]{16,})/);
-    if (m) history.replaceState(null, '', location.pathname + location.search);
-    const key = m?.[1] ?? readEditorKey();
-    if (key) connect(key, !!m);
-  }, [connect]);
 
   // Every edit is saved online on its own, a moment after typing stops. A save that fails is kept on this device
   // (in case the tab closes) and retried until it goes through, so no change is lost (Anat, 2026-10-27).
@@ -108,9 +83,8 @@ export function useStore() {
     }
   }, []);
 
-  // Edits left from a closed tab or a lost connection are sent again once the device is a connected editor.
+  // Edits left from a closed tab or a lost connection are sent again when the app opens.
   useEffect(() => {
-    if (!isEditor) return;
     try {
       const all = JSON.parse(localStorage.getItem(PENDING) || '{}') as Record<string, AppData>;
       for (const [id, app] of Object.entries(all)) {
@@ -121,7 +95,7 @@ export function useStore() {
     } catch {
       /* nothing pending */
     }
-  }, [isEditor, flush]);
+  }, [flush]);
 
   // Closing the tab while a change is still on its way asks first.
   useEffect(() => {
@@ -150,23 +124,17 @@ export function useStore() {
     [flush],
   );
 
-  const addApp = useCallback(async (app: AppData, key?: string) => {
+  const addApp = useCallback(async (app: AppData) => {
     setSaveState('saving');
     try {
-      await edit('save_app', { id: app.id, data: app }, key || readEditorKey());
+      await edit('save_app', { id: app.id, data: app });
       setApps((prev) => [app, ...prev]);
       setSaveState('saved');
       toast('האפליקציה נוספה');
       return true;
     } catch (e) {
       setSaveState('error');
-      const denied = (e as Error).message === 'not editor';
-      if (denied) {
-        // Show the link field again instead of a dead end; the form keeps what was typed.
-        storeEditorKey('');
-        setIsEditor(false);
-      }
-      toast(denied ? 'קישור העריכה לא התקבל. הדביקי אותו שוב בשדה ולחצי שמירה.' : `ההוספה נכשלה: ${(e as Error).message}`, 'error');
+      toast(`ההוספה נכשלה: ${(e as Error).message}`, 'error');
       return false;
     }
   }, []);
@@ -233,15 +201,9 @@ export function useStore() {
     }
   }, []);
 
-  const leaveEditor = useCallback(() => {
-    storeEditorKey('');
-    setIsEditor(false);
-    toast('המכשיר נותק מהעריכה');
-  }, []);
-
   return {
     apps, categories, facets, loading, loadError, reload: load,
-    isEditor, connect, leaveEditor, saveState, lastSaved,
+    saveState, lastSaved,
     updateApp, addApp, deleteApp, saveCategory, deleteCategory, saveFacet, deleteFacet,
   };
 }

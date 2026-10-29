@@ -62,32 +62,24 @@ Playwright comes from the global install: `ln -s "$(npm root -g)/playwright" nod
 | `aoa_apps` | `id` + `data` jsonb in the original AppData shape (`src/lib/types.ts`) |
 | `aoa_categories` | legacy Lovable categories, kept in `data.category` but no longer shown |
 | `aoa_facets` | controlled vocabulary: `kind` (domain / context), `value`, `label`, `synonyms[]`, `position` |
-| `aoa_editor_keys` | sha256 of editor keys |
+| `aoa_editor_keys` | sha256 of editor keys (unused since 2026-10-29) |
 | `aoa_admins` | admin emails (for a future Supabase session) |
 | `aoa-media` | public bucket, covers and logos (`<appId>/cover-<ts>.<ext>`) |
 
 RLS: public read on apps and categories, no write policies. Every write goes through the edge function
-`aoa-edit` (source in `supabase/functions/aoa-edit`), which checks the `x-editor-key` header and writes with
-the service role. Actions: check, save_app, delete_app, save_category, delete_category, save_facet, delete_facet, sign_upload,
+`aoa-edit` (source in `supabase/functions/aoa-edit`), which writes with the service role (open to every device, see Editing). Actions: check, save_app, delete_app, save_category, delete_category, save_facet, delete_facet, sign_upload,
 generate.
 
 ## Editing
 
-Google sign-in is off in cultura-GH, and email sign-in returns to another app's Site URL, so editing works
-by a personal editor link: `https://<site>/#editor=<KEY>`, or by pasting that link in the A&I menu
-("חיבור המכשיר לעריכה"). The key is kept in localStorage and removed from the address. The editing actions
-appear in the A&I menu only for a valid key.
-New key: generate a random string, insert its sha256 into `aoa_editor_keys`.
-Anat chose this over open editing (2026-10-24, option ב): the add form always opens; on a device not yet
-connected one field for the editor link appears above the save button and is used once. A connected device can
-copy the link from the A&I menu ("העתקת קישור העריכה") to connect another device. Open editing for everyone was
-requested first and blocked by the Claude Code safety check; do not remove the key check without her explicit
-approval in the session.
-Saving must not depend on localStorage (Anat, 2026-10-24, "אתה פשוט מרגיז אותי"): on anat1969.github.io all her
-apps share one localStorage, the link check passed and the save got 403. The key is kept in memory too, the add
-dialog passes the pasted key straight to the save, and a refused save shows the link field again with the form intact.
+EDITING IS OPEN ON EVERY DEVICE (Anat, 2026-10-29, explicit approval in the session: "ביקשתי שלא יהיה צריך קישור
+סיסמא או מה שלא יהיה לצורך עריכה! ... אני רוצה זרימה בעבודה ולא משנה מאיפה אני מתחברת"). No editor link, key, sign-in
+or device connection anywhere: `aoa-edit` has no editor check, the A&I menu always shows the editing actions, the add form
+saves at once. Never bring back a link or key step. Protection is the safety net below, not a gate.
+`aoa_editor_keys` and `aoa_admins` are left in the database, unused.
 Safety net in `aoa-edit`: the previous version of an app goes to `aoa_app_versions` before a save (at most one
-per app every 10 minutes); a delete moves the app to `aoa_trash` (action `restore_app`). Both tables are public
+per app every 10 minutes); a delete moves the app to `aoa_trash` (action `restore_app`); deleted categories and facets go there too as
+`category:<value>` / `facet:<kind>:<value>`. Both tables are public
 read, written by the function only. Migration: `supabase/migrations/20261024_aoa_versions_trash.sql`.
 
 TEXT STANDARD (Anat, 2026-10-26, "חשוב ביותר", for every app and every AI connection): every text an AI writes is
@@ -107,7 +99,7 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 
 - A&I LOGO BUTTON (Anat's standing rule, repeated many times): the top bar holds only the app name (links
   home), search, map/table, and ONE logo button "אד' ענת שטיבלמן A&I". Every editing and development action
-  lives only inside it: מצב עריכה, אפליקציה חדשה, ניסוח, חיבור/ניתוק מכשיר, העתקת קישור (copies the full
+  lives only inside it: מצב עריכה, אפליקציה חדשה, ניסוח, העתקת קישור (copies the full
   state: `?app=`, `?cat=`, `?q=`, `?view=table`, `?links=1`), שיחת הפיתוח, פרויקט המחקר, התקנת האפליקציה.
   No floating editor bar, no loose buttons. The component is `public/ai-menu.js`, served to all of Anat's apps
   from https://appofapp-gh.vercel.app/ai-menu.js; React wrapper `src/components/AIMenu.tsx`.
@@ -130,8 +122,7 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   and says which vocabulary entries widened the search. Empty box shows the search help.
 - ADDING AN APP is a primary purpose (Anat, 2026-10-24): a prominent "הוספת אפליקציה חדשה" button in the hero,
   in the catalog header, in empty search results and in every map cell. It is a content action, so it lives in
-  the page, not in the top bar (the A&I rule still holds there). The form always opens; on a device not yet
-  connected one editor-link field sits above the save button (see Editing).
+  the page, not in the top bar (the A&I rule still holds there). The form saves on every device, no link (see Editing).
 - SEARCH BY MEANING (Anat, 2026-10-24: "משכורת" must find "תלושי שכר"): every app has hidden `data.concepts`
   (everyday words, synonyms, English; seeded in `supabase/migrations/20261024_aoa_concepts.sql`). Search strips
   Hebrew prefixes (ה ו ב ל מ ש כ), says on each card which word found it ("נמצא דרך"), and when nothing matches

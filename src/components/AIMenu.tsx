@@ -1,7 +1,5 @@
 import { useEffect, useRef } from 'react';
 import type { SaveState } from '../lib/types';
-import { readEditorKey } from '../lib/supabase';
-import { toast } from './Toasts';
 
 export const DEV_SESSION_URL = 'https://claude.ai/code/session_01FtP6sty7hczHKPv2RmvypM';
 
@@ -31,61 +29,29 @@ const STATUS: Record<SaveState, string> = { idle: 'עריכה פעילה, שמי
 const hhmm = (t: number) => new Date(t).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
 
 interface Props {
-  isEditor: boolean;
   editing: boolean;
   saveState: SaveState;
   lastSaved?: number | null;
   setEditing: (v: boolean) => void;
   onAdd: () => void;
   onBulk: () => void;
-  onConnect: (key: string) => Promise<boolean>;
-  onLeave: () => void;
 }
 
 /** The A&I logo button (public/ai-menu.js). Every editing and development action lives inside it. */
-export default function AIMenu({ isEditor, editing, saveState, lastSaved, setEditing, onAdd, onBulk, onConnect, onLeave }: Props) {
+export default function AIMenu({ editing, saveState, lastSaved, setEditing, onAdd, onBulk }: Props) {
   const ref = useRef<MenuElement>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    el.items = isEditor
-      ? [
-          { label: editing ? 'סיום עריכה' : 'מצב עריכה', hint: editing ? 'פעיל' : 'כבוי', pressed: editing, onSelect: () => setEditing(!editing) },
-          { label: 'אפליקציה חדשה', onSelect: onAdd },
-          { label: 'ניסוח תוכן לכל האפליקציות', onSelect: onBulk },
-          {
-            label: 'העתקת קישור העריכה',
-            hint: 'לחיבור מכשיר נוסף',
-            onSelect: async () => {
-              const link = `${location.origin}${location.pathname}#editor=${readEditorKey()}`;
-              try {
-                await navigator.clipboard.writeText(link);
-                toast('קישור העריכה הועתק. פתחי אותו פעם אחת במכשיר השני.');
-              } catch {
-                prompt('קישור העריכה האישי שלך:', link);
-              }
-            },
-          },
-          { label: 'ניתוק המכשיר מהעריכה', onSelect: onLeave },
-        ]
-      : [
-          {
-            label: 'חיבור המכשיר לעריכה',
-            hint: 'קישור או מפתח',
-            onSelect: async () => {
-              const v = prompt(
-                'קישור העריכה האישי שלך מתחיל ב-https://appofapp-gh.vercel.app/#editor=\n' +
-                  'קיבלת אותו בשיחה עם Claude, ואפשר להעתיק אותו מתפריט A&I בכל מכשיר שכבר מחובר.\n' +
-                  'הדביקי אותו כאן. המכשיר יזכור אותו.',
-              )?.trim();
-              const key = v?.match(/editor=([\w-]{16,})/)?.[1] ?? v;
-              if (key) await onConnect(key);
-            },
-          },
-        ];
+    // Editing is open on every device: no link to copy, no device to connect (Anat, 2026-10-29).
+    el.items = [
+      { label: editing ? 'סיום עריכה' : 'מצב עריכה', hint: editing ? 'פעיל' : 'כבוי', pressed: editing, onSelect: () => setEditing(!editing) },
+      { label: 'אפליקציה חדשה', onSelect: onAdd },
+      { label: 'ניסוח תוכן לכל האפליקציות', onSelect: onBulk },
+    ];
     el.status = editing ? (saveState === 'saved' && lastSaved ? `נשמר ${hhmm(lastSaved)}` : STATUS[saveState]) : saveState === 'error' ? STATUS.error : '';
-  }, [isEditor, editing, saveState, lastSaved, setEditing, onAdd, onBulk, onConnect, onLeave]);
+  }, [editing, saveState, lastSaved, setEditing, onAdd, onBulk]);
 
   return <ai-menu ref={ref} chat={DEV_SESSION_URL} />;
 }
