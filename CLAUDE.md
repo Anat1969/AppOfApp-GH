@@ -161,6 +161,10 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   ones are limited to 82vh and the frame narrows to them). In edit mode a screenshot pasted anywhere on the app page
   (Ctrl+V, unless text is pasted into a field) becomes the cover, shows at once as a preview, and uploads once even if
   pasted again while uploading. A pasted image address is used as is.
+- ONE ACTION PER IMAGE (Anat, 2026-10-29: clicking the cover "מתבלבל עם מעבר לאפליקציה אחרת"): the cover on the app page
+  only opens the app, and says so on the frame at all times (a bar "פתיחת האפליקציה" + the address; touch has no hover).
+  Paging to other apps is never next to the image: it sits at the foot of the page, names the previous and next app, and says
+  which list it pages through ("N מתוך M" + search results / whole portfolio by date or by name, the catalog's own order).
 - EDIT MODE IS LIT (Anat, 2026-10-27): an amber frame around the screen while editing, pulsing while saving, red while a
   save is retried; the tag on it says every change is saved automatically. There is no save button: each edit is saved
   online after a pause, a failed save is kept on the device (`aoa-pending-edits`) and retried (2s, 5s, 15s, then 30s),

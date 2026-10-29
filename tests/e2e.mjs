@@ -284,10 +284,24 @@ const browser = await chromium.launch();
   ok((await page.locator('.titleblock b').first().textContent())?.startsWith('A-'), 'sheet number in title block');
   ok((await page.locator('.timeline li').count()) === 1, 'work log shown');
   await page.screenshot({ path: SHOTS + 'desktop-app.png' });
-  await page.locator('.crumbs-nav button', { hasText: 'הבאה' }).click();
-  ok(!page.url().includes('app=app-1'), 'next button moves to another app');
-  await page.locator('.crumbs-nav button', { hasText: 'הקודמת' }).click();
+  // the cover has one action and says it on the frame; paging sits at the foot of the page and names where it goes
+  ok((await page.locator('.app-visual a.cover').getAttribute('href')) === 'https://zikuk-dna.vercel.app/dna', 'cover links to the app itself');
+  ok(await page.locator('.app-visual .cover-bar').isVisible(), 'cover says it opens the app without hover');
+  ok((await page.locator('.app-visual .cover-host').textContent()) === 'zikuk-dna.vercel.app', 'cover shows the address it opens');
+  ok((await page.locator('.crumbs .ghost').count()) === 0 && (await page.locator('.app-visual button').count()) === 0, 'no paging buttons near the cover');
+  ok(/מתוך \d+ · /.test((await page.locator('.seq-head').textContent()) ?? ''), 'paging says which list it pages through');
+  const nextName = await page.locator('.seq-link.next b').textContent();
+  await page.locator('.seq-link.next').click();
+  ok(!page.url().includes('app=app-1') && (await page.locator('.app-title').textContent()) === nextName, 'next opens the app it names');
+  await page.locator('.seq-link.prev').click();
   ok(page.url().includes('app=app-1'), 'previous button returns');
+  // opened by address: pages through the whole portfolio in the order the catalog shows
+  await page.goto(BASE + '/?app=app-3');
+  await page.waitForSelector('.sheet-seq');
+  ok((await page.locator('.seq-link.prev b').textContent()) === 'רדאר אקטואליה' && (await page.locator('.seq-link.next b').textContent()) === 'תואם מתאר', 'direct link pages in catalog order');
+  ok((await page.locator('.seq-head').textContent())?.includes('בכל התיק'), 'direct link names the whole portfolio');
+  await page.goto(BASE + '/?app=app-1');
+  await page.waitForSelector('.app-page');
   await menu(page, 'למצב הנוכחי');
   const clip = await page.evaluate(() => navigator.clipboard.readText());
   ok(clip.includes('app=app-1'), 'copy link copies the current state');

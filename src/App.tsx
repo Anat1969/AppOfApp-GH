@@ -3,6 +3,7 @@ import { useStore } from './lib/store';
 import { useRoute } from './lib/route';
 import { useSearch } from './lib/search';
 import { activityOf, createdOf, sheetNo, siteUrl } from './lib/format';
+import type { AppData } from './lib/types';
 import TopBar from './components/TopBar';
 import Home from './components/Home';
 import AppPage from './components/AppPage';
@@ -56,6 +57,10 @@ export default function App() {
   }, [apps]);
 
   const search = useSearch(apps, facets);
+  const bySort = useMemo(
+    () => (sort === 'alpha' ? (a: AppData, b: AppData) => a.name.localeCompare(b.name, 'he') : (a: AppData, b: AppData) => activityOf(b) - activityOf(a)),
+    [sort],
+  );
   const { items: searched, vocab, reasons, near } = useMemo(() => search(route.q), [search, route.q]);
 
   const results = useMemo(() => {
@@ -65,14 +70,24 @@ export default function App() {
     if (route.domain) list = list.filter((a) => a.domains?.includes(route.domain!));
     if (route.ctx) list = list.filter((a) => a.contexts?.includes(route.ctx!));
     if (route.links) list = list.filter((a) => !!siteUrl(a));
-    if (q.length < 2) list.sort(sort === 'alpha' ? (a, b) => a.name.localeCompare(b.name, 'he') : (a, b) => activityOf(b) - activityOf(a));
+    if (q.length < 2) list.sort(bySort);
     return list;
-  }, [searched, route.q, route.action, route.domain, route.ctx, route.links, sort]);
+  }, [searched, route.q, route.action, route.domain, route.ctx, route.links, bySort]);
 
+  // Paging on the app page follows the list the app was opened from; an app outside it pages through the whole
+  // portfolio in the same order the catalog shows, never in database order.
   const active = route.app ? apps.find((a) => a.id === route.app) : undefined;
-  const idx = active ? results.findIndex((a) => a.id === active.id) : -1;
-  const order = idx >= 0 ? results : apps;
+  const narrowed = !!(route.q.trim() || route.action || route.domain || route.ctx || route.links);
+  const inResults = !!active && results.some((a) => a.id === active.id);
+  const order = useMemo(() => (inResults ? results : [...apps].sort(bySort)), [inResults, results, apps, bySort]);
   const pos = active ? order.findIndex((a) => a.id === active.id) : -1;
+  const seq = {
+    prev: pos > 0 ? order[pos - 1] : undefined,
+    next: pos >= 0 && pos < order.length - 1 ? order[pos + 1] : undefined,
+    pos: pos + 1,
+    total: order.length,
+    label: inResults && narrowed ? 'בתוצאות החיפוש והסינון' : sort === 'alpha' ? 'בכל התיק, לפי שם' : 'בכל התיק, מהמעודכנת ביותר',
+  };
 
   useEffect(() => {
     document.title = active ? `${active.name} · Apps` : 'Apps · תיק עבודות';
@@ -155,8 +170,7 @@ export default function App() {
                 sheets={sheets}
                 facets={facets}
                 go={go}
-                prev={pos > 0 ? order[pos - 1] : undefined}
-                next={pos >= 0 && pos < order.length - 1 ? order[pos + 1] : undefined}
+                seq={seq}
                 editing={editing}
                 onBack={() => go({ app: null })}
                 onOpen={(id) => go({ app: id })}
