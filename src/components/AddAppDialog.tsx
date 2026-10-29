@@ -10,38 +10,22 @@ interface Props {
   apps: AppData[];
   facets: Facet[];
   prefill: AddPrefill;
-  isEditor: boolean;
-  onConnect: (key: string) => Promise<boolean>;
-  onCreate: (a: AppData, key?: string) => Promise<boolean>;
+  onCreate: (a: AppData) => Promise<boolean>;
 }
 
-/**
- * Adding an app is the first purpose of the app of apps: the form always opens. On a device not yet
- * connected, one field for the editor link appears above the save button and is used once.
- */
-export default function AddAppDialog({ open, onClose, apps, facets, prefill, isEditor, onConnect, onCreate }: Props) {
+/** Adding an app is the first purpose of the app of apps: the form opens and saves on every device, no link needed. */
+export default function AddAppDialog({ open, onClose, apps, facets, prefill, onCreate }: Props) {
   const [name, setName] = useState(prefill.name ?? '');
   const [url, setUrl] = useState('');
   const [action, setAction] = useState<ActionValue | ''>(prefill.action ?? '');
   const [domains, setDomains] = useState<string[]>(prefill.domain ? [prefill.domain] : []);
   const [desc, setDesc] = useState(prefill.desc ?? '');
   const [busy, setBusy] = useState(false);
-  const [link, setLink] = useState('');
   const dup = name.trim() && apps.find((a) => a.name.trim().toLowerCase() === name.trim().toLowerCase());
 
   const submit = async () => {
     if (!name.trim()) return;
     setBusy(true);
-    let key: string | undefined;
-    if (!isEditor) {
-      const v = link.trim();
-      key = v.match(/editor=([\w-]{16,})/)?.[1] ?? v;
-      const ok = await onConnect(key);
-      if (!ok) {
-        setBusy(false);
-        return;
-      }
-    }
     const now = new Date().toISOString();
     const app: AppData = {
       id: `app-${Date.now()}`,
@@ -60,7 +44,7 @@ export default function AddAppDialog({ open, onClose, apps, facets, prefill, isE
       updatedAt: now,
       linkAddedAt: url.trim() ? now : undefined,
     };
-    const ok = await onCreate(app, key);
+    const ok = await onCreate(app);
     setBusy(false);
     if (ok) onClose();
   };
@@ -107,23 +91,11 @@ export default function AddAppDialog({ open, onClose, apps, facets, prefill, isE
             <span className="mono">תיאור קצר</span>
             <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} />
           </label>
-          {!isEditor && (
-            <div className="connect">
-              <label>
-                <span className="mono">קישור העריכה (פעם אחת במכשיר הזה)</span>
-                <input dir="ltr" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://appofapp-gh.vercel.app/#editor=..." />
-              </label>
-              <p className="dim">
-                זה הקישור האישי שקיבלת בשיחה עם Claude. אפשר גם להעתיק אותו מתפריט A&I בכל מכשיר שכבר מחובר. אחרי שמירה אחת, המכשיר
-                זוכר אותו ולא ישאל שוב.
-              </p>
-            </div>
-          )}
           <div className="row end">
             <button className="ghost" onClick={onClose}>
               ביטול
             </button>
-            <button className="solid" onClick={submit} disabled={!name.trim() || busy || (!isEditor && !link.trim())}>
+            <button className="solid" onClick={submit} disabled={!name.trim() || busy}>
               {busy ? 'שומר...' : 'הוספה לתיק'}
             </button>
           </div>

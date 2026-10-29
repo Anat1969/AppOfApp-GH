@@ -1,15 +1,13 @@
 // APPOFAPP-GH - every write the portfolio makes.
 //
-// The editor is recognised by a personal editor key (sent as x-editor-key and
-// stored only as a SHA-256 hash in aoa_editor_keys), or by a Supabase session
-// whose email is in aoa_admins. The key exists because Google sign-in is off in
-// the shared project and email sign-in returns to another app's Site URL.
+// Editing is open on every device, with no link or key (Anat, 2026-10-29: "ביקשתי שלא יהיה צריך קישור
+// ... לצורך עריכה"). The safety net below keeps every change recoverable.
 // Facets: domains and contexts vocabulary in aoa_facets (save_facet, delete_facet).
 // Safety net: before a save the previous version goes to aoa_app_versions (at most one
 // per app every 10 minutes), and a delete moves the app to aoa_trash (restore_app).
+// Deleted categories and facets go to aoa_trash too, as `category:<value>` / `facet:<kind>:<value>`.
 //
-// Writes run with the service role after that check, so the tables stay closed
-// to the public. Uploads get a signed URL and go straight to storage.
+// Writes run with the service role, so the tables stay closed to direct writes. Uploads get a signed URL and go straight to storage.
 // "generate" distills desc / problem / solution. It reads the app's own site first, then asks
 // Gemini (GEMINI_API_KEY, free tier) and falls back to Claude (ANTHROPIC_API_KEY).
 import Anthropic from 'npm:@anthropic-ai/sdk';
@@ -27,31 +25,6 @@ const json = (body: unknown, status = 200) =>
 const SB = Deno.env.get('SUPABASE_URL') ?? '';
 const SK = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const service = { apikey: SK, Authorization: `Bearer ${SK}` };
-
-async function sha256(text: string) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function isEditor(req: Request): Promise<boolean> {
-  try {
-    const key = req.headers.get('x-editor-key') ?? '';
-    if (key.length >= 16) {
-      const rows = await fetch(`${SB}/rest/v1/aoa_editor_keys?select=key_hash&key_hash=eq.${await sha256(key)}`, { headers: service }).then((r) => r.json());
-      if (Array.isArray(rows) && rows.length > 0) return true;
-    }
-    const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-    if (!token) return false;
-    const u = await fetch(`${SB}/auth/v1/user`, { headers: { Authorization: `Bearer ${token}`, apikey: SK } });
-    if (!u.ok) return false;
-    const email = String((await u.json())?.email ?? '').toLowerCase();
-    if (!email) return false;
-    const admins = await fetch(`${SB}/rest/v1/aoa_admins?select=email&email=eq.${encodeURIComponent(email)}`, { headers: service }).then((r) => r.json());
-    return Array.isArray(admins) && admins.length > 0;
-  } catch {
-    return false;
-  }
-}
 
 async function rest(method: string, path: string, body?: unknown, prefer?: string) {
   const res = await fetch(`${SB}/rest/v1/${path}`, {
@@ -228,7 +201,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   if (!SB || !SK) return json({ error: 'server not configured' }, 500);
-  if (!(await isEditor(req))) return json({ error: 'not editor' }, 403);
 
   let body: Record<string, unknown>;
   try {
@@ -282,9 +254,13 @@ Deno.serve(async (req) => {
         return json({ ok: true });
       }
 
-      case 'delete_category':
-        await rest('DELETE', `aoa_categories?value=eq.${safeId(body.value)}`);
+      case 'delete_category': {
+        const value = safeId(body.value);
+        const [cur] = await get(`aoa_categories?select=*&value=eq.${value}`);
+        if (cur) await upsert('aoa_trash', { app_id: `category:${value}`, data: cur, deleted_at: now });
+        await rest('DELETE', `aoa_categories?value=eq.${value}`);
         return json({ ok: true });
+      }
 
       case 'save_facet': {
         const kind = body.kind === 'context' ? 'context' : 'domain';
@@ -299,7 +275,10 @@ Deno.serve(async (req) => {
 
       case 'delete_facet': {
         const kind = body.kind === 'context' ? 'context' : 'domain';
-        await rest('DELETE', `aoa_facets?kind=eq.${kind}&value=eq.${safeId(body.value)}`);
+        const value = safeId(body.value);
+        const [cur] = await get(`aoa_facets?select=*&kind=eq.${kind}&value=eq.${value}`);
+        if (cur) await upsert('aoa_trash', { app_id: `facet:${kind}:${value}`, data: cur, deleted_at: now });
+        await rest('DELETE', `aoa_facets?kind=eq.${kind}&value=eq.${value}`);
         return json({ ok: true });
       }
 
