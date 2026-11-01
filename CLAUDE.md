@@ -158,6 +158,10 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   only opens the app, and says so on the frame at all times (a bar "פתיחת האפליקציה" + the address; touch has no hover).
   Paging to other apps is never next to the image: it sits at the foot of the page, names the previous and next app, and says
   which list it pages through ("N מתוך M" + search results / whole portfolio by date or by name, the catalog's own order).
+- NO AUTOFILL, LINK CHECK (Anat, 2026-11-01, floating buttons over text boxes and covers opening another app): Chrome
+  autofill offered addresses typed for one app in the fields of another; every input and textarea gets
+  autocomplete="off" (`src/main.tsx`, also for fields added later). In edit mode the app link shows a live picture of
+  the address the cover and the button open, and a red warning when another app has the same address.
 - EDIT MODE IS LIT (Anat, 2026-10-27): an amber frame around the screen while editing, pulsing while saving, red while a
   save is retried; the tag on it says every change is saved automatically. There is no save button: each edit is saved
   online after a pause, a failed save is kept on the device (`aoa-pending-edits`) and retried (2s, 5s, 15s, then 30s),

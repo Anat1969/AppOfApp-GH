@@ -663,3 +663,12 @@ td.name-edit { display: flex; align-items: center; gap: 8px; min-width: 220px; }
 .search input { padding-inline-end: 2.6rem; }
 .search-clear { position: absolute; inset-inline-end: 8px; top: 50%; transform: translateY(-50%); z-index: 4; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 0; background: transparent; color: #9a9ea4; cursor: pointer; }
 .search-clear:hover, .search-clear:focus-visible { color: var(--ink-2); background: rgba(23, 25, 28, 0.06); }
+
+/* Link check in edit mode: a live picture of the address the cover and the button open, and a warning when another
+   app has the same address (Anat, 2026-11-01). */
+.link-check { display: grid; gap: 6px; }
+.link-preview { display: grid; grid-template-columns: 160px 1fr; gap: 10px; align-items: center; padding: 6px; border: 1px solid var(--line); background: #fff; }
+.link-preview img { width: 160px; height: 100px; object-fit: cover; object-position: top; border: 1px solid var(--line); background: var(--bg-2); }
+.link-preview .mono { font-size: 0.72rem; color: var(--ink-2); word-break: break-all; direction: ltr; text-align: right; }
+.link-warn { color: var(--p-red-ink); background: var(--p-red-wash); border-inline-start: 3px solid var(--p-red); padding: 6px 10px; font-size: 0.85rem; line-height: 1.5; }
+.links-form .form.two > label { align-self: start; }

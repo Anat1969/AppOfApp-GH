@@ -430,6 +430,8 @@ const browser = await chromium.launch();
   ok(calls.some((c) => c.action === 'storage_put'), 'file sent to storage');
   await page.waitForTimeout(1000);
   ok(lastOf(calls, 'save_app')?.data?.coverImage?.includes('/aoa-media/app-1/cover-'), 'new cover saved on the app');
+  ok(await page.evaluate(() => [...document.querySelectorAll('.app-page input, .app-page textarea')].every((e) => e.getAttribute('autocomplete') === 'off')), 'no browser autofill in the editing fields');
+  ok(await page.locator('.link-preview').isVisible(), 'the link field shows where the cover and the button go');
   // a screenshot pasted anywhere on the page (nothing focused) becomes the cover, once, even when pasted twice fast
   const signsBefore = calls.filter((c) => c.action === 'sign_upload').length;
   await page.evaluate(async (b64) => {
