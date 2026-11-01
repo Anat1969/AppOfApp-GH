@@ -120,6 +120,8 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 - LIVE SEARCH (Anat liked it, keep it): typing shows a live grid of app thumbnails in the search panel that
   narrows with every word (each word must match, `$and` in `src/lib/search.ts`), highlights the typed text,
   and says which vocabulary entries widened the search. Empty box shows the search help.
+  A grey X at the end of the field (Anat, 2026-11-01) resets the search and the filters it set; it shows only when
+  there is something to reset.
 - ADDING AN APP is a primary purpose (Anat, 2026-10-24): a prominent "הוספת אפליקציה חדשה" button in the hero,
   in the catalog header, in empty search results and in every map cell. It is a content action, so it lives in
   the page, not in the top bar (the A&I rule still holds there). The form saves on every device, no link (see Editing).

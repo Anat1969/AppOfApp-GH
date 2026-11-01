@@ -91,6 +91,24 @@ export default function TopBar({ route, apps, facets, search, onHome, onSearch, 
               }
             }}
           />
+          {/* Grey X: one click resets the search and the filters it set (Anat, 2026-11-01). */}
+          {(route.q || route.action || route.domain || route.ctx) && (
+            <button
+              type="button"
+              className="search-clear"
+              aria-label="איפוס החיפוש"
+              title="איפוס החיפוש"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                go({ q: '', action: null, domain: null, ctx: null });
+                input.current?.focus();
+              }}
+            >
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden>
+                <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
           <AnimatePresence>
             {focus && (
 
