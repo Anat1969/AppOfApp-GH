@@ -42,6 +42,9 @@ const LINKS: { url: keyof AppData; label: keyof AppData; fallback: string }[] = 
 export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, editing, onBack, onOpen, onChange, onDelete }: Props) {
   const [gen, setGen] = useState<Field | 'all' | null>(null);
   const site = siteUrl(app);
+  // Other apps that open the same address: a wrong link pasted or autofilled from another app shows up here.
+  const norm = (u?: string) => (u ?? '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/[/#]+$/, '');
+  const sameLink = site ? apps.filter((x) => x.id !== app.id && norm(siteUrl(x)) === norm(site)) : [];
   const act = actionOf(app.action);
   const domainLabels = (app.domains ?? []).map((d) => facets.find((f) => f.kind === 'domain' && f.value === d)?.label ?? d);
   const near = related(app, apps);
@@ -223,7 +226,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
               <span className="mono">טקסט הכפתור הראשי</span>
               <input value={app.primaryBtn ?? ''} onChange={(e) => set({ primaryBtn: e.target.value })} placeholder="כניסה לאפליקציה" />
             </label>
-            <label>
+            <label className="link-check">
               <span className="mono">קישור לאפליקציה</span>
               <input
                 dir="ltr"
@@ -231,6 +234,16 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
                 onChange={(e) => set({ previewUrl: e.target.value, linkAddedAt: e.target.value.trim() !== (app.previewUrl ?? '').trim() ? new Date().toISOString() : app.linkAddedAt })}
                 placeholder="https://"
               />
+              {/* See where the link really goes, next to the cover it should match (Anat, 2026-11-01). */}
+              {site && (
+                <span className="link-preview">
+                  <img src={`https://image.thum.io/get/width/480/crop/300/${site}`} alt="" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+                  <span className="mono">התמונה והכפתור פותחים: {site.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                </span>
+              )}
+              {sameLink.length > 0 && (
+                <span className="link-warn">הכתובת הזו רשומה גם אצל: {sameLink.map((x) => x.name).join(', ')}. ודאי שזו הכתובת של האפליקציה הזו.</span>
+              )}
             </label>
             {LINKS.map((l) => (
               <div key={String(l.url)} className="pair">
