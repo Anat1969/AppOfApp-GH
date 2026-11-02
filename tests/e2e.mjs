@@ -472,10 +472,27 @@ const browser = await chromium.launch();
   ok(added?.data?.action === 'diagnose' && added?.data?.domains?.includes('urban'), 'new app carries its classification');
 
   // delete it
-  await page.locator('.danger .ghost').click();
+  ok((await page.locator('.danger .ghost').count()) === 0, 'no loose delete button on the app page');
+  await page.locator('ai-menu .logo').click();
+  const lastItem = page.locator('ai-menu .group').last().locator('.item').last();
+  ok((await lastItem.textContent())?.includes('ביטול האפליקציה'), 'remove app is the last item in the A&I menu');
+  ok((await lastItem.evaluate((el) => getComputedStyle(el).color)) === 'rgb(179, 38, 30)', 'remove app item is red');
+  await page.screenshot({ path: SHOTS + 'menu-remove.png' });
+  await lastItem.click();
+  const confirmBtn = page.locator('.dialog .danger-solid');
+  ok(await confirmBtn.isDisabled(), 'remove is locked until the name is typed');
+  await page.locator('.remove-app input').fill('אפליקציה');
+  ok(await confirmBtn.isDisabled(), 'a partial name keeps it locked');
+  ok(!lastOf(calls, 'delete_app'), 'nothing deleted before confirming');
+  await page.locator('.remove-app input').fill('אפליקציה בדיקה');
+  await page.screenshot({ path: SHOTS + 'remove-dialog.png' });
+  await confirmBtn.click();
   await page.waitForTimeout(400);
   ok(lastOf(calls, 'delete_app')?.id === added.id, 'delete sends delete_app');
   ok(!page.url().includes('app='), 'after delete returns home');
+  await page.locator('.toast-act', { hasText: 'שחזור' }).click();
+  await page.waitForTimeout(400);
+  ok(lastOf(calls, 'restore_app')?.id === added.id, 'restore from the toast sends restore_app');
 
   // table edit
   await page.goto(BASE + '/?view=table');

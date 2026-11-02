@@ -27,7 +27,6 @@ interface Props {
   onBack: () => void;
   onOpen: (id: string) => void;
   onChange: (a: AppData) => void;
-  onDelete: (id: string) => void;
 }
 
 type Field = 'desc' | 'problem' | 'solution';
@@ -39,7 +38,7 @@ const LINKS: { url: keyof AppData; label: keyof AppData; fallback: string }[] = 
   { url: 'supabaseProjectUrl', label: 'supabaseUrlLabel', fallback: 'מסד נתונים' },
 ];
 
-export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, editing, onBack, onOpen, onChange, onDelete }: Props) {
+export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, editing, onBack, onOpen, onChange }: Props) {
   const [gen, setGen] = useState<Field | 'all' | null>(null);
   const site = siteUrl(app);
   // Other apps that open the same address: a wrong link pasted or autofilled from another app shows up here.
@@ -329,18 +328,6 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
         </nav>
       )}
 
-      {editing && (
-        <div className="danger">
-          <button
-            className="ghost"
-            onClick={() => {
-              if (confirm(`למחוק את "${app.name}"? הפעולה אינה הפיכה.`)) onDelete(app.id);
-            }}
-          >
-            מחיקת האפליקציה
-          </button>
-        </div>
-      )}
     </motion.article>
   );
 }

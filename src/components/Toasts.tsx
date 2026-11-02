@@ -2,13 +2,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 type Tone = 'info' | 'error';
-interface Item { id: number; text: string; tone: Tone }
+interface Action { label: string; run: () => unknown }
+interface Item { id: number; text: string; tone: Tone; action?: Action }
 
 let push: (t: Item) => void = () => {};
 let seq = 0;
 
-export function toast(text: string, tone: Tone = 'info') {
-  push({ id: ++seq, text, tone });
+export function toast(text: string, tone: Tone = 'info', action?: Action) {
+  push({ id: ++seq, text, tone, action });
 }
 
 export default function Toasts() {
@@ -16,7 +17,7 @@ export default function Toasts() {
   useEffect(() => {
     push = (t) => {
       setItems((prev) => [...prev.slice(-2), t]);
-      setTimeout(() => setItems((prev) => prev.filter((x) => x.id !== t.id)), t.tone === 'error' ? 7000 : 3200);
+      setTimeout(() => setItems((prev) => prev.filter((x) => x.id !== t.id)), t.action ? 12000 : t.tone === 'error' ? 7000 : 3200);
     };
   }, []);
   return (
@@ -31,6 +32,17 @@ export default function Toasts() {
             exit={{ opacity: 0, y: 8 }}
           >
             {t.text}
+            {t.action && (
+              <button
+                className="toast-act"
+                onClick={() => {
+                  setItems((prev) => prev.filter((x) => x.id !== t.id));
+                  t.action!.run();
+                }}
+              >
+                {t.action.label}
+              </button>
+            )}
           </motion.div>
         ))}
       </AnimatePresence>
