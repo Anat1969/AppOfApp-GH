@@ -19,6 +19,9 @@
  * App editing actions (optional):
  *   menu.items = [{ label: 'מצב עריכה', pressed: true, onSelect() {...} }, ...]
  *   menu.status = 'נשמר'   // short state shown under the name
+ * A destructive action (Anat, 2026-11-02: ביטול אפליקציה) takes danger: true. It is shown in red,
+ * alone in the last group of the menu, below sharing and development, so it is never clicked by habit.
+ * The app opens its own confirmation; the menu never deletes anything by itself.
  */
 (function () {
   if (customElements.get('ai-menu')) return;
@@ -87,6 +90,11 @@
     .item[aria-pressed='true'] { background: #17191c; color: #f4f3f0; }
     .item[aria-pressed='true'] small { color: #b9bcc0; }
     .item.solid { background: linear-gradient(180deg, #2a2d32, #17191c); color: #f4f3f0; }
+    .group.danger { margin-top: 6px; border-top: 2px solid #b3261e; }
+    .group.danger .label { color: #b3261e; }
+    .item.danger { color: #b3261e; font-weight: 500; }
+    .item.danger small { color: #b3261e; }
+    .item.danger:hover:not(:disabled), .item.danger:focus-visible { background: #fbe9e7; }
     .note { padding: 6px 10px 4px; font-size: 12.5px; color: #2f5d46; }
     .note:empty { display: none; }
     .brandimg { display: block; height: 36px; width: auto; }
@@ -203,13 +211,16 @@
       const research = this.getAttribute('research');
       const standalone = matchMedia('(display-mode: standalone)').matches;
       const groups = [];
-      if (this._items.length) groups.push({ label: 'עריכת האפליקציה', items: this._items });
+      const edits = this._items.filter((it) => !it.danger);
+      const danger = this._items.filter((it) => it.danger);
+      if (edits.length) groups.push({ label: 'עריכת האפליקציה', items: edits });
       const dev = [{ label: 'העתקת קישור', hint: 'למצב הנוכחי', onSelect: () => this._copy() }];
       if (chat) dev.push({ label: 'שיחת הפיתוח', href: chat });
       if (research) dev.push({ label: 'פרויקט המחקר', href: research });
       if (installEvent) dev.push({ label: 'התקנת האפליקציה', solid: true, onSelect: () => this._install() });
       else if (!standalone) dev.push({ label: 'התקנת האפליקציה', hint: 'דרך תפריט Chrome', disabled: true });
       groups.push({ label: 'שיתוף ופיתוח', items: dev });
+      if (danger.length) groups.push({ label: 'פעולה מסוכנת', items: danger, danger: true });
 
       const p = this._panel;
       p.replaceChildren();
@@ -221,7 +232,7 @@
       p.append(head);
       for (const g of groups) {
         const box = document.createElement('div');
-        box.className = 'group';
+        box.className = `group${g.danger ? ' danger' : ''}`;
         box.setAttribute('role', 'group');
         box.setAttribute('aria-label', g.label);
         const lab = document.createElement('div');
@@ -230,7 +241,7 @@
         box.append(lab);
         for (const it of g.items) {
           const el = document.createElement(it.href ? 'a' : 'button');
-          el.className = `item${it.solid ? ' solid' : ''}`;
+          el.className = `item${it.solid ? ' solid' : ''}${it.danger ? ' danger' : ''}`;
           el.setAttribute('role', 'menuitem');
           if (it.href) {
             el.href = it.href;

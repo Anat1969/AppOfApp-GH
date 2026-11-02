@@ -12,6 +12,7 @@ import AIMenu from './components/AIMenu';
 import AddAppDialog from './components/AddAppDialog';
 import type { AddPrefill } from './components/Matrix';
 import BulkDialog from './components/BulkDialog';
+import RemoveAppDialog from './components/RemoveAppDialog';
 import Toasts from './components/Toasts';
 
 const SORT_KEY = 'aoa-sort';
@@ -27,6 +28,7 @@ export default function App() {
     setAdding(p);
   };
   const [bulk, setBulk] = useState(false);
+  const [removing, setRemoving] = useState<AppData | null>(null);
   const [sort, setSortState] = useState<'date' | 'alpha'>(() => {
     try {
       return localStorage.getItem(SORT_KEY) === 'alpha' ? 'alpha' : 'date';
@@ -125,6 +127,7 @@ export default function App() {
             setEditing={setEditing}
             onAdd={() => openAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}
             onBulk={() => setBulk(true)}
+            onRemove={active ? () => setRemoving(active) : undefined}
           />
         }
       />
@@ -168,9 +171,6 @@ export default function App() {
                 onBack={() => go({ app: null })}
                 onOpen={(id) => go({ app: id })}
                 onChange={store.updateApp}
-                onDelete={async (id) => {
-                  if (await store.deleteApp(id)) go({ app: null });
-                }}
               />
             ) : route.view === 'table' ? (
               <TableView key="table" apps={apps} facets={facets} sheets={sheets} editing={editing} onOpen={(id) => go({ app: id, view: 'home' })} onChange={store.updateApp} />
@@ -220,6 +220,17 @@ export default function App() {
         }}
       />
       <BulkDialog open={bulk} onClose={() => setBulk(false)} apps={apps} facets={facets} onChange={store.updateApp} />
+      <RemoveAppDialog
+        app={removing}
+        sheet={removing ? sheets.get(removing.id) ?? '' : ''}
+        onClose={() => setRemoving(null)}
+        onRemove={async (id) => {
+          if (await store.deleteApp(id)) {
+            setRemoving(null);
+            go({ app: null });
+          }
+        }}
+      />
       <Toasts />
     </div>
   );

@@ -8,6 +8,8 @@ export interface MenuItem {
   hint?: string;
   pressed?: boolean;
   disabled?: boolean;
+  /** Red, alone at the end of the menu. */
+  danger?: boolean;
   onSelect: () => unknown;
 }
 
@@ -35,10 +37,12 @@ interface Props {
   setEditing: (v: boolean) => void;
   onAdd: () => void;
   onBulk: () => void;
+  /** Only on an app page: opens the confirmation for removing that app. */
+  onRemove?: () => void;
 }
 
 /** The A&I logo button (public/ai-menu.js). Every editing and development action lives inside it. */
-export default function AIMenu({ editing, saveState, lastSaved, setEditing, onAdd, onBulk }: Props) {
+export default function AIMenu({ editing, saveState, lastSaved, setEditing, onAdd, onBulk, onRemove }: Props) {
   const ref = useRef<MenuElement>(null);
 
   useEffect(() => {
@@ -49,9 +53,11 @@ export default function AIMenu({ editing, saveState, lastSaved, setEditing, onAd
       { label: editing ? 'סיום עריכה' : 'מצב עריכה', hint: editing ? 'פעיל' : 'כבוי', pressed: editing, onSelect: () => setEditing(!editing) },
       { label: 'אפליקציה חדשה', onSelect: onAdd },
       { label: 'ניסוח תוכן לכל האפליקציות', onSelect: onBulk },
+      // Removing an app is rare and dangerous (Anat, 2026-11-02): red, last in the menu, and it only opens a confirmation.
+      ...(onRemove ? [{ label: 'ביטול האפליקציה', hint: 'דורש אישור', danger: true, onSelect: onRemove }] : []),
     ];
     el.status = editing ? (saveState === 'saved' && lastSaved ? `נשמר ${hhmm(lastSaved)}` : STATUS[saveState]) : saveState === 'error' ? STATUS.error : '';
-  }, [editing, saveState, lastSaved, setEditing, onAdd, onBulk]);
+  }, [editing, saveState, lastSaved, setEditing, onAdd, onBulk, onRemove]);
 
   return <ai-menu ref={ref} chat={DEV_SESSION_URL} />;
 }

@@ -104,6 +104,11 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   No floating editor bar, no loose buttons. The component is `public/ai-menu.js`, served to all of Anat's apps
   from https://appofapp-gh.vercel.app/ai-menu.js; React wrapper `src/components/AIMenu.tsx`.
   Standard and paste-ready skill text: `docs/ai-menu-standard.md`. The e2e test fails without it.
+- REMOVING AN APP (Anat, 2026-11-02: "ביטול אפליקציה באדום בסוף הכפתורים שבלוגו שלי - בזהירות כי זה לא קורה הרבה וזה
+  מסוכן"): "ביטול האפליקציה" is the last item of the A&I menu, red, alone in a group "פעולה מסוכנת", only on an app page
+  (`danger: true` items in `ai-menu.js`). It only opens `RemoveAppDialog`: the button stays locked until the app's name is
+  typed exactly; the app goes to `aoa_trash`, and the toast that follows has "שחזור" (`restore_app`). No delete button
+  anywhere else.
 - Sheet numbers (A-001...) follow creation order.
 - CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
   `action` (exactly one of 7, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,
