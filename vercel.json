@@ -6,7 +6,7 @@
   },
   "rewrites": [
     {
-      "source": "/((?!assets/|sw.js|ai-menu.js|guide.js|ashdod-logo.png|manifest.webmanifest|icon).*)",
+      "source": "/((?!assets/|sw.js|ai-menu.js|guide.js|demo.js|walk.js|ashdod-logo.png|manifest.webmanifest|icon).*)",
       "destination": "/index.html"
     }
   ],
@@ -35,6 +35,32 @@
     },
     {
       "source": "/ai-menu.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/demo.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/walk.js",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
