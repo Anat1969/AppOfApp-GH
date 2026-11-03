@@ -121,6 +121,16 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   no quota). Opening the link lights the next button with an amber ring and a bubble, and moves on when it is clicked;
   it continues across pages (sessionStorage) and inside the A&I menu (shadow host). Also a printable page. Code
   `public/guide.js`, loaded only on use; it is served next to `ai-menu.js`, so every app with the A&I button has it.
+- DEMO VIDEO (Anat, 2026-11-03: "כפתור המחבר לסרטון שאתה תייצר שיתמקם בדף הבית. סרטון קצר שניתן לקבוע אורך ומהירות"):
+  the A&I menu (and the Ashdod one) has "סרטון הדגמה" in every app. The app's video and settings live in `aoa_apps`
+  `data.demo` = { src, poster, duration, speed, length, whole, at[] }; `at` lists the page addresses that show the button.
+  Length and speed are applied at playback, never burned into the file, so a change shows at once with no render and
+  no deployment. "כל הסיפור" (default) ties them: length = duration / speed, so the closing card is always seen; off,
+  the ending is cut and the panel says so. The button mounts in `[data-aoa-demo]` (here: the hero, `large`); an app
+  whose `<html>` has `data-aoa-demo-slots` shows it only where a slot is, any other app gets it in the corner.
+  The panel also copies a ready request to Claude for a new video at the chosen length. Video: `templates/demo.cjs`
+  in Claude-GH, file in `aoa-media/<appId>/demo-<ts>.mp4`. Code `public/demo.js`, loaded by `ai-menu.js` after idle.
+  This app is recorded in its own portfolio as `app-appofapp-gh` (it was missing until 2026-11-03).
 - Sheet numbers (A-001...) follow creation order.
 - CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
   `action` (exactly one of 7, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,

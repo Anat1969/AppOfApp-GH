@@ -78,6 +78,8 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
             <span className="dim">שם, קישור, פעולה ותחום. היא מקבלת מיד מקום במפה ובחיפוש.</span>
           </div>
         </motion.div>
+        {/* "סרטון הדגמה": public/demo.js mounts the button here when aoa_apps holds a demo for this page. */}
+        <div className="hero-demo" data-aoa-demo="large" />
       </section>
 
       {!filtering && recent.length > 0 && (

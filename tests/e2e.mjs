@@ -634,6 +634,56 @@ const browser = await chromium.launch();
   await context.close();
 }
 
+// ---------- demo video (סרטון הדגמה): home button, player with speed, settings in the A&I menu ----------
+{
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const calls = [];
+  await setup(context, calls);
+  const demo = { src: 'https://ktqmwpbzcnzkhjskqisy.supabase.co/storage/v1/object/public/aoa-media/x/demo.mp4', poster: '', duration: 42, speed: 1, whole: true, at: [BASE + '/'] };
+  // Registered after setup, so it answers first: the demo query, and the record that holds it.
+  await context.route(/\/rest\/v1\/aoa_apps\?select=(id,demo|data&id=eq\.app-0)/, (r) => {
+    const u = decodeURIComponent(r.request().url());
+    if (u.includes('select=id,demo')) return r.fulfill({ json: u.includes(BASE + '/') ? [{ id: 'app-0', demo }] : [] });
+    return r.fulfill({ json: [{ data: { ...rows[0].data, demo } }] });
+  });
+  const page = await context.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(String(e)));
+  await page.goto(BASE + '/');
+  await page.waitForSelector('.card');
+  const launch = page.locator('.hero-demo aoa-demo .launch');
+  await launch.waitFor({ timeout: 10000 });
+  ok(await launch.isVisible(), 'demo: the home page shows the demo button in the hero slot');
+  ok((await launch.innerText()).includes('0:42'), 'demo: the button says the length');
+  await page.screenshot({ path: SHOTS + 'demo-home.png' });
+  await launch.click();
+  ok(await page.locator('aoa-demo .veil video').isVisible(), 'demo: the button opens the player');
+  await page.keyboard.press('Escape');
+  ok((await page.locator('aoa-demo .veil').count()) === 0, 'demo: Escape closes the player');
+  await page.locator('.topbar').getByText('טבלה', { exact: true }).click();
+  await page.waitForSelector('.table-wrap');
+  ok((await page.locator('aoa-demo .launch').count()) === 0, 'demo: no button outside the home page');
+  await page.locator('.topbar').getByText('מפה', { exact: true }).click();
+  await page.locator('ai-menu .logo').click();
+  await page.locator('ai-menu .item', { hasText: 'סרטון הדגמה' }).click();
+  const sum = page.locator('aoa-demo .panel .sum');
+  await sum.waitFor({ timeout: 10000 });
+  ok((await sum.innerText()).includes('0:42'), 'demo: the A&I item opens the settings with the length');
+  await page.locator('aoa-demo .panel .chip', { hasText: '×2' }).click();
+  ok((await sum.innerText()).includes('0:21'), 'demo: speed ×2 with the whole story makes it 0:21');
+  await page.screenshot({ path: SHOTS + 'demo-panel.png' });
+  await page.locator('aoa-demo .panel .solid', { hasText: 'שמירה' }).click();
+  await page.waitForFunction(() => document.querySelector('aoa-demo .panel, aoa-demo')
+    && [...document.querySelectorAll('aoa-demo')].some((h) => h.shadowRoot.querySelector('.st')?.textContent.startsWith('נשמר')));
+  const saved = calls.find((c) => c.action === 'save_app');
+  ok(saved && saved.id === 'app-0' && saved.data.demo.speed === 2 && saved.data.demo.length === 21 && saved.data.name === rows[0].data.name,
+    'demo: save keeps the record and stores speed 2 and length 21');
+  await page.setViewportSize({ width: 390, height: 800 });
+  ok(await noHScroll(page), 'demo: mobile, no horizontal scroll');
+  ok(errs.length === 0, `demo: no page errors (${errs.join(' | ')})`);
+  await context.close();
+}
+
 // ---------- installability ----------
 {
   const context = await browser.newContext();
