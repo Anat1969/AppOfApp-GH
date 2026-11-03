@@ -143,6 +143,13 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   Every shared script must be listed in the rewrite exception in `vercel.json` (walk.js and demo.js were missing and came
   back as index.html). The `gh-pages` output carries a vercel.json with git deployments off: each Pages push used to start a
   Vercel build that failed and still counted toward the daily 100 (found 2026-11-03, the day the quota ran out).
+- OPEN ON THE PHONE (2026-11-03, Anat: "בצע 1, 2, 3", tools bank): `<ai-menu phone>` adds "פתיחה בטלפון" to the sharing
+  group: a QR of the current page with its state, opened in place under the item. The encoder (qrcode-generator 1.4.4 from
+  jsdelivr) loads only on use. ON TRIAL: only this portfolio sets `phone` (`AIMenu.tsx`); every other app's menu is
+  unchanged until Anat approves making it the default. Standard: `docs/ai-menu-standard.md`.
+- ASHDOD STREETS (2026-11-03): `public/streets.js` (`AIStreets.nearest`, `locate`, `load`) and
+  `public/gis/ashdod-streets.geojson`, the municipality street layer (2,991 segments, WGS84) shared by all municipal apps,
+  loaded from Pages first. Original shapefile and converter: SHIMUR-GH `data/gis/rehovot/`. Standard: `docs/streets-standard.md`.
 - Sheet numbers (A-001...) follow creation order.
 - CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
   `action` (exactly one of 7, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,

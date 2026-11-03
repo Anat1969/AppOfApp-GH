@@ -68,6 +68,21 @@
     if (/[#&]aig=/.test(location.hash) || sessionStorage.getItem('ai-guide-play') || sessionStorage.getItem('ai-guide-rec')) loadGuide().catch(() => {});
   } catch {}
 
+  // "פתיחה בטלפון" (2026-11-03, Claude-GH docs/tools-bank.md): a QR of this exact page, so the app moves to the phone in
+  // one scan. On trial: shown only where <ai-menu phone> is set (the portfolio first), so no other app changes until Anat
+  // approves. The QR encoder (qrcode-generator, MIT) is loaded only when the item is used.
+  let qrLoad = null;
+  const loadQR = () =>
+    (qrLoad ||= window.qrcode
+      ? Promise.resolve(window.qrcode)
+      : new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+          s.onload = () => (window.qrcode ? res(window.qrcode) : rej(new Error('qrcode')));
+          s.onerror = () => { qrLoad = null; rej(new Error('qrcode')); };
+          document.head.append(s);
+        }));
+
   // Chrome fires this once, early; keep it for the install item.
   let installEvent = null;
   const listeners = new Set();
@@ -137,6 +152,12 @@
     .item.danger:hover:not(:disabled), .item.danger:focus-visible { background: #fbe9e7; }
     .note { padding: 6px 10px 4px; font-size: 12.5px; color: #2f5d46; }
     .note:empty { display: none; }
+    .phone { padding: 8px 10px 4px; display: grid; gap: 8px; justify-items: center; text-align: center; }
+    .phone .code { width: 168px; padding: 6px; background: #fff; box-shadow: 0 1px 2px rgba(20,22,26,.12); line-height: 0; }
+    .phone .code svg { width: 100%; height: auto; display: block; }
+    .phone b { font-size: 13.5px; font-weight: 600; }
+    .phone p { margin: 0; font-size: 12px; color: #5a5f66; }
+    .phone code { direction: ltr; unicode-bidi: isolate; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: #6b7077; overflow-wrap: anywhere; }
     .brandimg { display: block; height: 36px; width: auto; }
     :host([brand='ashdod']) .logo { padding: 4px 8px; background: #fff; }
     .head .brandimg { height: 30px; }
@@ -233,6 +254,7 @@
 
     close() {
       this._open = false;
+      this._qr = null;
       this._panel.hidden = true;
       this._btn.setAttribute('aria-expanded', 'false');
     }
@@ -255,6 +277,7 @@
       const danger = this._items.filter((it) => it.danger);
       if (edits.length) groups.push({ label: 'עריכת האפליקציה', items: edits });
       const dev = [{ label: 'העתקת קישור', hint: 'למצב הנוכחי', onSelect: () => this._copy() }];
+      if (this.hasAttribute('phone')) dev.push({ label: 'פתיחה בטלפון', hint: this._qr ? 'סגירת הקוד' : 'QR לעמוד הזה', qr: true, onSelect: () => this._phone() });
       dev.push({ label: 'מדריך חי', hint: 'הקלטה ושיתוף', onSelect: () => this._guide() });
       // Only where this app has a video (Anat, 2026-11-03): an empty item that only copies a request is not a feature.
       if (window.AIDemo && window.AIDemo.has()) dev.push({ label: 'סרטון הדגמה', hint: 'אורך ומהירות', onSelect: () => this._demo() });
@@ -309,6 +332,17 @@
             el.append(s);
           }
           box.append(el);
+          // the QR opens in place, right under the item that asked for it
+          if (it.qr && this._qr) {
+            const qr = document.createElement('div');
+            qr.className = 'phone';
+            qr.setAttribute('aria-label', 'קוד QR לעמוד הזה');
+            qr.innerHTML = `<div class="code">${this._qr.svg}</div><b>סורקים במצלמה של הטלפון</b><p>אותו עמוד ואותו מצב, בלי להקליד כתובת.</p>`;
+            const c = document.createElement('code');
+            c.textContent = this._qr.url;
+            qr.append(c);
+            box.append(qr);
+          }
         }
         p.append(box);
       }
@@ -338,6 +372,23 @@
         this.close();
       }, 900);
       this.dispatchEvent(new CustomEvent('ai-copied', { detail: url, bubbles: true, composed: true }));
+    }
+
+    async _phone() {
+      if (this._qr) { this._qr = null; this._render(); return true; }
+      const url = location.href;
+      try {
+        const qrcode = await loadQR();
+        const q = qrcode(0, 'M');
+        q.addData(url);
+        q.make();
+        this._qr = { url, svg: q.createSvgTag({ cellSize: 4, margin: 1, scalable: true }) };
+      } catch {
+        this._note = 'קוד ה-QR לא נטען. אפשר להעתיק את הקישור ולשלוח אותו לטלפון.';
+      }
+      this._render();
+      this._position();
+      return true;
     }
 
     async _guide() {
