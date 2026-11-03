@@ -18,6 +18,12 @@
  * otherwise a fixed button at the bottom corner. Only on the pages listed in "at".
  *
  *   AIDemo.open()   the settings panel (from the logo button)
+ *
+ * Sharing (trial on one app, 2026-11-03: "דאג שתהיה אפשרות לשתף את הסרטון ברשתות"): only when data.demo.share is set,
+ * so every other player stays as it was. share = { text } (the line that goes with the link). The player gets "שיתוף":
+ * the device's own share sheet (with the video file when the device allows it), WhatsApp, Facebook, LinkedIn, X, Telegram,
+ * e-mail, copy link, and download (Instagram and TikTok take an uploaded file, not a link). The shared link is the page
+ * itself with ?aoa-demo=1, which opens the player on arrival, so the network preview shows the app and the click shows the video.
  */
 (function () {
   if (window.AIDemo) return;
@@ -87,7 +93,7 @@
     .launch.large .ltext b { font-size: 17px; }
     .corner { position: fixed; bottom: 18px; inset-inline-end: 18px; z-index: 2147482000; }
 
-    .veil { position: fixed; inset: 0; z-index: 2147483200; background: rgba(8,14,26,.86); display: grid; place-items: center; padding: 24px; animation: fade .2s; }
+    .veil { position: fixed; inset: 0; z-index: 2147483200; background: rgba(8,14,26,.86); display: grid; place-items: center; padding: 56px 24px 24px; overflow: auto; animation: fade .2s; }
     @keyframes fade { from { opacity: 0; } }
     .stage { position: relative; width: min(1100px, 100%); background: var(--aoa-demo-ink, #0b1f3a); box-shadow: 0 30px 80px rgba(0,0,0,.5); }
     .stage video { display: block; width: 100%; height: auto; max-height: calc(100vh - 140px); background: #000; }
@@ -97,6 +103,19 @@
     .bar small { font: 500 12px "IBM Plex Mono", monospace; opacity: .85; white-space: nowrap; }
     .ctl { min-width: 88px; padding: 7px 12px; border: 0; border-radius: 0; background: rgba(255,255,255,.12); color: #fff; font-size: 13px; }
     .ctl:hover { background: rgba(255,255,255,.22); }
+    .stage.sharing video { max-height: calc(100vh - 330px); }
+    @media (max-width: 600px) { .stage.sharing video { max-height: calc(100vh - 470px); } }
+    .share { display: grid; gap: 10px; padding: 14px; background: rgba(255,255,255,.06); color: #fff; border-top: 1px solid rgba(255,255,255,.14); }
+    .share[hidden] { display: none; }
+    .share p { margin: 0; font-size: 13px; opacity: .8; }
+    .nets { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+    .nets a, .nets button { display: flex; align-items: center; justify-content: center; min-height: 38px; padding: 8px 10px; border: 0; border-radius: 0;
+      background: rgba(255,255,255,.12); color: #fff; font: 500 13.5px "IBM Plex Sans Hebrew", Arial, sans-serif; text-decoration: none; text-align: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s, background .15s; cursor: pointer; }
+    .nets a:hover, .nets button:hover { background: rgba(255,255,255,.22); transform: translateY(-1px); }
+    .nets a:active, .nets button:active { transform: translateY(1px); }
+    .nets .main { background: var(--aoa-demo-accent, #f2b705); color: var(--aoa-demo-ink, #0b1f3a); font-weight: 700; }
+    .nets .main:hover { background: var(--aoa-demo-accent-hover, #ffc61a); }
     .x { position: absolute; top: -44px; inset-inline-end: 0; width: 36px; height: 36px; border: 0; background: none; color: #fff; }
     .x::before, .x::after { content: ""; position: absolute; inset: 0; margin: auto; width: 22px; height: 2px; background: currentColor; transform: rotate(45deg); }
     .x::after { transform: rotate(-45deg); }
@@ -171,7 +190,11 @@
     const close = () => { removeEventListener('keydown', onKey); h.remove(); };
     const onKey = (e) => { if (e.key === 'Escape') close(); if (e.key === ' ') { e.preventDefault(); toggle.click(); } };
     const x = el('button', { className: 'x', type: 'button', title: 'סגירה', 'aria-label': 'סגירה', on: { click: close } });
-    const stage = el('div', { className: 'stage', role: 'dialog', 'aria-label': 'סרטון הדגמה' }, [x, v, el('div', { className: 'bar' }, [toggle, sound, el('div', { className: 'track' }, fill), time])]);
+    const share = d.share ? shareBox(d) : null;
+    const shareBtn = share && el('button', { className: 'ctl', type: 'button', textContent: 'שיתוף', 'aria-expanded': 'false', on: { click: () => {
+      share.hidden = !share.hidden; stage.classList.toggle('sharing', !share.hidden); shareBtn.setAttribute('aria-expanded', String(!share.hidden)); if (!share.hidden) { v.pause(); toggle.textContent = 'המשך'; }
+    } } });
+    const stage = el('div', { className: 'stage', role: 'dialog', 'aria-label': 'סרטון הדגמה' }, [x, v, el('div', { className: 'bar' }, [toggle, sound, shareBtn, el('div', { className: 'track' }, fill), time]), share]);
     const veil = el('div', { className: 'veil', on: { click: (e) => { if (e.target === veil) close(); } } }, stage);
     r.append(veil);
     document.body.append(h);
@@ -191,6 +214,46 @@
     v.playbackRate = pl.speed;
     v.play().catch(() => { v.muted = true; sound.textContent = 'צליל'; v.play().catch(() => { toggle.textContent = 'הפעלה'; }); });
     x.focus();
+  }
+
+  // ---------- sharing (only when demo.share is set) ----------
+  const shareUrl = () => { const u = new URL(location.href); u.hash = ''; u.search = ''; u.searchParams.set('aoa-demo', '1'); return u.href; };
+  function shareBox(d) {
+    const url = shareUrl();
+    const text = (d.share && d.share.text) || document.title;
+    const e = encodeURIComponent;
+    const st = el('p', { textContent: 'הקישור פותח את האפליקציה, והסרטון מתנגן מיד.' });
+    const link = (label, href) => el('a', { href, target: '_blank', rel: 'noopener', textContent: label });
+    // ASCII name from the app's address: Chromium turns a Hebrew download name into "download".
+    const fileName = `${(location.hostname.split('.')[0] || 'app').replace(/[^a-z0-9-]+/gi, '-')}-demo.mp4`;
+    const getFile = async () => { const r = await fetch(d.src); const b = await r.blob(); return new File([b], fileName, { type: 'video/mp4' }); };
+    const kids = [];
+    if (navigator.share) kids.push(el('button', { type: 'button', className: 'main', textContent: 'שיתוף מהמכשיר', on: { click: async () => {
+      try {
+        let data = { title: document.title, text, url };
+        try { const f = await getFile(); if (navigator.canShare && navigator.canShare({ files: [f] })) data = { files: [f], title: document.title, text: `${text}\n${url}` }; } catch {}
+        await navigator.share(data);
+      } catch {}
+    } } }));
+    kids.push(
+      link('וואטסאפ', `https://wa.me/?text=${e(`${text}\n${url}`)}`),
+      link('פייסבוק', `https://www.facebook.com/sharer/sharer.php?u=${e(url)}`),
+      link('לינקדאין', `https://www.linkedin.com/sharing/share-offsite/?url=${e(url)}`),
+      link('X', `https://twitter.com/intent/tweet?text=${e(text)}&url=${e(url)}`),
+      link('טלגרם', `https://t.me/share/url?url=${e(url)}&text=${e(text)}`),
+      el('a', { href: `mailto:?subject=${e(document.title)}&body=${e(`${text}\n${url}`)}`, textContent: 'מייל' }),
+      el('button', { type: 'button', textContent: 'העתקת קישור', on: { click: async (ev) => {
+        const b = ev.currentTarget; try { await navigator.clipboard.writeText(url); b.textContent = 'הועתק'; } catch { prompt('הקישור:', url); }
+        setTimeout(() => { b.textContent = 'העתקת קישור'; }, 1800);
+      } } }),
+      el('button', { type: 'button', textContent: 'הורדת הסרטון', title: 'לאינסטגרם ולטיקטוק: מורידים ומעלים כקובץ', on: { click: async (ev) => {
+        const b = ev.currentTarget; b.textContent = 'מוריד...';
+        try { const f = await getFile(); const a = el('a', { href: URL.createObjectURL(f), download: fileName }); document.body.append(a); a.click(); a.remove(); b.textContent = 'ירד'; }
+        catch { window.open(d.src, '_blank'); b.textContent = 'נפתח בלשונית'; }
+        setTimeout(() => { b.textContent = 'הורדת הסרטון'; }, 2200);
+      } } }),
+    );
+    return el('div', { className: 'share', hidden: true }, [st, el('div', { className: 'nets' }, kids), el('p', { textContent: 'לאינסטגרם ולטיקטוק: הורדת הסרטון, והעלאה כקובץ.' })]);
   }
 
   // ---------- the home-page button ----------
@@ -235,6 +298,8 @@
       }
     } catch {}
     mount();
+    // A shared link (?aoa-demo=1) opens the player on arrival, once.
+    if (current && current.demo.share && new URLSearchParams(location.search).get('aoa-demo') === '1') play(current.demo);
     // The menu may already be open: let it redraw with the item.
     document.querySelectorAll('ai-menu').forEach((m) => { if (m._open) m._render(); });
     new MutationObserver(remount).observe(document.body, { childList: true, subtree: true });
