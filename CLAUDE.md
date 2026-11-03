@@ -133,6 +133,11 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   This app is recorded in its own portfolio as `app-appofapp-gh` (it was missing until 2026-11-03).
   The item shows in the logo only where the page has a video (`AIDemo.has()`, Anat approved 2026-11-03); a new app gets
   its video from Claude first, tried on one app (Refua-GH) before any change reaches all apps.
+  SHARING (Anat, 2026-11-03: "דאג שתהיה אפשרות לשתף את הסרטון ברשתות"), trial on one app (PrasNovel-GH): only when
+  `data.demo.share` = { text } is set, the player gets "שיתוף": the device's share sheet (with the file when allowed), WhatsApp,
+  Facebook, LinkedIn, X, Telegram, e-mail, copy link, and download (Instagram and TikTok take a file). The shared link is the
+  page with `?aoa-demo=1`, which opens the player on arrival; the app's own og: tags give the network preview. Without
+  `share` the player is unchanged. Download names are ASCII (`<host>-demo.mp4`): Chromium turns a Hebrew name into "download".
 - WALK AT EYE HEIGHT (2026-11-03, from a reel on spaceplanner.co, Anat approved): `public/walk.js` serves `<space-walk>` to all
   her apps, like `ai-menu.js`. A plan (JSON, meters) becomes 3D and a first-person walk at a chosen eye height (95 child,
   120 seated, 160 standing), with a live count of what blocks the view and a plan map with a legend. three.js 0.160 is
