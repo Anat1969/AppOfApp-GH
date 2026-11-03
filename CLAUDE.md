@@ -92,7 +92,11 @@ times, so `aoa-edit` tries `gemini-flash-latest`, then lighter models, 25s each.
 `generate` (Anat, 2026-10-26: "חינמי") reads the app's own site (title, meta, headings) so the model does not
 invent, then asks Gemini first (`GEMINI_API_KEY`, free tier, model `GEMINI_MODEL` default `gemini-flash-latest`)
 and falls back to Claude (`ANTHROPIC_API_KEY`, returned 401 since 2026-10-24). Without a Gemini key the error says
-how to add one. The 67 apps that still had Lovable placeholders were filled once by hand from name, keywords and
+how to add one. POE (Anat, 2026-11-03, from a reel on free chatbots, poe.com): the second link in the chain, Gemini, then Poe, then
+Claude. `POE_API_KEY` (from poe.com/api_key) pays from the account's free daily points (about 3,000 a day, not officially
+documented) through the OpenAI-compatible `api.poe.com/v1`; bot `POE_MODEL`, default `Claude-Haiku-4.5`, then cheaper bots.
+It reaches Claude without the 401 Anthropic key. Without the secret the step is skipped.
+The 67 apps that still had Lovable placeholders were filled once by hand from name, keywords and
 site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 
 ## UI rules
