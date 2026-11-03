@@ -233,6 +233,8 @@
       }
     } catch {}
     mount();
+    // The menu may already be open: let it redraw with the item.
+    document.querySelectorAll('ai-menu').forEach((m) => { if (m._open) m._render(); });
     new MutationObserver(remount).observe(document.body, { childList: true, subtree: true });
     addEventListener('popstate', remount);
     addEventListener('hashchange', remount);
@@ -396,6 +398,7 @@
     return b;
   }
 
-  window.AIDemo = { open, play: (d) => play(d || (current && current.demo)), reload: load };
+  // has(): this page has a video. The logo shows "סרטון הדגמה" only then (Anat, 2026-11-03).
+  window.AIDemo = { has: () => !!(current && current.demo && current.demo.src), open, play: (d) => play(d || (current && current.demo)), reload: load };
   document.readyState === 'loading' ? addEventListener('DOMContentLoaded', load) : load();
 })();
