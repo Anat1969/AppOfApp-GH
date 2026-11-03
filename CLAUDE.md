@@ -137,6 +137,9 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   her apps, like `ai-menu.js`. A plan (JSON, meters) becomes 3D and a first-person walk at a chosen eye height (95 child,
   120 seated, 160 standing), with a live count of what blocks the view and a plan map with a legend. three.js 0.160 is
   imported from jsdelivr on use. Standard: `docs/walk-standard.md`. First use: Urban 95 (`Anat1969/-95`, route `/walk`).
+  Every shared script must be listed in the rewrite exception in `vercel.json` (walk.js and demo.js were missing and came
+  back as index.html). The `gh-pages` output carries a vercel.json with git deployments off: each Pages push used to start a
+  Vercel build that failed and still counted toward the daily 100 (found 2026-11-03, the day the quota ran out).
 - Sheet numbers (A-001...) follow creation order.
 - CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
   `action` (exactly one of 7, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,
