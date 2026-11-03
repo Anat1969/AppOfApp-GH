@@ -1,12 +1,14 @@
 # walk.js: קו, נפח, גוף ראשון
 
 **תוכנית הופכת לתלת־ממד שהולכים בו, בגובה עיניים שבוחרים.**
-רכיב משותף לכל האפליקציות של ענת, מוגש כמו `ai-menu.js`. נולד ב-03.11.2026 מסרטון על spaceplanner.co.
+רכיב משותף לכל האפליקציות של ענת. נטען קודם מ-GitHub Pages של התיק, ולא מ-Vercel: ב-03.11.2026 Vercel הגיש גרסה ישנה כשהמכסה נחסמה, והיא נטענה בלי שגיאה, ולכן הגיבוי לא הופעל. נולד ב-03.11.2026 מסרטון על spaceplanner.co.
 
 ## שימוש
 
 ```html
-<script src="https://appofapp-gh.vercel.app/walk.js"></script>
+<!-- Pages first: it follows every merge to main with no Vercel quota. Vercel is the backup. -->
+<script src="https://anat1969.github.io/AppOfApp-GH/walk.js"></script>
+<script>if (!customElements.get('space-walk')) document.write('<script src="https://appofapp-gh.vercel.app/walk.js"><\/script>')</script>
 <space-walk ref-base="/principles/"></space-walk>
 <script>document.querySelector('space-walk').plan = PLAN</script>
 ```
