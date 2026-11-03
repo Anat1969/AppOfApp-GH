@@ -131,6 +131,8 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   The panel also copies a ready request to Claude for a new video at the chosen length. Video: `templates/demo.cjs`
   in Claude-GH, file in `aoa-media/<appId>/demo-<ts>.mp4`. Code `public/demo.js`, loaded by `ai-menu.js` after idle.
   This app is recorded in its own portfolio as `app-appofapp-gh` (it was missing until 2026-11-03).
+  The item shows in the logo only where the page has a video (`AIDemo.has()`, Anat approved 2026-11-03); a new app gets
+  its video from Claude first, tried on one app (Refua-GH) before any change reaches all apps.
 - Sheet numbers (A-001...) follow creation order.
 - CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
   `action` (exactly one of 7, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,
