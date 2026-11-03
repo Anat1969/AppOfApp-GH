@@ -448,6 +448,19 @@ const browser = await chromium.launch();
   ok(calls.filter((c) => c.action === 'sign_upload').length === signsBefore + 1, 'paste anywhere uploads one copy');
   await page.screenshot({ path: SHOTS + 'editor-app.png', fullPage: true });
 
+  // from the phone (tools bank, tool 2): a QR code to the phone page, and the new cover arrives here on its own
+  // test covers are 64px wide, so the tools overflow the tiny frame; a real cover is checked in phone-qr.png
+  await page.locator('.app-visual .cover-phone').dispatchEvent('click');
+  await page.waitForSelector('.phone-qr svg');
+  ok((await page.locator('.phone-url a').getAttribute('href'))?.includes('app=app-1') && (await page.locator('.phone-url a').getAttribute('href'))?.includes('shoot=1'), 'phone: the QR leads to the phone page of this app');
+  ok(await page.locator('.phone-wait').isVisible(), 'phone: the computer says it is waiting');
+  await page.screenshot({ path: SHOTS + 'phone-qr.png' });
+  const oldCover = rows[0].data.coverImage;
+  rows[0].data.coverImage = 'https://ktqmwpbzcnzkhjskqisy.supabase.co/storage/v1/object/public/aoa-media/app-1/cover-phone.jpg';
+  await page.waitForSelector('.phone-qr', { state: 'detached', timeout: 9000 }).catch(() => {});
+  ok((await page.locator('.app-visual .cover img').getAttribute('src'))?.endsWith('cover-phone.jpg'), 'phone: the new cover shows on the computer without reloading');
+  rows[0].data.coverImage = oldCover;
+
   // add from a gap idea: the dialog is prefilled
   await page.goto(BASE + '/');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
@@ -681,6 +694,35 @@ const browser = await chromium.launch();
   await page.setViewportSize({ width: 390, height: 800 });
   ok(await noHScroll(page), 'demo: mobile, no horizontal scroll');
   ok(errs.length === 0, `demo: no page errors (${errs.join(' | ')})`);
+  await context.close();
+}
+
+// ---------- from the phone: the phone page ----------
+{
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const calls = [];
+  await setup(context, calls);
+  const page = await context.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  await page.goto(BASE + '/?app=app-1&shoot=1');
+  await page.waitForSelector('.shoot-name');
+  ok((await page.locator('.shoot-name').textContent()) === rows[0].data.name, 'phone page: names the app it shoots for');
+  ok((await page.locator('.shoot input[type=file]').getAttribute('capture')) === 'environment', 'phone page: opens the back camera');
+  await page.locator('.shoot input[type=file]').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: png });
+  await page.waitForSelector('.shoot-photo');
+  await page.locator('.shoot-big', { hasText: 'שמירה כתמונת שער' }).click();
+  await page.waitForSelector('.shoot-ok');
+  const saved = lastOf(calls, 'save_app');
+  ok(/^app-1\/cover-\d+\./.test(lastOf(calls, 'sign_upload')?.path ?? ''), 'phone page: uploads under the app');
+  ok(saved?.id === 'app-1' && saved.data.coverImage.includes('/aoa-media/app-1/cover-') && saved.data.name === rows[0].data.name, 'phone page: saves the cover and keeps the record');
+  ok(saved?.data.changeLog?.[0]?.text.includes('מהטלפון'), 'phone page: writes the work log');
+  ok(await noHScroll(page), 'phone page: no horizontal scroll');
+  await page.screenshot({ path: SHOTS + 'phone-shoot.png' });
+  await page.goto(BASE + '/?app=missing&shoot=1');
+  await page.waitForSelector('.shoot-insight');
+  ok((await page.locator('.shoot-main').textContent()).includes('סרקי את הקוד החדש'), 'phone page: a wrong link says what to do');
+  ok(errs.length === 0, `phone page: no page errors (${errs.join(' | ')})`);
   await context.close();
 }
 
