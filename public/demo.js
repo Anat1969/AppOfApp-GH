@@ -11,6 +11,9 @@
  * with no new render and no deployment. With "whole" on they are one decision (length = duration / speed),
  * so the whole story, including the closing card with the address, is always seen.
  *
+ * Colours follow the app's DNA: --aoa-demo-ink and --aoa-demo-accent on the slot (or any ancestor) reach the button and
+ * the player through the shadow root. Defaults are the portfolio's navy and amber.
+ *
  * Placement: inside an element with data-aoa-demo when the page has one (the app decides where),
  * otherwise a fixed button at the bottom corner. Only on the pages listed in "at".
  *
@@ -67,12 +70,12 @@
     .launch:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 2px 4px rgba(20,22,26,.1), 0 16px 30px -12px rgba(20,22,26,.5); }
     .launch:active { transform: translateY(1px); }
     .launch:focus-visible { outline: 2px solid #22324f; outline-offset: 2px; }
-    .thumb { position: relative; order: 2; width: 112px; height: 70px; flex: none; background: #0b1f3a center / cover no-repeat; }
+    .thumb { position: relative; order: 2; width: 112px; height: 70px; flex: none; background: var(--aoa-demo-ink, #0b1f3a) center / cover no-repeat; }
     /* Play mark in an amber square at the corner, so it never covers the title on the poster. */
-    .thumb::before { content: ""; position: absolute; left: 0; bottom: 0; width: 28px; height: 28px; background: #f2b705; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+    .thumb::before { content: ""; position: absolute; left: 0; bottom: 0; width: 28px; height: 28px; background: var(--aoa-demo-accent, #f2b705); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
     .thumb::after { content: ""; position: absolute; left: 10px; bottom: 8px; width: 0; height: 0; border-style: solid;
-      border-width: 6px 0 6px 10px; border-color: transparent transparent transparent #0b1f3a; }
-    .launch:hover .thumb::before { background: #ffc61a; }
+      border-width: 6px 0 6px 10px; border-color: transparent transparent transparent var(--aoa-demo-ink, #0b1f3a); }
+    .launch:hover .thumb::before { background: var(--aoa-demo-accent-hover, #ffc61a); }
     .ltext { order: 1; display: grid; gap: 3px; }
     .ltext b { font-size: 15px; font-weight: 700; }
     .ltext small { font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans Hebrew", monospace; color: #5a5f66; letter-spacing: .03em; }
@@ -86,11 +89,11 @@
 
     .veil { position: fixed; inset: 0; z-index: 2147483200; background: rgba(8,14,26,.86); display: grid; place-items: center; padding: 24px; animation: fade .2s; }
     @keyframes fade { from { opacity: 0; } }
-    .stage { position: relative; width: min(1100px, 100%); background: #0b1f3a; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+    .stage { position: relative; width: min(1100px, 100%); background: var(--aoa-demo-ink, #0b1f3a); box-shadow: 0 30px 80px rgba(0,0,0,.5); }
     .stage video { display: block; width: 100%; height: auto; max-height: calc(100vh - 140px); background: #000; }
-    .bar { display: flex; align-items: center; gap: 14px; padding: 10px 14px; color: #fff; border-top: 3px solid #f2b705; }
+    .bar { display: flex; align-items: center; gap: 14px; padding: 10px 14px; color: #fff; border-top: 3px solid var(--aoa-demo-accent, #f2b705); }
     .track { position: relative; flex: 1; height: 4px; background: rgba(255,255,255,.22); }
-    .track i { position: absolute; inset-block: 0; inset-inline-start: 0; width: 0; background: #f2b705; }
+    .track i { position: absolute; inset-block: 0; inset-inline-start: 0; width: 0; background: var(--aoa-demo-accent, #f2b705); }
     .bar small { font: 500 12px "IBM Plex Mono", monospace; opacity: .85; white-space: nowrap; }
     .ctl { min-width: 88px; padding: 7px 12px; border: 0; border-radius: 0; background: rgba(255,255,255,.12); color: #fff; font-size: 13px; }
     .ctl:hover { background: rgba(255,255,255,.22); }
@@ -106,7 +109,7 @@
     .ph p { margin: 4px 0 0; font-size: 13px; color: #5a5f66; }
     .ph .x { position: relative; top: 0; color: #17191c; flex: none; }
     .pb { overflow: auto; padding: 16px 20px 24px; display: grid; gap: 18px; }
-    .pv video { width: 100%; display: block; background: #0b1f3a; }
+    .pv video { width: 100%; display: block; background: var(--aoa-demo-ink, #0b1f3a); }
     .lab { font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans Hebrew", monospace; letter-spacing: .14em; color: #6b7077; margin-bottom: 8px; }
     .chips { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
     .chip { padding: 8px 0; border: 1px solid transparent; border-radius: 0; background: #ebe9e4; font: 500 13px "IBM Plex Mono", monospace;
