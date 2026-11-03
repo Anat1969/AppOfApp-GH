@@ -126,6 +126,13 @@ export function useStore() {
     [flush],
   );
 
+  /** A change already saved on another device (the phone): shown here at once, and kept in an edit still on its way. */
+  const receiveApp = useCallback((id: string, patch: Partial<AppData>) => {
+    setApps((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+    const pending = latest.current.get(id);
+    if (pending) latest.current.set(id, { ...pending, ...patch });
+  }, []);
+
   const addApp = useCallback(async (app: AppData) => {
     setSaveState('saving');
     try {
@@ -221,7 +228,7 @@ export function useStore() {
   return {
     apps, categories, facets, loading, loadError, reload: load,
     saveState, lastSaved,
-    updateApp, addApp, deleteApp, restoreApp, saveCategory, deleteCategory, saveFacet, deleteFacet,
+    updateApp, receiveApp, addApp, deleteApp, restoreApp, saveCategory, deleteCategory, saveFacet, deleteFacet,
   };
 }
 

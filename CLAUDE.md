@@ -183,6 +183,18 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   ones are limited to 82vh and the frame narrows to them). In edit mode a screenshot pasted anywhere on the app page
   (Ctrl+V, unless text is pasted into a field) becomes the cover, shows at once as a preview, and uploads once even if
   pasted again while uploading. A pasted image address is used as is.
+- FROM THE PHONE (Anat, 2026-11-03, "פעל בהתאם להמלצה", tool 2 in Claude-GH `docs/tools-bank.md`, from a reel on
+  PairDrop): in edit mode the cover has "מהטלפון" next to "בחירת קובץ". It opens a QR code to this app's own address with
+  `?app=<id>&shoot=1` (`src/lib/phone.ts`). The phone page (`PhoneShoot.tsx`, rendered instead of the portfolio) has one big
+  button that opens the back camera, shrinks the photo on the phone itself (tool 1: longest side 2000px, JPEG 85%, shows
+  the sizes), uploads it with `sign_upload`, reads the app again and saves it with the new cover and a work-log line. No
+  sign-in, no pairing code (editing is open on every device). The computer reads the app every 3s while the QR is open
+  (up to 15 minutes, no realtime channel, so it works on Pages too) and shows the new cover with `receiveApp`, which
+  does not save again and keeps an edit still on its way.
+- DIALOGS ON BODY (2026-11-03): `Dialog.tsx` renders through a portal on `<body>`. Inside `.app-visual` (perspective) a
+  fixed dialog was pinned to the cover frame instead of the screen.
+- The test PNG in `tests/e2e.mjs` is a broken file (inflate error): images in tests never render, so a visual check needs
+  a real image.
 - ONE ACTION PER IMAGE (Anat, 2026-10-29: clicking the cover "מתבלבל עם מעבר לאפליקציה אחרת"): the cover on the app page
   only opens the app, and says so on the frame at all times (a bar "פתיחת האפליקציה" + the address; touch has no hover).
   Paging to other apps is never next to the image: it sits at the foot of the page, names the previous and next app, and says

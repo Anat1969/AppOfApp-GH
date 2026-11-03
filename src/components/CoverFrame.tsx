@@ -13,6 +13,8 @@ interface Props {
   pasteAnywhere?: boolean;
   /** An image address that was pasted instead of an image. */
   onUrl?: (url: string) => void;
+  /** Opens the QR code that takes a photo from the phone (edit mode). */
+  onPhone?: () => void;
 }
 
 /** The image in a paste: Windows screenshots and copied images arrive as files or as clipboard items. */
@@ -39,7 +41,7 @@ const hostOf = (url: string) => {
 };
 
 /** Cover image that links to the app; in edit mode it accepts drop, paste or a file. */
-export default function CoverFrame({ src, alt, href, editing, onFile, className = '', label = 'תמונת שער', pasteAnywhere, onUrl }: Props) {
+export default function CoverFrame({ src, alt, href, editing, onFile, className = '', label = 'תמונת שער', pasteAnywhere, onUrl, onPhone }: Props) {
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
   const file = useRef<HTMLInputElement>(null);
@@ -136,6 +138,11 @@ export default function CoverFrame({ src, alt, href, editing, onFile, className 
         <button type="button" onClick={() => file.current?.click()} disabled={busy}>
           בחירת קובץ
         </button>
+        {onPhone && (
+          <button type="button" className="cover-phone" onClick={onPhone} disabled={busy} title="צילום בטלפון, והתמונה מופיעה כאן">
+            מהטלפון
+          </button>
+        )}
       </span>
       <input ref={file} type="file" accept="image/*" hidden onChange={(e) => take(e.target.files?.[0])} />
     </div>

@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import PhoneShoot from './components/PhoneShoot';
+import { isShootPage } from './lib/phone';
 import './styles.css';
 
 // No browser autofill in the editing fields (Anat, 2026-11-01): Chrome offered addresses typed for one app in the
@@ -14,7 +16,7 @@ new MutationObserver((list) => list.forEach((m) => m.addedNodes.forEach((n) => n
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    {isShootPage() && new URLSearchParams(location.search).get('app') ? <PhoneShoot appId={new URLSearchParams(location.search).get('app')!} /> : <App />}
   </StrictMode>,
 );
 

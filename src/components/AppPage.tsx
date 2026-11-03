@@ -13,6 +13,7 @@ import MarkedTextarea from './MarkedTextarea';
 import ChangeLog from './ChangeLog';
 import Notes from './Notes';
 import { toast } from './Toasts';
+import PhoneLink from './PhoneLink';
 
 interface Props {
   app: AppData;
@@ -27,6 +28,8 @@ interface Props {
   onBack: () => void;
   onOpen: (id: string) => void;
   onChange: (a: AppData) => void;
+  /** A change saved on another device, shown without saving it again. */
+  onReceive?: (id: string, patch: Partial<AppData>) => void;
 }
 
 type Field = 'desc' | 'problem' | 'solution';
@@ -38,7 +41,8 @@ const LINKS: { url: keyof AppData; label: keyof AppData; fallback: string }[] = 
   { url: 'supabaseProjectUrl', label: 'supabaseUrlLabel', fallback: 'מסד נתונים' },
 ];
 
-export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, editing, onBack, onOpen, onChange }: Props) {
+export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, editing, onBack, onOpen, onChange, onReceive }: Props) {
+  const [phone, setPhone] = useState(false);
   const [gen, setGen] = useState<Field | 'all' | null>(null);
   const site = siteUrl(app);
   // Other apps that open the same address: a wrong link pasted or autofilled from another app shows up here.
@@ -134,7 +138,19 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
             <span />
             <span />
           </div>
-          <CoverFrame src={app.coverImage} alt={app.name} href={site} editing={editing} onFile={upload('cover')} pasteAnywhere onUrl={(url) => set({ coverImage: url })} />
+          <CoverFrame src={app.coverImage} alt={app.name} href={site} editing={editing} onFile={upload('cover')} pasteAnywhere onUrl={(url) => set({ coverImage: url })} onPhone={onReceive ? () => setPhone(true) : undefined} />
+          {onReceive && (
+            <PhoneLink
+              app={app}
+              open={phone}
+              onClose={() => setPhone(false)}
+              onReceive={(fresh) => {
+                onReceive(app.id, { coverImage: fresh.coverImage, changeLog: fresh.changeLog, updatedAt: fresh.updatedAt });
+                setPhone(false);
+                toast('התמונה מהטלפון התקבלה ונשמרה');
+              }}
+            />
+          )}
         </div>
 
         <div className="app-summary">
