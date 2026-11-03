@@ -162,14 +162,16 @@
   function play(d) {
     const pl = plan(d);
     const [h, r] = host();
-    const v = el('video', { src: d.src, poster: d.poster || '', playsInline: true, muted: true, preload: 'auto' });
+    // With sound: the visitor clicked, so the browser allows it, and a narrated video needs it (Hila, 2026-11-03).
+    const v = el('video', { src: d.src, poster: d.poster || '', playsInline: true, muted: false, preload: 'auto' });
     const fill = el('i');
     const time = el('small', { dir: 'ltr', textContent: `0:00 / ${fmt(pl.length)}` });
     const toggle = el('button', { className: 'ctl', type: 'button', textContent: 'השהיה' });
+    const sound = el('button', { className: 'ctl', type: 'button', textContent: 'השתקה', on: { click: () => { v.muted = !v.muted; sound.textContent = v.muted ? 'צליל' : 'השתקה'; } } });
     const close = () => { removeEventListener('keydown', onKey); h.remove(); };
     const onKey = (e) => { if (e.key === 'Escape') close(); if (e.key === ' ') { e.preventDefault(); toggle.click(); } };
     const x = el('button', { className: 'x', type: 'button', title: 'סגירה', 'aria-label': 'סגירה', on: { click: close } });
-    const stage = el('div', { className: 'stage', role: 'dialog', 'aria-label': 'סרטון הדגמה' }, [x, v, el('div', { className: 'bar' }, [toggle, el('div', { className: 'track' }, fill), time])]);
+    const stage = el('div', { className: 'stage', role: 'dialog', 'aria-label': 'סרטון הדגמה' }, [x, v, el('div', { className: 'bar' }, [toggle, sound, el('div', { className: 'track' }, fill), time])]);
     const veil = el('div', { className: 'veil', on: { click: (e) => { if (e.target === veil) close(); } } }, stage);
     r.append(veil);
     document.body.append(h);
@@ -187,7 +189,7 @@
       else { v.pause(); toggle.textContent = 'המשך'; }
     });
     v.playbackRate = pl.speed;
-    v.play().catch(() => { toggle.textContent = 'הפעלה'; });
+    v.play().catch(() => { v.muted = true; sound.textContent = 'צליל'; v.play().catch(() => { toggle.textContent = 'הפעלה'; }); });
     x.focus();
   }
 
