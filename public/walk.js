@@ -33,7 +33,18 @@
     return [...(plan.items || []), ...(v ? v.items || [] : [])];
   }
   function opaque(it) {
-    return it.opaque != null ? !!it.opaque : !SEE_THROUGH.includes(it.type);
+    if (it.opaque != null) return !!it.opaque;
+    if (it.type === 'prism' && (it.glass || (it.h || 0) <= 0.05)) return false;
+    return !SEE_THROUGH.includes(it.type);
+  }
+  // even-odd point in polygon, points as [[x, z], ...]
+  function inPoly(x, z, pts) {
+    let ins = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const [xi, zi] = pts[i], [xj, zj] = pts[j];
+      if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins;
+    }
+    return ins;
   }
   function blockTop(it) {
     if (it.blockTop != null) return it.blockTop;
@@ -233,7 +244,7 @@
               <button class="opt" data-view="walk" aria-pressed="true">גוף ראשון</button>
               <button class="opt" data-view="top" aria-pressed="false">מבט על</button>
             </div>
-            <div class="lbl">מה רואים מהגובה הזה</div>
+            <div class="lbl sight-lbl">מה רואים מהגובה הזה</div>
             <ol class="sight"></ol>
             <div class="lbl checks-lbl">מידות במקום</div>
             <ol class="checks"></ol>
@@ -308,23 +319,30 @@
       if (!p || !this.shadowRoot.firstChild) return;
       this._heights = p.heights && p.heights.length ? p.heights : DEFAULT_HEIGHTS;
       const vs = p.variants || [];
-      const want = this.getAttribute('variant');
-      this._variant = vs.find((v) => v.id === want) ? want : (vs[0] && vs[0].id) || null;
-      const eyeAttr = +this.getAttribute('eye');
-      const h = this._heights.find((x) => x.cm === eyeAttr) || this._heights[0];
-      this._eyeCm = h.cm; this._eye = h.cm / 100;
-      if (this.getAttribute('view') === 'top') this._view = 'top';
-      const s = p.spawn || {};
-      this._pos = { x: s.x || 0, z: s.z || 0 };
-      this._yaw = ((s.yaw || 0) * Math.PI) / 180;
-      this._pitch = 0;
+      // a plan with the same id is the same place updated live (a form, a slider): keep where the viewer stands
+      const same = p.id != null && p.id === this._planId && this._variant !== undefined;
+      this._planId = p.id;
+      if (!same || !vs.find((v) => v.id === this._variant)) {
+        const want = this.getAttribute('variant');
+        this._variant = vs.find((v) => v.id === want) ? want : (vs[0] && vs[0].id) || null;
+      }
+      if (!same) {
+        const eyeAttr = +this.getAttribute('eye');
+        const h = this._heights.find((x) => x.cm === eyeAttr) || this._heights[0];
+        this._eyeCm = h.cm; this._eye = h.cm / 100;
+        if (this.getAttribute('view') === 'top') this._view = 'top';
+        const s = p.spawn || {};
+        this._pos = { x: s.x || 0, z: s.z || 0 };
+        this._yaw = ((s.yaw || 0) * Math.PI) / 180;
+        this._pitch = 0;
+      }
 
       this.$('.title').textContent = p.title || '';
       this.$('.vars').innerHTML = vs.map((v) => `<button class="opt" data-variant="${esc(v.id)}" data-tone="${esc(v.tone || '')}">${esc(v.label)}</button>`).join('');
       this.$('.rule').innerHTML = rich(p.rule || 'חוסם: חלק אטום שהחלק העליון שלו מגיע לגובה העיניים או מעליו. גדר שקופה וזכוכית לא חוסמות. חלון נמדד לפי האדן. מגבלה: בדיקת גובה בלבד, בלי מרחק וזווית.');
       this.$('.src').innerHTML = p.source ? rich(p.source) : '';
       this._render();
-      this._boot();
+      if (this._booted) this._rebuild(); else this._boot();
     }
 
     _setEye(c, user) { this._eyeCm = c; if (this._reduce) this._eye = c / 100; this._render(); if (user) this._emit(); }
@@ -342,14 +360,19 @@
       this.$('.heights').innerHTML = per.map(({ h, n }) => `
         <button class="opt" data-eye="${h.cm}" aria-pressed="${h.cm === this._eyeCm}">
           <span class="n">${h.cm}<span class="u"> ס״מ</span></span><span class="who">${esc(h.label)}</span>
-          <span class="cnt ${n ? '' : 'zero'}">${n ? n + ' חוסמים' : 'פתוח'}</span></button>`).join('');
+          ${ev.total ? `<span class="cnt ${n ? '' : 'zero'}">${n ? n + ' חוסמים' : 'פתוח'}</span>` : ''}</button>`).join('');
       this.shadowRoot.querySelectorAll('.vars .opt').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.variant === this._variant)));
       this.shadowRoot.querySelectorAll('.views .opt').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === this._view)));
       const v = (p.variants || []).find((x) => x.id === this._variant);
       this.$('.vnote').innerHTML = v && v.note ? rich(v.note) : '';
 
       const here = this._heights.find((h) => h.cm === this._eyeCm) || { cm: this._eyeCm, label: '' };
-      if (!ev.total) {
+      this.$('.sight-lbl').hidden = !ev.total;
+      const sum = p.summary || ((p.variants || []).find((x) => x.id === this._variant) || {}).summary;
+      if (sum && !ev.total) {
+        this.$('.insight').innerHTML = rich(sum.insight || '');
+        this.$('.explain').innerHTML = rich(sum.explain || '');
+      } else if (!ev.total) {
         this.$('.insight').innerHTML = `מגובה <b>${here.cm} ס״מ</b>`;
         this.$('.explain').textContent = 'בתוכנית הזו אין אלמנטים שנמדדים לקו מבט.';
       } else if (!ev.blocks) {
@@ -429,12 +452,7 @@
       sun.shadow.bias = -0.0005;
       scene.add(sun);
 
-      const [x0, z0, x1, z1] = p.bounds || [-10, -10, 10, 10];
-      const ground = new T.Mesh(new T.PlaneGeometry(x1 - x0, z1 - z0), new T.MeshStandardMaterial({ color: p.ground || '#d9d3c4', roughness: 1 }));
-      ground.rotation.x = -Math.PI / 2;
-      ground.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
-      ground.receiveShadow = true;
-      scene.add(ground);
+      this._sun = sun;
 
       // you, seen from above
       const me = (this._me = new T.Group());
@@ -494,7 +512,23 @@
 
     _rebuild() {
       if (!this.T || !this._group) return;
-      const T = this.T;
+      const T = this.T, p = this._plan;
+      const [x0, z0, x1, z1] = p.bounds || [-10, -10, 10, 10];
+      const R = Math.max(x1 - x0, z1 - z0) / 2 + 2;
+      if (this._ground) { this._ground.geometry.dispose(); this._scene.remove(this._ground); }
+      const ground = (this._ground = new T.Mesh(new T.PlaneGeometry(x1 - x0, z1 - z0), new T.MeshStandardMaterial({ color: p.ground || '#d9d3c4', roughness: 1 })));
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
+      ground.receiveShadow = true;
+      this._scene.add(ground);
+      const sh = this._sun.shadow.camera;
+      Object.assign(sh, { left: -R, right: R, top: R, bottom: -R, far: R * 4 + 40 });
+      sh.updateProjectionMatrix();
+      this._sun.position.set((x0 + x1) / 2 - R * 0.55, R + 14, (z0 + z1) / 2 + R * 0.45);
+      this._sun.target.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
+      this._sun.target.updateMatrixWorld();
+      this._scene.fog.near = Math.max(22, R * 1.4); this._scene.fog.far = Math.max(60, R * 4);
+      this._cam.far = Math.max(200, R * 8); this._cam.updateProjectionMatrix();
       this._group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       this._group.clear();
       this._objs = new Map();
@@ -514,6 +548,20 @@
       const w = it.w || 1, d = it.d || 1, h = it.h || 1, y0 = it.y0 || 0;
       const c = it.color;
       switch (it.type) {
+        case 'prism': {
+          // a real footprint from a map: points [[x, z], ...] in meters, extruded from y0 to y0 + h
+          const pts = it.points || [];
+          if (pts.length < 3) break;
+          const shape = new T.Shape(pts.map(([px, pz]) => new T.Vector2(px, -pz)));
+          const geo = new T.ExtrudeGeometry(shape, { depth: Math.max(0.02, h), bevelEnabled: false });
+          geo.rotateX(-Math.PI / 2);
+          const flat = h <= 0.05;
+          const m = new T.Mesh(geo, this._mat(c || (it.glass ? '#9fb4c2' : '#e4e0d8'), it.glass ? { transparent: true, opacity: 0.3, roughness: 0.1, depthWrite: false } : flat ? { roughness: 1 } : null));
+          m.position.y = y0 + (flat ? 0.002 + (it.layer || 0) * 0.004 : 0);
+          m.castShadow = !it.glass && !flat; m.receiveShadow = true;
+          g.add(m);
+          break;
+        }
         case 'surface': {
           const m = this._box(g, w, 0.02, d, 0, 0.002 + (it.layer || 0) * 0.004, 0, c || '#bbb', null, false);
           m.castShadow = false;
@@ -613,15 +661,21 @@
     _blocked(x, z) {
       const [x0, z0, x1, z1] = this._plan.bounds || [-10, -10, 10, 10];
       if (x < x0 + 0.3 || x > x1 - 0.3 || z < z0 + 0.3 || z > z1 - 0.3) return true;
-      return this._aabbs().some((b) => x > b[0] && x < b[2] && z > b[1] && z < b[3]);
+      if (this._aabbs().some((b) => x > b[0] && x < b[2] && z > b[1] && z < b[3])) return true;
+      return this._items().some((it) => it.type === 'prism' && it.solid !== false && opaque(it) && it.points && inPoly(x - (it.x || 0), z - (it.z || 0), it.points));
     }
 
     _lookAt(id) {
       const it = this._items().find((x) => x.id === id);
       if (!it) return;
       this._flash = { id, until: performance.now() + 1800 };
-      if (this._view === 'walk' && it.x != null) {
-        const yaw = Math.atan2(-(it.x - this._pos.x), -(it.z - this._pos.z));
+      let tx = it.x, tz = it.z;
+      if (it.type === 'prism' && it.points && it.points.length) {
+        tx = (it.x || 0) + it.points.reduce((a, q) => a + q[0], 0) / it.points.length;
+        tz = (it.z || 0) + it.points.reduce((a, q) => a + q[1], 0) / it.points.length;
+      }
+      if (this._view === 'walk' && tx != null) {
+        const yaw = Math.atan2(-(tx - this._pos.x), -(tz - this._pos.z));
         let dy = yaw - this._yaw;
         dy = Math.atan2(Math.sin(dy), Math.cos(dy));
         this._turnTo = this._yaw + dy;
@@ -647,7 +701,7 @@
       if (k.has('d')) side += 1;
       if (k.has('a')) side -= 1;
       if ((fwd || side) && this._view === 'walk') {
-        const sp = 1.8 * dt, s = Math.sin(this._yaw), c = Math.cos(this._yaw);
+        const sp = (this._plan.speed || 1.8) * dt, s = Math.sin(this._yaw), c = Math.cos(this._yaw);
         const dx = (-s * fwd + c * side) * sp, dz = (-c * fwd - s * side) * sp;
         if (!this._blocked(this._pos.x + dx, this._pos.z)) this._pos.x += dx;
         if (!this._blocked(this._pos.x, this._pos.z + dz)) this._pos.z += dz;
@@ -702,12 +756,25 @@
       ctx.fillStyle = this._plan.ground || '#d9d3c4';
       ctx.fillRect(f.X(f.x0), f.Z(f.z0), (this._plan.bounds[2] - f.x0) * f.s, (this._plan.bounds[3] - f.z0) * f.s);
       const eye = this._eyeCm / 100;
-      const order = (it) => (it.type === 'surface' ? 0 : 1);
+      const order = (it) => (it.type === 'surface' || (it.type === 'prism' && (it.h || 0) <= 0.05) ? 0 : it.glass ? 2 : 1);
       for (const it of this._items().filter((x) => x.type !== 'note').sort((a, b) => order(a) - order(b))) {
         const q = Math.abs(Math.round((it.rot || 0) / 90)) % 2 === 1;
         const w = (q ? it.d : it.w) || 1, d = (q ? it.w : it.d) || 1;
         let fill = it.type === 'surface' ? it.color || '#bbb' : '#a49d90';
         if (counted(it)) fill = sightState(it, eye) === 'block' ? P : S;
+        if (it.type === 'prism') {
+          if (!it.points || it.points.length < 3) continue;
+          const ox = it.x || 0, oz = it.z || 0;
+          ctx.beginPath();
+          it.points.forEach(([px, pz], i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, f.X(px + ox), f.Z(pz + oz)));
+          ctx.closePath();
+          ctx.globalAlpha = it.glass ? 0.3 : 1;
+          ctx.fillStyle = counted(it) ? fill : it.mapColor || it.color || '#a49d90';
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          if (this._flash && this._flash.id === it.id && performance.now() < this._flash.until) { ctx.strokeStyle = '#f3e37c'; ctx.lineWidth = 4; ctx.stroke(); }
+          continue;
+        }
         if (it.type === 'tree') { ctx.fillStyle = '#7ea26f'; ctx.beginPath(); ctx.arc(f.X(it.x), f.Z(it.z), ((it.crown || it.w || 1) / 2) * f.s, 0, 7); ctx.fill(); continue; }
         ctx.fillStyle = fill;
         const fl = this._flash && this._flash.id === it.id && performance.now() < this._flash.until;
