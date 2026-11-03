@@ -109,6 +109,11 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   (`danger: true` items in `ai-menu.js`). It only opens `RemoveAppDialog`: the button stays locked until the app's name is
   typed exactly; the app goes to `aoa_trash`, and the toast that follows has "שחזור" (`restore_app`). No delete button
   anywhere else.
+- LIVE GUIDE (2026-11-03, from a reel on the Tango extension that Anat sent): the A&I menu has "מדריך חי". It records
+  every click and field as a step, lets her reword the steps, and carries the whole guide in the link (`#aig=`, no server,
+  no quota). Opening the link lights the next button with an amber ring and a bubble, and moves on when it is clicked;
+  it continues across pages (sessionStorage) and inside the A&I menu (shadow host). Also a printable page. Code
+  `public/guide.js`, loaded only on use; it is served next to `ai-menu.js`, so every app with the A&I button has it.
 - Sheet numbers (A-001...) follow creation order.
 - CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
   `action` (exactly one of 7, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,
