@@ -22,7 +22,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'ai-menu': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { chat?: string; research?: string };
+      'ai-menu': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { chat?: string; research?: string; phone?: string };
     }
   }
 }
@@ -59,5 +59,6 @@ export default function AIMenu({ editing, saveState, lastSaved, setEditing, onAd
     el.status = editing ? (saveState === 'saved' && lastSaved ? `נשמר ${hhmm(lastSaved)}` : STATUS[saveState]) : saveState === 'error' ? STATUS.error : '';
   }, [editing, saveState, lastSaved, setEditing, onAdd, onBulk, onRemove]);
 
-  return <ai-menu ref={ref} chat={DEV_SESSION_URL} />;
+  // phone: "פתיחה בטלפון" on trial in the portfolio only (2026-11-03), until Anat approves it for every app
+  return <ai-menu ref={ref} chat={DEV_SESSION_URL} phone="" />;
 }

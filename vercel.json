@@ -6,7 +6,7 @@
   },
   "rewrites": [
     {
-      "source": "/((?!assets/|sw.js|ai-menu.js|guide.js|demo.js|walk.js|ashdod-logo.png|manifest.webmanifest|icon).*)",
+      "source": "/((?!assets/|sw.js|ai-menu.js|guide.js|demo.js|walk.js|streets.js|gis/|ashdod-logo.png|manifest.webmanifest|icon).*)",
       "destination": "/index.html"
     }
   ],
@@ -69,6 +69,32 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=300, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/streets.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/gis/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, must-revalidate"
         }
       ]
     }

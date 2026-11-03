@@ -728,6 +728,58 @@ const browser = await chromium.launch();
   await context.close();
 }
 
+// ---------- "פתיחה בטלפון" in the A&I menu (trial: the portfolio only) ----------
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+  await setup(context, []);
+  await context.route(/cdn\.jsdelivr\.net\/npm\/qrcode-generator/, (r) => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(new URL('../node_modules/qrcode-generator/qrcode.js', import.meta.url)) }));
+  const page = await context.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  await page.goto(BASE + '/?app=app-1');
+  await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 0);
+  await page.locator('ai-menu .logo').click();
+  ok((await page.locator('ai-menu .item', { hasText: 'פתיחה בטלפון' }).count()) === 1, 'phone QR: the item is in the portfolio menu');
+  await page.locator('ai-menu .item', { hasText: 'פתיחה בטלפון' }).click();
+  await page.waitForFunction(() => document.querySelector('ai-menu').shadowRoot.querySelector('.phone svg'), null, { timeout: 8000 }).catch(() => {});
+  ok(await page.evaluate(() => !!document.querySelector('ai-menu').shadowRoot.querySelector('.phone .code svg')), 'phone QR: the code shows inside the menu');
+  ok((await page.evaluate(() => document.querySelector('ai-menu').shadowRoot.querySelector('.phone code').textContent)).includes('app=app-1'), 'phone QR: it carries the page state');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: SHOTS + 'menu-phone-qr.png' });
+  // any other app: the same element without the attribute keeps the menu as it was
+  const other = await page.evaluate(async () => {
+    const el = document.createElement('ai-menu');
+    document.body.append(el);
+    el.openMenu();
+    const has = [...el.shadowRoot.querySelectorAll('.item')].some((b) => b.textContent.includes('פתיחה בטלפון'));
+    el.remove();
+    return has;
+  });
+  ok(other === false, 'phone QR: apps without the trial attribute are unchanged');
+  ok(errs.length === 0, `phone QR: no page errors (${errs.join(' | ')})`);
+  await context.close();
+}
+
+// ---------- shared streets layer ----------
+{
+  const context = await browser.newContext();
+  await context.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+  await context.route(/\/rest\/v1\//, (r) => r.fulfill({ json: [] }));
+  const page = await context.newPage();
+  await page.goto(BASE + '/');
+  const res = await page.evaluate(async (base) => {
+    await new Promise((ok, no) => { const s = document.createElement('script'); s.src = base + '/streets.js'; s.onload = ok; s.onerror = no; document.head.append(s); });
+    const a = await window.AIStreets.locate('שדרות הרצל 12, אשדוד');
+    const b = await window.AIStreets.nearest(31.812281, 34.644832);
+    const g = await window.AIStreets.load();
+    return { a, b, n: g.features.length };
+  }, BASE);
+  ok(res.n === 2991, `streets: the shared layer serves all segments (${res.n})`);
+  ok(res.a?.name === 'שד הרצל' && Math.abs(res.a.lat - 31.79) < 0.03, `streets: an address finds its street (${JSON.stringify(res.a)})`);
+  ok(res.b?.name === "ז'בוטינסקי" && res.b.quarter === 'רובע א', 'streets: a point finds its street and quarter');
+  await context.close();
+}
+
 // ---------- installability ----------
 {
   const context = await browser.newContext();
