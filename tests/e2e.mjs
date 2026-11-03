@@ -573,6 +573,67 @@ const browser = await chromium.launch();
   await context.close();
 }
 
+// ---------- live guide (מדריך חי): record, share as a link, play ----------
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  await setup(context, []);
+  const page = await context.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(String(e)));
+  await page.goto(BASE + '/');
+  await page.waitForSelector('.card');
+  await page.locator('ai-menu .logo').click();
+  await page.locator('ai-menu .item', { hasText: 'מדריך חי' }).click();
+  await page.waitForFunction(() => window.AIGuide);
+  ok(await page.locator('ai-guide-layer .dock h2').isVisible(), 'guide: A&I item opens the live guide panel');
+  await page.screenshot({ path: SHOTS + 'guide-panel.png' });
+  await page.locator('ai-guide-layer button', { hasText: 'התחלת הקלטה' }).click();
+  ok(await page.locator('ai-guide-layer .rec').isVisible(), 'guide: recording bar shows');
+  await page.locator('.topbar').getByText('טבלה', { exact: true }).click();
+  await page.waitForSelector('table');
+  await page.locator('.table-search').fill('גינות');
+  await page.locator('.table-search').press('Tab');
+  await page.locator('.topbar').getByText('מפה', { exact: true }).click();
+  await page.waitForTimeout(200);
+  const n = await page.evaluate(() => JSON.parse(sessionStorage.getItem('ai-guide-rec')).s.length);
+  ok(n === 3, `guide: three actions became three steps (${n})`);
+  await page.screenshot({ path: SHOTS + 'guide-recording.png' });
+  await page.locator('ai-guide-layer button', { hasText: 'סיום ועריכה' }).click();
+  ok((await page.locator('ai-guide-layer .steps li').count()) === 3, 'guide: editor lists the steps');
+  ok((await page.locator('ai-guide-layer .steps input').first().inputValue()).includes('טבלה'), 'guide: step text names the button');
+  await page.locator('ai-guide-layer .title input').fill('איך מסננים בטבלה');
+  await page.screenshot({ path: SHOTS + 'guide-edit.png' });
+  await page.locator('ai-guide-layer button', { hasText: 'שמירה והעתקת קישור' }).click();
+  const link = await page.evaluate(() => window.AIGuide.link(JSON.parse(localStorage.getItem('ai-guides'))[0]));
+  ok(link.includes('#aig='), 'guide: the guide is carried in the link');
+
+  const viewer = await context.newPage();
+  viewer.on('pageerror', (e) => errs.push(String(e)));
+  await viewer.goto(link);
+  await viewer.waitForSelector('ai-guide-layer .bubble', { timeout: 8000 });
+  await viewer.waitForSelector('ai-guide-layer .ring', { timeout: 8000 });
+  ok((await viewer.locator('ai-guide-layer .bubble .say').textContent()).includes('טבלה'), 'guide link: first step bubble names the button');
+  ok(!(await viewer.evaluate(() => location.hash.includes('aig='))), 'guide link: the address is cleaned after reading');
+  const ring = await viewer.locator('ai-guide-layer .ring').boundingBox();
+  const btn = await viewer.locator('.topbar').getByText('טבלה', { exact: true }).boundingBox();
+  ok(ring && btn && ring.x <= btn.x && ring.x + ring.width >= btn.x + btn.width, 'guide link: the ring lights the real button');
+  await viewer.screenshot({ path: SHOTS + 'guide-play.png' });
+  await viewer.locator('.topbar').getByText('טבלה', { exact: true }).click();
+  await viewer.waitForFunction(() => document.querySelector('ai-guide-layer')?.shadowRoot.querySelector('.bubble .mono')?.textContent.includes('02'));
+  ok(true, 'guide link: clicking the lit button moves to step 2');
+  await viewer.locator('.table-search').fill('גינות');
+  await viewer.locator('.table-search').press('Tab');
+  await viewer.waitForFunction(() => document.querySelector('ai-guide-layer')?.shadowRoot.querySelector('.bubble .mono')?.textContent.includes('03'));
+  ok(true, 'guide link: typing in the field moves to step 3');
+  await viewer.locator('.topbar').getByText('מפה', { exact: true }).click();
+  await viewer.waitForFunction(() => document.querySelector('ai-guide-layer')?.shadowRoot.querySelector('.bubble .say')?.textContent.includes('הושלם'));
+  ok(true, 'guide link: last step ends the guide');
+  await viewer.setViewportSize({ width: 390, height: 800 });
+  ok(await noHScroll(viewer), 'guide: mobile, no horizontal scroll');
+  ok(errs.length === 0, `guide: no page errors (${errs.join(' | ')})`);
+  await context.close();
+}
+
 // ---------- installability ----------
 {
   const context = await browser.newContext();

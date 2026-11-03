@@ -16,6 +16,9 @@
  * instead of the A&I mark; the menu inside is the same.
  *   <ai-menu brand="ashdod" chat="..."></ai-menu>
  *
+ * "מדריך חי" (2026-11-03): an item that records a walkthrough and shares it as a link;
+ * the code is public/guide.js, loaded on demand from the same address as this file.
+ *
  * App editing actions (optional):
  *   menu.items = [{ label: 'מצב עריכה', pressed: true, onSelect() {...} }, ...]
  *   menu.status = 'נשמר'   // short state shown under the name
@@ -27,6 +30,23 @@
   if (customElements.get('ai-menu')) return;
   const BASE = (document.currentScript && document.currentScript.src) || 'https://appofapp-gh.vercel.app/ai-menu.js';
   const ASHDOD_LOGO = new URL('ashdod-logo.png', BASE).href;
+
+  // "מדריך חי" (public/guide.js): loaded only when used, or when a guide link or a
+  // guide in progress is waiting on this page.
+  let guideLoad = null;
+  const loadGuide = () =>
+    (guideLoad ||= window.AIGuide
+      ? Promise.resolve(window.AIGuide)
+      : new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = new URL('guide.js', BASE).href;
+          s.onload = () => (window.AIGuide ? res(window.AIGuide) : rej(new Error('guide.js')));
+          s.onerror = () => { guideLoad = null; rej(new Error('guide.js')); };
+          document.head.append(s);
+        }));
+  try {
+    if (/[#&]aig=/.test(location.hash) || sessionStorage.getItem('ai-guide-play') || sessionStorage.getItem('ai-guide-rec')) loadGuide().catch(() => {});
+  } catch {}
 
   // Chrome fires this once, early; keep it for the install item.
   let installEvent = null;
@@ -215,6 +235,7 @@
       const danger = this._items.filter((it) => it.danger);
       if (edits.length) groups.push({ label: 'עריכת האפליקציה', items: edits });
       const dev = [{ label: 'העתקת קישור', hint: 'למצב הנוכחי', onSelect: () => this._copy() }];
+      dev.push({ label: 'מדריך חי', hint: 'הקלטה ושיתוף', onSelect: () => this._guide() });
       if (chat) dev.push({ label: 'שיחת הפיתוח', href: chat });
       if (research) dev.push({ label: 'פרויקט המחקר', href: research });
       if (installEvent) dev.push({ label: 'התקנת האפליקציה', solid: true, onSelect: () => this._install() });
@@ -295,6 +316,16 @@
         this.close();
       }, 900);
       this.dispatchEvent(new CustomEvent('ai-copied', { detail: url, bubbles: true, composed: true }));
+    }
+
+    async _guide() {
+      try {
+        (await loadGuide()).open();
+      } catch {
+        this._note = 'המדריך לא נטען. בדקי חיבור ונסי שוב.';
+        this._render();
+        return true;
+      }
     }
 
     async _install() {
