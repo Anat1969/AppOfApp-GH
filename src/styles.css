@@ -171,6 +171,10 @@ img { display: block; max-width: 100%; }
 .hero-add { font-size: 1.1rem; padding: 0.95rem 1.6rem; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, var(--shadow-3); }
 .hero-add:hover:not(:disabled) { transform: translateY(-2px); }
 .hero-cta .dim { max-width: 34ch; font-size: 0.92rem; }
+/* Demo video button (public/demo.js): the second focus of the hero, on the empty side. */
+.hero-demo { position: absolute; inset-inline-end: 0; bottom: 56px; }
+.hero-demo:empty { display: none; }
+@media (max-width: 1100px) { .hero-demo { position: static; margin-top: 28px; } }
 .card-why { font-size: 0.82rem; color: var(--navy); margin-top: 4px; }
 .live-why { font-size: 0.78rem; color: var(--navy); }
 .connect { display: grid; gap: 6px; padding: 12px; border: 1px dashed var(--ink-2); background: #fff; }

@@ -19,6 +19,10 @@
  * "מדריך חי" (2026-11-03): an item that records a walkthrough and shares it as a link;
  * the code is public/guide.js, loaded on demand from the same address as this file.
  *
+ * "סרטון הדגמה" (2026-11-03): an item that sets the app's demo video, its length and speed, and a button for it on
+ * the home page (slot data-aoa-demo, else the corner). Code public/demo.js, loaded on every page after idle, since
+ * the home button is for every visitor. Data: aoa_apps data.demo.
+ *
  * App editing actions (optional):
  *   menu.items = [{ label: 'מצב עריכה', pressed: true, onSelect() {...} }, ...]
  *   menu.status = 'נשמר'   // short state shown under the name
@@ -44,6 +48,22 @@
           s.onerror = () => { guideLoad = null; rej(new Error('guide.js')); };
           document.head.append(s);
         }));
+  // "סרטון הדגמה" (public/demo.js): loaded after the page settles, because the home-page button is for everyone.
+  let demoLoad = null;
+  const loadDemo = () =>
+    (demoLoad ||= window.AIDemo
+      ? Promise.resolve(window.AIDemo)
+      : new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = new URL('demo.js', BASE).href;
+          s.onload = () => (window.AIDemo ? res(window.AIDemo) : rej(new Error('demo.js')));
+          s.onerror = () => { demoLoad = null; rej(new Error('demo.js')); };
+          document.head.append(s);
+        }));
+  const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1200));
+  const startDemo = () => idle(() => loadDemo().catch(() => {}), { timeout: 3000 });
+  document.readyState === 'complete' ? startDemo() : addEventListener('load', startDemo, { once: true });
+
   try {
     if (/[#&]aig=/.test(location.hash) || sessionStorage.getItem('ai-guide-play') || sessionStorage.getItem('ai-guide-rec')) loadGuide().catch(() => {});
   } catch {}
@@ -236,6 +256,7 @@
       if (edits.length) groups.push({ label: 'עריכת האפליקציה', items: edits });
       const dev = [{ label: 'העתקת קישור', hint: 'למצב הנוכחי', onSelect: () => this._copy() }];
       dev.push({ label: 'מדריך חי', hint: 'הקלטה ושיתוף', onSelect: () => this._guide() });
+      dev.push({ label: 'סרטון הדגמה', hint: 'אורך ומהירות', onSelect: () => this._demo() });
       if (chat) dev.push({ label: 'שיחת הפיתוח', href: chat });
       if (research) dev.push({ label: 'פרויקט המחקר', href: research });
       if (installEvent) dev.push({ label: 'התקנת האפליקציה', solid: true, onSelect: () => this._install() });
@@ -323,6 +344,16 @@
         (await loadGuide()).open();
       } catch {
         this._note = 'המדריך לא נטען. בדקי חיבור ונסי שוב.';
+        this._render();
+        return true;
+      }
+    }
+
+    async _demo() {
+      try {
+        (await loadDemo()).open();
+      } catch {
+        this._note = 'הסרטון לא נטען. בדקי חיבור ונסי שוב.';
         this._render();
         return true;
       }
