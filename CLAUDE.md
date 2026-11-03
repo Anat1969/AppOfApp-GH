@@ -133,6 +133,10 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   This app is recorded in its own portfolio as `app-appofapp-gh` (it was missing until 2026-11-03).
   The item shows in the logo only where the page has a video (`AIDemo.has()`, Anat approved 2026-11-03); a new app gets
   its video from Claude first, tried on one app (Refua-GH) before any change reaches all apps.
+- WALK AT EYE HEIGHT (2026-11-03, from a reel on spaceplanner.co, Anat approved): `public/walk.js` serves `<space-walk>` to all
+  her apps, like `ai-menu.js`. A plan (JSON, meters) becomes 3D and a first-person walk at a chosen eye height (95 child,
+  120 seated, 160 standing), with a live count of what blocks the view and a plan map with a legend. three.js 0.160 is
+  imported from jsdelivr on use. Standard: `docs/walk-standard.md`. First use: Urban 95 (`Anat1969/-95`, route `/walk`).
 - Sheet numbers (A-001...) follow creation order.
 - CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
   `action` (exactly one of 7, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,
