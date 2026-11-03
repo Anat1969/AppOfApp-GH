@@ -76,7 +76,8 @@
       font-family: var(--sw-font, inherit); color: var(--k-ink); direction: rtl; outline: none; }
     *, *::before, *::after { box-sizing: border-box; }
     .sw { display: grid; grid-template-columns: minmax(0, 1fr) 340px; height: 100%; background: var(--k-paper); }
-    .stage { position: relative; min-height: 0; overflow: hidden; background: #dfe5e8; border-inline-start: 1px solid var(--k-line); }
+    .stage { position: relative; min-height: 0; overflow: hidden; background: #dfe5e8; border-inline-start: 1px solid var(--k-line); container-type: inline-size; }
+    @container (max-width: 640px) { .hint { display: none; } }
     .gl { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
     .gl:active { cursor: grabbing; }
     .msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center;
