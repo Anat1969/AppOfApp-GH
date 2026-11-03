@@ -9,7 +9,8 @@
 //
 // Writes run with the service role, so the tables stay closed to direct writes. Uploads get a signed URL and go straight to storage.
 // "generate" distills desc / problem / solution. It reads the app's own site first, then asks
-// Gemini (GEMINI_API_KEY, free tier) and falls back to Claude (ANTHROPIC_API_KEY).
+// Gemini (GEMINI_API_KEY, free tier), then Poe (POE_API_KEY, free daily points, OpenAI-compatible,
+// reaches Claude / GPT / Gemini with one key), and falls back to Claude (ANTHROPIC_API_KEY).
 import Anthropic from 'npm:@anthropic-ai/sdk';
 
 const BUCKET = 'aoa-media';
@@ -148,6 +149,50 @@ async function viaGemini(key: string, user: string): Promise<Gen> {
   throw last;
 }
 
+// Poe (Anat, 2026-11-03, from a reel on free chatbots): one OpenAI-compatible endpoint, paid from the account's
+// free daily points. It replaces the Claude key that answers 401. The bot name is POE_MODEL; a cheap bot keeps
+// the daily points for many clicks. JSON is asked for in the prompt and read leniently (code fences, extra text).
+const POE_MODELS = [...new Set([Deno.env.get('POE_MODEL') ?? 'Claude-Haiku-4.5', 'Gemini-2.5-Flash', 'GPT-4o-Mini'])];
+
+function readJson(text: string) {
+  const t = text.replace(/```(?:json)?/gi, '');
+  const a = t.indexOf('{');
+  const b = t.lastIndexOf('}');
+  return JSON.parse(a >= 0 && b > a ? t.slice(a, b + 1) : t);
+}
+
+async function viaPoe(key: string, user: string): Promise<Gen> {
+  let last: unknown;
+  for (const model of POE_MODELS) {
+    try {
+      const r = await fetch('https://api.poe.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: 'system',
+              content: `${GEN_SYSTEM}\nענה ב-JSON בלבד, בלי טקסט נוסף, במבנה: {"desc":{"insight":"","detail":""},"problem":{"insight":"","detail":""},"solution":{"insight":"","detail":""}}`,
+            },
+            { role: 'user', content: user },
+          ],
+        }),
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!r.ok) throw Object.assign(new Error(`Poe ${model} ${r.status}`), { status: r.status });
+      const j = await r.json();
+      return compose(readJson(String(j?.choices?.[0]?.message?.content ?? '')));
+    } catch (err) {
+      last = err;
+      const status = (err as { status?: number }).status;
+      // a wrong key or no points left will not work with another bot either
+      if (status === 401 || status === 402 || status === 403) throw err;
+    }
+  }
+  throw last;
+}
+
 async function viaClaude(key: string, user: string): Promise<Gen> {
   const client = new Anthropic({ apiKey: key });
   const response = await client.beta.messages.create({
@@ -180,9 +225,10 @@ async function generate(body: Record<string, unknown>) {
   ].filter(Boolean).join('\n');
 
   const gemini = Deno.env.get('GEMINI_API_KEY')?.trim();
+  const poe = Deno.env.get('POE_API_KEY')?.trim();
   const claude = Deno.env.get('ANTHROPIC_API_KEY')?.trim();
   const errors: string[] = [];
-  for (const [label, key, run] of [['Gemini', gemini, viaGemini], ['Claude', claude, viaClaude]] as const) {
+  for (const [label, key, run] of [['Gemini', gemini, viaGemini], ['Poe', poe, viaPoe], ['Claude', claude, viaClaude]] as const) {
     if (!key) continue;
     try {
       const out = await run(key, user);
@@ -193,7 +239,7 @@ async function generate(body: Record<string, unknown>) {
       errors.push(status ? `${label} ${status}` : String((err as Error).message ?? err));
     }
   }
-  const hint = gemini ? '' : ' כדי שהניסוח יעבוד בחינם צריך להגדיר מפתח Gemini חינמי (GEMINI_API_KEY) ב-Supabase.';
+  const hint = gemini || poe ? '' : ' כדי שהניסוח יעבוד בחינם צריך להגדיר ב-Supabase מפתח Gemini חינמי (GEMINI_API_KEY) או מפתח Poe (POE_API_KEY, מ-poe.com/api_key).';
   return json({ error: `${errors.join(', ') || 'אין מפתח ניסוח'}.${hint}` }, 502);
 }
 
