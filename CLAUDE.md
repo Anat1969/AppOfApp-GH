@@ -67,7 +67,7 @@ Playwright comes from the global install: `ln -s "$(npm root -g)/playwright" nod
 | `aoa-media` | public bucket, covers and logos (`<appId>/cover-<ts>.<ext>`) |
 
 RLS: public read on apps and categories, no write policies. Every write goes through the edge function
-`aoa-edit` (source in `supabase/functions/aoa-edit`), which writes with the service role (open to every device, see Editing). Actions: check, save_app, delete_app, save_category, delete_category, save_facet, delete_facet, sign_upload,
+`aoa-edit` (source in `supabase/functions/aoa-edit`), which writes with the service role (open to every device, see Editing). Actions: check, ai_status (which AI keys are set, true/false only, and whether Poe answers), save_app, delete_app, save_category, delete_category, save_facet, delete_facet, sign_upload,
 generate.
 
 ## Editing
@@ -96,6 +96,9 @@ how to add one. POE (Anat, 2026-11-03, from a reel on free chatbots, poe.com): t
 Claude. `POE_API_KEY` (from poe.com/api_key) pays from the account's free daily points (about 3,000 a day, not officially
 documented) through the OpenAI-compatible `api.poe.com/v1`; bot `POE_MODEL`, default `Claude-Haiku-4.5`, then cheaper bots.
 It reaches Claude without the 401 Anthropic key. Without the secret the step is skipped.
+Checked 2026-11-03 with action `ai_status`: the key is set and Poe answers 402 (insufficient_points). The free plan
+gives no points the API can use; the API needs the paid plan (about $5 a month, 10,000 points a day). Until Anat decides,
+Gemini keeps writing and the Poe step stops at once on 402, without delay.
 The 67 apps that still had Lovable placeholders were filled once by hand from name, keywords and
 site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 
