@@ -260,6 +260,23 @@ Deno.serve(async (req) => {
       case 'check':
         return json({ ok: true });
 
+      // Which AI keys are set (true/false only, never the key) and whether Poe answers (Anat, 2026-11-03: "עשיתי?").
+      case 'ai_status': {
+        const has = (k: string) => Boolean(Deno.env.get(k)?.trim());
+        const poeKey = Deno.env.get('POE_API_KEY')?.trim();
+        let poe: string = poeKey ? '' : 'אין מפתח';
+        if (poeKey) {
+          const r = await fetch('https://api.poe.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${poeKey}` },
+            body: JSON.stringify({ model: POE_MODELS[0], max_tokens: 5, messages: [{ role: 'user', content: 'ok' }] }),
+            signal: AbortSignal.timeout(20000),
+          }).catch((e) => ({ ok: false, status: String(e) }) as const);
+          poe = r.ok ? `עובד (${POE_MODELS[0]})` : `שגיאה ${r.status}`;
+        }
+        return json({ gemini: has('GEMINI_API_KEY'), poe_key: has('POE_API_KEY'), poe, claude: has('ANTHROPIC_API_KEY') });
+      }
+
       case 'save_app': {
         const id = safeId(body.id);
         if (!id) return json({ error: 'bad id' }, 400);
