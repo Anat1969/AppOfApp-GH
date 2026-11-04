@@ -5,15 +5,17 @@ import {
 import { explain } from './glossary';
 import { MONTH_NAMES } from './parse';
 import type { Row, Slip } from './types';
-import { Est, Insight, Kpi, M, Meter, NumField, Section, Source, Spark, Stack, Toc } from './ui';
+import { Band, Est, Insight, Kpi, M, Meter, NumField, Section, Source, Spark, Stack, Toc } from './ui';
+import { ChartCard, LineChart, insightsFor } from './Chart';
 import Upload, { Jobs } from './Upload';
 import SlipMap from './SlipMap';
 
-export type View = 'home' | 'slip' | 'flow' | 'owed' | 'save' | 'pension' | 'time' | 'method';
+export type View = 'home' | 'slip' | 'flow' | 'rules' | 'owed' | 'save' | 'pension' | 'time' | 'method';
 export const VIEWS: { id: View; label: string; title: string }[] = [
   { id: 'home', label: 'בית', title: 'מה יש בתלוש שלי' },
   { id: 'slip', label: 'מה יש בתלוש', title: 'כל שורה בתלוש, במילים פשוטות' },
   { id: 'flow', label: 'הכנסות והוצאות', title: 'מאיפה הכסף בא ולאן הוא הולך' },
+  { id: 'rules', label: 'כללי אצבע', title: 'איפה אני עומדת מול כללי האצבע' },
   { id: 'owed', label: 'מה מגיע לי', title: 'זכויות, יתרות ומה לבדוק' },
   { id: 'save', label: 'איפה לחסוך', title: 'איפה אפשר לחסוך' },
   { id: 'pension', label: 'פנסיה', title: 'כמה תהיה הפנסיה ואיך היא תחולק' },
@@ -153,12 +155,19 @@ export function SlipView({ slips, params, go, month, onSlip, onRemove }: P) {
   const src = `תלוש ${monthLabel(s)}${s.fileName ? `, ${s.fileName}` : ''}`;
   return (
     <div>
-      <div className="chips" role="tablist" aria-label="חודש">
-        {slips.map((x) => <button key={x.id} type="button" role="tab" aria-selected={x.id === s.id} className={`chip ${x.id === s.id ? 'on' : ''}`} onClick={() => go('slip', x.id)}>{monthLabel(x)}</button>)}
-      </div>
-      <Toc items={[['s-fall', 'מהברוטו לבנק'], ['s-pay', 'תשלומים'], ['s-tax', 'מס וביטוח'], ['s-save', 'חיסכון'], ['s-imp', 'שווי שנזקף'], ['s-bal', 'יתרות']]} />
+      <Band>
+        <div className="chips" role="tablist" aria-label="חודש">
+          {slips.map((x) => <button key={x.id} type="button" role="tab" aria-selected={x.id === s.id} className={`chip ${x.id === s.id ? 'on' : ''}`} onClick={() => go('slip', x.id)}>{monthLabel(x)}</button>)}
+        </div>
+        <Toc items={[['s-fall', 'סיכום'], ['s-io', 'הכנסות מול הוצאות'], ['s-save', 'חיסכון'], ['s-imp', 'שווי שנזקף'], ['s-bal', 'יתרות']]} />
+      </Band>
 
       <Section n="01" id="s-fall" title={`כמה מהברוטו הגיע לבנק ב${monthLabel(s)}?`} lead={`מתוך **${nis(s.summary.totalPay)}** ברוטו נכנסו לבנק **${nis(s.summary.bank)}**, כלומר ${Math.round((s.summary.bank / s.summary.totalPay) * 100)}%.`}>
+        <div className="vs3">
+          <div className="vs ink"><span>ברוטו</span><b>{nis(s.summary.totalPay)}</b><i>כל מה שהעירייה שילמה</i></div>
+          <div className="vs neutral"><span>נטו</span><b>{nis(s.summary.net)}</b><i>{`אחרי מס וביטוח: ${Math.round((s.summary.net / s.summary.totalPay) * 100)}% מהברוטו`}</i></div>
+          <div className="vs pos"><span>לבנק</span><b>{nis(s.summary.bank)}</b><i>{`אחרי חיסכון וניכויים: ${Math.round((s.summary.bank / s.summary.totalPay) * 100)}%`}</i></div>
+        </div>
         <div className="fall">
           {[
             { l: 'סך התשלומים (ברוטו)', v: s.summary.totalPay, t: 'ink' },
@@ -182,14 +191,21 @@ export function SlipView({ slips, params, go, month, onSlip, onRemove }: P) {
         )}
       </Section>
 
-      <Section n="02" id="s-pay" title="על מה שילמו לי?" lead="כל רכיב בשכר, עם המגמה שלו ב-12 החודשים האחרונים.">
-        <Rows trend={trend} rows={s.payments} extra={(r) => (r.qty && r.rate ? `${n2(r.qty)} x ${nis(r.rate, 2)}` : undefined)} />
+      <Section n="02" id="s-io" title="מה נכנס ומה יצא?" lead={`נכנסו **${nis(s.summary.totalPay)}**, יצאו **${nis(s.summary.mandatory + s.summary.personalDed + s.summary.fundsDed)}**, מתוכם ${nis(s.summary.fundsDed)} לחיסכון שלך.`}>
+        <div className="io">
+          <div className="io-col in">
+            <h3><span>הכנסות</span><b>{nis(s.summary.totalPay, 2)}</b></h3>
+            <Rows trend={trend} rows={s.payments} extra={(r) => (r.qty && r.rate ? `${n2(r.qty)} x ${nis(r.rate, 2)}` : undefined)} />
+          </div>
+          <div className="io-col out">
+            <h3><span>הוצאות וניכויים</span><b>{nis(-(s.summary.mandatory + s.summary.personalDed + s.summary.fundsDed), 2)}</b></h3>
+            <Rows trend={trend} rows={[...s.mandatory, ...s.personal, ...s.funds.map((f) => ({ ...f, name: `חיסכון: ${f.name}` }))]} sign={-1} />
+          </div>
+        </div>
+        <p className="note"><M>{`המס השולי שלך **${n2(s.info.marginalTax ?? 0)}%**: מכל 100 ₪ נוספים ברוטו יורדים ${n2(s.info.marginalTax ?? 0)} ₪ למס, לפני ביטוח לאומי.`}</M></p>
+        <Source>{`${src}: "פירוט תשלומים וניכויים".`}</Source>
       </Section>
-      <Section n="03" id="s-tax" title="כמה לקחו מס וביטוח?" lead="ניכויים שהחוק קובע, לא בחירה.">
-        <Rows trend={trend} rows={s.mandatory} sign={-1} />
-        <p className="note"><M>{`המס השולי שלך **${n2(s.info.marginalTax ?? 0)}%**: מכל שקל נוסף ברוטו יורדים ${n2(s.info.marginalTax ?? 0)} אגורות למס, לפני ביטוח לאומי.`}</M></p>
-      </Section>
-      <Section n="04" id="s-save" title="כמה נחסך לי, ומי שם את הכסף?" lead="מה יורד ממך, ומה המעסיק מוסיף לאותה קופה.">
+      <Section n="03" id="s-save" title="כמה נחסך לי, ומי שם את הכסף?" lead="מה יורד ממך, ומה המעסיק מוסיף לאותה קופה.">
         <table className="rows funds">
           <thead><tr><th>קופה</th><th>ממך</th><th>מהמעסיק</th><th>פיצויים</th><th>סה"כ בחודש</th></tr></thead>
           <tbody>
@@ -205,17 +221,12 @@ export function SlipView({ slips, params, go, month, onSlip, onRemove }: P) {
         <p className="note"><M>{`על כל **${nis(s.summary.fundsDed)}** שיורדים ממך, המעסיק מוסיף **${nis(employerTotal(s))}**.`}</M></p>
         <Source>{`${src}: "קופות גמל" והפרשות המעסיק ב"נתוני עזר".`}</Source>
       </Section>
-      {s.personal.length > 0 && (
-        <Section n="05" title="מה ירד לפי בחירה שלי?" lead="ניכויים שבחרת בהם, לא חובה.">
-          <Rows trend={trend} rows={s.personal} sign={-1} extra={(r) => (r.name.includes('ביטוח') ? `${nis(r.amount * 12)} בשנה` : undefined)} />
-        </Section>
-      )}
       {imp.length > 0 && (
-        <Section n="06" id="s-imp" title="על מה אני משלמת מס בלי לקבל כסף?" lead="סכומים שלא נכנסים לחשבון, אבל נוספים לשכר החייב במס.">
+        <Section n="04" id="s-imp" title="על מה אני משלמת מס בלי לקבל כסף?" lead="סכומים שלא נכנסים לחשבון, אבל נוספים לשכר החייב במס.">
           <Rows rows={imp} extra={(r) => `מס משוער: ${nis((r.amount * (s.info.marginalTax ?? 0)) / 100)} בחודש`} />
         </Section>
       )}
-      <Section n="07" id="s-bal" title="מה צברתי?">
+      <Section n="05" id="s-bal" title="מה צברתי?">
         <div className="kpis">
           {s.vacation && <Kpi label={`חופשה (${unit})`} value={n2(s.vacation.close)} note={`נצבר ${n2(s.vacation.credit)}, נוצל ${n2(s.vacation.used)}`} />}
           {s.sick && <Kpi label={`מחלה (${unit})`} value={n2(s.sick.close)} note={`נצבר ${n2(s.sick.credit)}, נוצל ${n2(s.sick.used)}`} />}
@@ -237,61 +248,144 @@ export function Flow({ slips, go, onSlip }: P) {
   if (!slips.length) return <Empty onSlip={onSlip} />;
   const tot = (f: (s: Slip) => number) => sum(slips.map(f));
   const gross = tot((s) => s.summary.totalPay);
-  const parts = [
-    { label: 'לבנק', value: tot((s) => s.summary.bank), tone: 'green' },
-    { label: 'מס הכנסה', value: tot((s) => mandatoryBy(s, 'מס הכנסה')), tone: 'red' },
-    { label: 'ביטוח לאומי ובריאות', value: tot((s) => mandatoryBy(s, 'לאומי') + mandatoryBy(s, 'בריאות')), tone: 'red2' },
-    { label: 'פנסיה והשתלמות (חלקך)', value: tot((s) => s.summary.fundsDed), tone: 'blue' },
-    { label: 'ניכויים אישיים', value: tot((s) => s.summary.personalDed), tone: 'amber' },
-  ];
-  const max = Math.max(...slips.map((s) => s.summary.totalPay + employerTotal(s)));
+  const net = tot((s) => s.summary.net);
+  const tax = tot((s) => mandatoryBy(s, 'מס הכנסה'));
+  const bl = tot((s) => mandatoryBy(s, 'לאומי') + mandatoryBy(s, 'בריאות'));
+  const mine = tot((s) => s.summary.fundsDed);
+  const pers = tot((s) => s.summary.personalDed);
+  const bank = tot((s) => s.summary.bank);
+  const emp = tot(employerTotal);
   const per100 = (v: number) => Math.round((v / gross) * 100);
+  const labels = slips.map((s) => MONTH_NAMES[s.month - 1].slice(0, 3) + (new Set(slips.map((x) => x.year)).size > 1 ? ` ${String(s.year).slice(2)}` : ''));
+  const k = (n: number) => `${Math.round(n / 100) / 10}K`;
+  const bankSeries = slips.map((s) => s.summary.bank);
   return (
     <div>
-      <Toc items={[['f-all', 'לאן הולך כל שקל'], ['f-months', 'חודש אחרי חודש'], ['f-table', 'כל המספרים']]} />
-      <Section n="01" id="f-all" title="לאן הולך כל שקל?" lead={`מכל **100 ₪** ברוטו: ${per100(parts[0].value)} לבנק, ${per100(parts[1].value)} מס הכנסה, ${per100(parts[2].value)} ביטוח לאומי ובריאות, ${per100(parts[3].value)} לחיסכון שלך.`}>
-        <Stack parts={parts} total={gross} />
-        <div className="kpis">
-          <Kpi label="ברוטו מצטבר" value={nis(gross)} />
-          <Kpi label="לבנק מצטבר" value={nis(parts[0].value)} tone="green" />
-          <Kpi label="הפקדות המעסיק" value={nis(tot(employerTotal))} note="לא בתוך הברוטו" tone="blue" />
-          <Kpi label="עלות מלאה שלך למעסיק" value={nis(gross + tot(employerTotal))} note="בלי ביטוח לאומי מעסיק" />
+      <Band><Toc items={[['f-sum', 'ברוטו מול נטו'], ['f-line', 'לאורך החודשים'], ['f-save', 'חיסכון'], ['f-table', 'כל המספרים']]} /></Band>
+      <Section n="01" id="f-sum" title="כמה ברוטו, כמה נטו, וכמה הגיע לבנק?" lead={`מכל **100 ₪** ברוטו: ${per100(bank)} לבנק, ${per100(tax)} מס הכנסה, ${per100(bl)} ביטוח לאומי ובריאות, ${per100(mine)} לחיסכון שלך.`}>
+        <div className="vs3">
+          <div className="vs ink"><span>{`ברוטו, ${slips.length} חודשים`}</span><b>{nis(gross)}</b><i>{`ממוצע ${nis(gross / slips.length)} בחודש`}</i></div>
+          <div className="vs neutral"><span>נטו</span><b>{nis(net)}</b><i>{`${per100(net)}% מהברוטו`}</i></div>
+          <div className="vs pos"><span>לבנק</span><b>{nis(bank)}</b><i>{`${per100(bank)}% מהברוטו`}</i></div>
         </div>
+        <div className="io sums">
+          <div className="io-col in">
+            <h3><span>נכנס</span><b>{nis(gross + emp)}</b></h3>
+            <dl className="io-dl"><dt>ברוטו</dt><dd>{nis(gross)}</dd><dt>הפקדות המעסיק לחיסכון שלך</dt><dd>{nis(emp)}</dd></dl>
+          </div>
+          <div className="io-col out">
+            <h3><span>יצא</span><b>{nis(-(tax + bl + pers))}</b></h3>
+            <dl className="io-dl"><dt>מס הכנסה</dt><dd>{nis(-tax)}</dd><dt>ביטוח לאומי ובריאות</dt><dd>{nis(-bl)}</dd><dt>ניכויים אישיים</dt><dd>{nis(-pers)}</dd></dl>
+          </div>
+        </div>
+        <Stack parts={[
+          { label: 'לבנק', value: bank, tone: 'green' },
+          { label: 'חיסכון שלך', value: mine, tone: 'blue' },
+          { label: 'מס הכנסה', value: tax, tone: 'red' },
+          { label: 'ביטוח לאומי ובריאות', value: bl, tone: 'red2' },
+          { label: 'ניכויים אישיים', value: pers, tone: 'amber' },
+        ]} total={gross} />
         <Source>{`${slips.length} תלושים, שורת הסיכום בתחתית כל תלוש.`}</Source>
       </Section>
-      <Section n="02" id="f-months" title="איך זה משתנה מחודש לחודש?" lead="כל עמודה היא חודש. החלק הבהיר למעלה הוא **מה שהמעסיק מפקיד** מעבר לברוטו. לחיצה פותחת את התלוש.">
-        <div className="cols" role="list">
-          {slips.map((s) => {
-            const segs = [
-              ['green', s.summary.bank], ['red', mandatoryBy(s, 'מס הכנסה')], ['red2', mandatoryBy(s, 'לאומי') + mandatoryBy(s, 'בריאות')],
-              ['blue', s.summary.fundsDed], ['amber', s.summary.personalDed], ['blue-light', employerTotal(s)],
-            ] as [string, number][];
-            return (
-              <button key={s.id} type="button" role="listitem" className="col" onClick={() => go('slip', s.id)} title={`${monthLabel(s)}: לבנק ${nis(s.summary.bank)}`}>
-                <span className="col-stack">{segs.map(([t, v]) => <span key={t} className={`seg ${t}`} style={{ height: `${(Math.max(0, v) / max) * 100}%` }} />)}</span>
-                <span className="col-l">{MONTH_NAMES[s.month - 1].slice(0, 3)}</span>
-                <span className="col-v">{Math.round(s.summary.bank / 1000)}K</span>
-              </button>
-            );
-          })}
-        </div>
+      <Section n="02" id="f-line" title="איך זה משתנה מחודש לחודש?" lead="כל קו הוא סכום אחד לאורך כל החודשים. לחיצה על שם בודדת את הקו ומציגה את הממוצע שלו.">
+        <ChartCard q="ברוטו, נטו ולבנק: האם החודש היה רגיל?" how="כל נקודה היא חודש; ריחוף מציג את הסכום. ירוק הוא מה שהגיע אלייך, אדום מה שיצא למס." insights={insightsFor('הסכום לבנק', bankSeries, labels, nis)}>
+          <LineChart labels={labels} fmt={k} series={[
+            { key: 'gross', label: 'ברוטו', values: slips.map((s) => s.summary.totalPay), tone: 'ink' },
+            { key: 'net', label: 'נטו', values: slips.map((s) => s.summary.net), tone: 'save' },
+            { key: 'bank', label: 'לבנק', values: bankSeries, tone: 'pos' },
+            { key: 'tax', label: 'מס הכנסה', values: slips.map((s) => mandatoryBy(s, 'מס הכנסה')), tone: 'neg' },
+          ]} />
+        </ChartCard>
       </Section>
-      <Section n="03" id="f-table" title="כל המספרים, חודש בחודש">
+      <Section n="03" id="f-save" title="כמה נחסך כל חודש, וכמה מזה מהמעסיק?">
+        <ChartCard q="החלק שלך מול החלק של המעסיק" how="כחול: מה שיורד ממך לקופות. ירוק: מה שהמעסיק מוסיף, מעבר לברוטו." insights={insightsFor('הפקדת המעסיק', slips.map(employerTotal), labels, nis)}>
+          <LineChart labels={labels} fmt={k} series={[
+            { key: 'mine', label: 'ממך', values: slips.map((s) => s.summary.fundsDed), tone: 'save' },
+            { key: 'emp', label: 'מהמעסיק', values: slips.map(employerTotal), tone: 'pos' },
+          ]} />
+        </ChartCard>
+      </Section>
+      <Section n="04" id="f-table" title="כל המספרים, חודש בחודש" lead="ירוק: עלה מהחודש הקודם. אדום: ירד. לחיצה על שורה פותחת את התלוש.">
         <div className="scroll-x">
           <table className="grid">
-            <thead><tr><th>חודש</th><th>ברוטו</th><th>מס הכנסה</th><th>ב"ל ובריאות</th><th>חיסכון שלך</th><th>אישיים</th><th>לבנק</th><th>מהמעסיק</th></tr></thead>
+            <thead><tr><th>חודש</th><th>ברוטו</th><th>נטו</th><th>מס הכנסה</th><th>ב"ל ובריאות</th><th>חיסכון שלך</th><th>לבנק</th><th>שינוי בבנק</th><th>מהמעסיק</th></tr></thead>
             <tbody>
-              {slips.map((s) => (
-                <tr key={s.id} onClick={() => go('slip', s.id)}>
-                  <td>{monthLabel(s)}</td><td>{nis(s.summary.totalPay)}</td><td className="red">{nis(mandatoryBy(s, 'מס הכנסה'))}</td>
-                  <td className="red">{nis(mandatoryBy(s, 'לאומי') + mandatoryBy(s, 'בריאות'))}</td><td className="blue">{nis(s.summary.fundsDed)}</td>
-                  <td>{nis(s.summary.personalDed)}</td><td className="green strong">{nis(s.summary.bank)}</td><td className="blue">{nis(employerTotal(s))}</td>
-                </tr>
-              ))}
+              {slips.map((s, i) => {
+                const d = i ? s.summary.bank - slips[i - 1].summary.bank : 0;
+                return (
+                  <tr key={s.id} onClick={() => go('slip', s.id)}>
+                    <td>{monthLabel(s)}</td><td>{nis(s.summary.totalPay)}</td><td>{nis(s.summary.net)}</td><td className="red">{nis(mandatoryBy(s, 'מס הכנסה'))}</td>
+                    <td className="red">{nis(mandatoryBy(s, 'לאומי') + mandatoryBy(s, 'בריאות'))}</td><td className="blue">{nis(s.summary.fundsDed)}</td>
+                    <td className="green strong">{nis(s.summary.bank)}</td>
+                    <td className={!i || Math.abs(d) < 1 ? '' : d > 0 ? 'green' : 'red'}>{!i ? '—' : `${d > 0 ? '+' : ''}${nis(d)}`}</td>
+                    <td className="green">{nis(employerTotal(s))}</td>
+                  </tr>
+                );
+              })}
             </tbody>
-            <tfoot><tr><td>סה"כ</td><td>{nis(gross)}</td><td>{nis(parts[1].value)}</td><td>{nis(parts[2].value)}</td><td>{nis(parts[3].value)}</td><td>{nis(parts[4].value)}</td><td>{nis(parts[0].value)}</td><td>{nis(tot(employerTotal))}</td></tr></tfoot>
+            <tfoot><tr><td>סה"כ</td><td>{nis(gross)}</td><td>{nis(net)}</td><td>{nis(tax)}</td><td>{nis(bl)}</td><td>{nis(mine)}</td><td>{nis(bank)}</td><td /><td>{nis(emp)}</td></tr></tfoot>
           </table>
         </div>
+      </Section>
+    </div>
+  );
+}
+
+/* ---------- Rules of thumb ---------- */
+type Light = 'green' | 'amber' | 'red';
+interface Rule { title: string; rule: string; mine: string; light: Light; why: string }
+
+export function Rules({ slips, params, go, onSlip }: P) {
+  if (!slips.length) return <Empty onSlip={onSlip} />;
+  const last = slips[slips.length - 1];
+  const groups = fundGroups(last);
+  const base = sum(last.payments.filter((p) => /שכר יסוד/.test(p.name)).map((p) => p.amount)) || last.summary.base;
+  const pens = groups.filter((g) => g.kind === 'pension' && !/הוצאות/.test(g.name));
+  const pensBase = sum(pens.map((g) => g.base));
+  const pensPct = base ? (sum(pens.map((g) => g.employee + g.employer + g.severance)) / base) * 100 : 0;
+  const hish = groups.find((g) => g.kind === 'hishtalmut');
+  const hishPct = hish ? (hish.pctEmployee ?? 0) + (hish.pctEmployer ?? 0) : 0;
+  const f = forecast(slips, params);
+  const netNow = avg(slips.map((s) => s.summary.net));
+  const share = (f.totalNet / netNow) * 100;
+  const bankAvg = avg(slips.map((s) => s.summary.bank));
+  const vac = slips.filter((s) => s.vacation);
+  const vacNet = sum(vac.map((s) => s.vacation!.credit - s.vacation!.used));
+  const marg = last.info.marginalTax ?? 0;
+  const life = last.personal.filter((p) => /ביטוח/.test(p.name));
+  const havraa = slips.some((s) => s.payments.some((p) => /הבראה/.test(p.name)));
+  const rules: Rule[] = [
+    { title: 'חיסכון לפנסיה', rule: 'לפחות 18.5% מהשכר (6% עובד, 6.5% מעסיק, 6% פיצויים)', mine: `${n2(pensPct)}%`, light: pensPct >= 18.5 ? 'green' : 'red', why: pensPct >= 18.5 ? 'מעל המינימום בחוק: ההפקדות מלאות.' : 'מתחת למינימום. לבדוק מול מחלקת השכר.' },
+    { title: 'פנסיה על כל השכר', rule: 'בסיס ההפקדה שווה לשכר היסוד', mine: `${nis(pensBase)} מתוך ${nis(base)}`, light: pensBase >= base - 1 ? 'green' : 'red', why: pensBase >= base - 1 ? 'כל שכר היסוד מבוטח.' : 'חלק מהשכר לא מבוטח לפנסיה.' },
+    { title: 'קרן השתלמות', rule: '10% בסך הכול (2.5% ממך, 7.5% מהמעסיק)', mine: hish ? `${n2(hishPct)}%` : 'אין', light: hishPct >= 10 ? 'green' : hish ? 'amber' : 'red', why: hishPct >= 10 ? 'בתקרה המלאה: חיסכון פטור ממס.' : 'כדאי לבדוק אם אפשר להגדיל.' },
+    { title: 'הכנסה בפרישה', rule: 'לפחות 70% מהנטו של היום', mine: `${Math.round(share)}%`, light: share >= 70 ? 'green' : share >= 50 ? 'amber' : 'red', why: Object.values(params.balances).some((b) => b > 0) ? 'לפי התחזית בדף הפנסיה.' : 'עוד בלי הצבירה הקיימת, ולכן נמוך מהאמת. להזין צבירה בדף הפנסיה.' },
+    { title: 'דמי ניהול מהצבירה', rule: `עד ${n2(params.targetFee)}% (היעד שקבעת)`, mine: `${n2(params.feeBalance)}%`, light: params.feeBalance <= params.targetFee ? 'green' : params.feeBalance <= 0.3 ? 'amber' : 'red', why: 'אחוז קטן מהצבירה מצטבר לעשרות אלפי שקלים עד הפרישה.' },
+    { title: 'כרית ביטחון', rule: '3 עד 6 חודשי הכנסה בחיסכון נזיל', mine: `${nis(bankAvg * 3)} עד ${nis(bankAvg * 6)}`, light: 'amber', why: 'התלוש לא יודע כמה יש בחשבון. זה היעד לפי ההכנסה שלך.' },
+    { title: 'ניצול חופשה', rule: 'לנצל בערך את מה שנצבר בשנה', mine: vac.length >= 3 ? `${vacNet >= 0 ? '+' : ''}${n2(vacNet)} ב-${vac.length} חודשים` : 'צריך 3 חודשים', light: vac.length < 3 ? 'amber' : vacNet > 5 ? 'amber' : 'green', why: 'צבירה מעל תקרת ההסכם נמחקת; ניצול שומר על הערך.' },
+    { title: 'מס שולי', rule: 'לדעת כמה נשאר מכל שקל נוסף', mine: `${n2(marg)}%`, light: marg >= 47 ? 'red' : marg >= 35 ? 'amber' : 'green', why: `מכל 100 ₪ נוספים ברוטו נשארים לך כ-${Math.round(100 - marg - 12)} ₪ אחרי מס וביטוח לאומי (הערכה).` },
+    { title: 'ביטוח חיים בתלוש', rule: 'לא לשלם פעמיים על אותו כיסוי', mine: life.length ? `${nis(sum(life.map((l) => l.amount)) * 12)} בשנה` : 'אין', light: life.length ? 'amber' : 'green', why: life.length ? 'קרן הפנסיה כבר כוללת כיסוי שארים. לבדוק כפילות.' : 'אין ניכוי ביטוח אישי.' },
+    { title: 'דמי הבראה', rule: 'משולמים פעם בשנה', mine: havraa ? 'שולמו' : 'עוד לא הופיעו', light: havraa ? 'green' : 'amber', why: havraa ? 'נמצאה שורת הבראה בתלושים.' : 'אם עד הסתיו אין שורה כזו, לשאול במחלקת השכר.' },
+  ];
+  const count = (l: Light) => rules.filter((r) => r.light === l).length;
+  return (
+    <div>
+      <section className="answers" aria-label="סיכום הרמזור">
+        <article className="answer light-green"><h2>עומדת בכלל</h2><p className="big">{count('green')}</p><p className="sub">אין מה לעשות כרגע.</p></article>
+        <article className="answer light-amber"><h2>כדאי לבדוק</h2><p className="big">{count('amber')}</p><p className="sub">חסר מידע או שיש מקום לשיפור.</p></article>
+        <article className="answer light-red"><h2>לא עומדת בכלל</h2><p className="big">{count('red')}</p><p className="sub">כאן כדאי לפעול קודם.</p></article>
+      </section>
+      <Section n="01" title="כל כלל, והמספר שלך מולו" lead="אדום קודם, אחר כך כתום, ובסוף ירוק: מה שדורש פעולה נמצא למעלה.">
+        <ol className="rules">
+          {[...rules].sort((a, b) => ['red', 'amber', 'green'].indexOf(a.light) - ['red', 'amber', 'green'].indexOf(b.light)).map((r) => (
+            <li key={r.title} className={`rule ${r.light}`}>
+              <span className="light" aria-label={{ green: 'ירוק', amber: 'כתום', red: 'אדום' }[r.light]} />
+              <div className="rule-body"><b>{r.title}</b><span className="rule-rule">{r.rule}</span><span className="rule-why">{r.why}</span></div>
+              <div className="rule-mine">{r.mine}</div>
+            </li>
+          ))}
+        </ol>
+        <p className="note">כללי אצבע מקובלים בתכנון כלכלי אישי, לא ייעוץ. המספרים שלך מהתלוש האחרון ({monthLabel(last)}) ומההנחות בדף הפנסיה.</p>
+        <div className="row-actions"><button type="button" className="btn" onClick={() => go('pension')}>להנחות הפנסיה</button><button type="button" className="btn" onClick={() => go('method')}>איך מחשבים</button></div>
       </Section>
     </div>
   );
@@ -379,7 +473,7 @@ export function Save({ slips, params, setParams, onSlip }: P) {
   const life = last.personal.filter((p) => /ביטוח/.test(p.name));
   return (
     <div>
-      <Toc items={[['v-fee', 'דמי ניהול'], ['v-imp', 'שווי שנזקף'], ['v-ins', 'ביטוחים'], ['v-don', 'תרומות']]} />
+      <Band><Toc items={[['v-fee', 'דמי ניהול'], ['v-imp', 'שווי שנזקף'], ['v-ins', 'ביטוחים'], ['v-don', 'תרומות']]} /></Band>
       <Section n="01" id="v-fee" title="כמה עולים לי דמי הניהול?" lead="הסעיף הגדול ביותר שאפשר לשנות בשיחת טלפון אחת לקרן.">
         <Meter label="דמי ניהול מהצבירה" value={params.feeBalance} target={params.targetFee} max={0.6} lowerIsBetter fmt={(n) => `${n2(n)}%`} note="התקרה בחוק לקרן פנסיה: 0.5%" />
         <Meter label="דמי ניהול מההפקדה" value={params.feeDeposit} target={1} max={6.5} lowerIsBetter fmt={(n) => `${n2(n)}%`} note="התקרה בחוק: 6%" />
@@ -426,7 +520,7 @@ export function Pension({ slips, params, setParams, onSlip }: P) {
   return (
     <div>
       {!hasBalances && <Insight title="חסרה הצבירה שכבר יש לך" tone="red">{`בלי הצבירה הקיימת התחזית סופרת רק **הפקדות מהיום והלאה**. את הסכום מעתיקים מהדוח השנתי של כל קרן, למטה.`}</Insight>}
-      <Toc items={[['p-sum', 'כמה אקבל'], ['p-split', 'איך תחולק'], ['p-assume', 'ההנחות']]} />
+      <Band><Toc items={[['p-sum', 'כמה אקבל'], ['p-split', 'איך תחולק'], ['p-assume', 'ההנחות']]} /></Band>
       <Section n="01" id="p-sum" title={`כמה אקבל בחודש בפרישה? כ-${nis(f.totalNet)} נטו`} lead={`הערכה ב**שקלים של היום**, מ${fmtDate(f.retireDate)} (גיל ${params.retireAge}), עוד **${f.months} חודשי** הפקדה.`}>
         <div className="kpis">
           <Kpi est label="קצבה ברוטו מהקרנות" value={nis(f.pension)} tone="blue" />

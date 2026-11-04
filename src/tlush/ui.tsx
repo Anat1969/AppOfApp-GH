@@ -1,4 +1,5 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, useLayoutEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 /** Text standard: `**word**` becomes a marker. */
 export function M({ children }: { children: string }) {
@@ -111,4 +112,14 @@ export function Toc({ items }: { items: [string, string][] }) {
       {items.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>{label}</a>)}
     </nav>
   );
+}
+
+/**
+ * Page controls go into the one sticky band under the top bar (Anat, 2026-11-04: "כל סרגל כפתורים צריך להיות קבוע בדף
+ * בו הוא מצוי - בלי קפיצות"). Mounted before paint, so nothing shifts when a page opens.
+ */
+export function Band({ children }: { children: ReactNode }) {
+  const [el, setEl] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => setEl(document.getElementById('band-slot')), []);
+  return el ? createPortal(children, el) : null;
 }

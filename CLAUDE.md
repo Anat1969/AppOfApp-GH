@@ -100,6 +100,17 @@ measured against it:
   only; bold headings (800) and big bold numbers; quiet shadows; generous white space; 17px body. Square corners and no
   icons stay (Anat's standing rules), even though MOKED uses rounded pills and thin line icons.
 Applied first to the payslip reader (2026-11-04).
+- READING ORDER AND CONTROLS (Anat, 2026-11-04, for every app):
+  "כל סרגל כפתורים צריך להיות קבוע בדף בו הוא מצוי - בלי קפיצות - מאבדים אוריינטציה": every button bar is sticky in its
+  page and never moves: one band under the top bar holds the page's controls (in the payslip reader `.band` + `Band` portal
+  in `src/tlush/ui.tsx`); page changes fade without vertical motion; a month switch keeps the scroll position.
+  "יותר שימוש ברמזור צבעים": green = good for the user, red = out / below target, amber = check; navy = savings, gold = targets.
+  "כפתורים באותם גדלים, ללא מסגרות, כן ריחוף והצללה והבלטה של הלחוץ": one button size (40px), no borders, lift and shadow on
+  hover, the pressed one filled navy and set in.
+  Line charts with points, axes, every month, isolate a line on click (the others fade) and its average as a dashed line
+  (`src/tlush/Chart.tsx`); "כל גרף - ההסבר שלו והתובנות שעולות ממנו": every chart has "איך לקרוא" and "מה רואים" (computed).
+  Income opposite expenses and gross next to net, side by side. "סדר את המידע ... מסיכום לפרוט": top-down from summary to
+  detail. A "כללי אצבע" page: each rule, the user's number against it and a traffic light, red first.
 
 ## Data (Supabase cultura-GH, ktqmwpbzcnzkhjskqisy, shared: prefix `aoa_`)
 

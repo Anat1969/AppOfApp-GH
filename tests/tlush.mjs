@@ -35,6 +35,7 @@ ok(await page.locator('.upload').isVisible(), 'empty state shows the upload area
 ok(await page.locator('button:has-text("העלאת כל התלושים")').first().isVisible(), 'main button: upload all slips');
 // A PDF that is not a payslip, and a non-PDF, go through the same pipeline and are reported, not swallowed.
 const pdfPage = await ctx.newPage();
+// (the band stays put: checked after the slips are loaded)
 await pdfPage.setContent('<p>not a payslip</p>');
 const notSlip = await pdfPage.pdf();
 await pdfPage.close();
@@ -54,13 +55,26 @@ await page.locator('.map-grid .cell.on').first().click();
 ok(page.url().includes('m=2026-01'), 'a map cell opens its slip');
 await page.goto(`${BASE}/tlush/`);
 ok((await page.textContent('.kpis')).includes('3'), 'home counts three slips');
-for (const [label, expect] of [['מה יש בתלוש', 'מהברוטו לבנק'], ['הכנסות והוצאות', 'מכל 100'], ['מה מגיע לי', 'נקודות זיכוי'], ['איפה לחסוך', 'דמי ניהול'], ['פנסיה', 'איך הקצבה תחולק'], ['תכנון זמן', 'מתי צריך להחליט'], ['איך מחשבים', 'בדיקת התאמה מלאה']]) {
+for (const [label, expect] of [['מה יש בתלוש', 'מה נכנס ומה יצא'], ['הכנסות והוצאות', 'מכל 100'], ['כללי אצבע', 'כל כלל, והמספר שלך מולו'], ['מה מגיע לי', 'נקודות זיכוי'], ['איפה לחסוך', 'דמי ניהול'], ['פנסיה', 'איך הקצבה תחולק'], ['תכנון זמן', 'מתי צריך להחליט'], ['איך מחשבים', 'בדיקת התאמה מלאה']]) {
   await page.click(`.nav-btn:has-text("${label}")`);
   await page.waitForTimeout(350);
-  ok(await page.locator('.page-title button:has-text("העלאת כל התלושים")').isVisible(), `${label}: upload button in the page head`);
+  ok(await page.locator('.band button:has-text("העלאת כל התלושים")').isVisible(), `${label}: upload button in the sticky band`);
   ok((await page.textContent('main')).includes(expect), `${label}: shows "${expect}"`);
   await page.screenshot({ path: `${SHOTS}tlush-${label.replace(/\s/g, '-')}.png`, fullPage: true });
 }
+// Sticky band: same place after scrolling, and the line chart isolates a series with its average.
+await page.click('.nav-btn:has-text("הכנסות והוצאות")');
+await page.waitForTimeout(300);
+const bandTop = await page.locator('.band').evaluate((el) => el.getBoundingClientRect().top);
+await page.mouse.wheel(0, 1500); await page.waitForTimeout(300);
+ok(Math.abs((await page.locator('.band').evaluate((el) => el.getBoundingClientRect().top)) - 60) <= 2 && bandTop >= 60, 'the band sticks under the top bar');
+await page.locator('.lc-key:has-text("לבנק")').first().click();
+ok(await page.locator('.lc-avg').first().isVisible(), 'isolating a line shows its average');
+ok((await page.locator('.lc-s.faded').count()) === 3, 'the other lines fade');
+ok((await page.locator('.chart-insights').first().textContent()).includes('הממוצע'), 'every chart has its insights');
+await page.click('.nav-btn:has-text("כללי אצבע")');
+await page.waitForTimeout(300);
+ok((await page.locator('.rule').count()) >= 8, 'rules of thumb listed with a traffic light');
 await page.click('.nav-btn:has-text("פנסיה")');
 const before = await page.textContent('.sec .kpis');
 await page.locator('.field input').first().fill('500000');

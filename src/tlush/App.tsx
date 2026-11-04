@@ -1,9 +1,9 @@
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSlips } from './store';
 import { UploadButton, UploaderProvider } from './Upload';
 import type { Slip } from './types';
-import { Flow, Home, Method, Owed, Pension, Save, SlipView, Time, VIEWS, type View } from './Views';
+import { Flow, Home, Method, Owed, Pension, Rules, Save, SlipView, Time, VIEWS, type View } from './Views';
 
 interface MenuElement extends HTMLElement { items: { label: string; hint?: string; danger?: boolean; onSelect: () => unknown }[]; status: string }
 // The 'ai-menu' JSX type is declared once, in src/components/AIMenu.tsx.
@@ -27,9 +27,12 @@ export default function App() {
     if (v !== 'home') q.set('v', v);
     if (m) q.set('m', m);
     history.pushState(null, '', `${location.pathname}${q.size ? `?${q}` : ''}`);
-    setRoute({ view: v, month: m });
-    scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
-  }, [reduce]);
+    setRoute((cur) => {
+      // A month switch keeps the reader where they are; only a new page starts at the top.
+      if (cur.view !== v) scrollTo({ top: 0, behavior: 'auto' });
+      return { view: v, month: m };
+    });
+  }, []);
 
   useEffect(() => { const on = () => setRoute(readUrl()); addEventListener('popstate', on); return () => removeEventListener('popstate', on); }, []);
   useEffect(() => { document.title = `${VIEWS.find((x) => x.id === view)!.label} · מה יש בתלוש שלי`; }, [view]);
@@ -64,7 +67,7 @@ export default function App() {
 
   const props = { slips, params, setParams, go, month, onSlip: add, onRemove: remove };
   const current = VIEWS.find((x) => x.id === view)!;
-  const Page = { home: Home, slip: SlipView, flow: Flow, owed: Owed, save: Save, pension: Pension, time: Time, method: Method }[view];
+  const Page = { home: Home, slip: SlipView, flow: Flow, rules: Rules, owed: Owed, save: Save, pension: Pension, time: Time, method: Method }[view];
   const okCount = slips.filter((s) => !s.warnings.length).length;
   const badge = slips.length > 0 && (
     <button type="button" className={`match-badge ${okCount < slips.length ? 'bad' : ''}`} onClick={() => go('method')} title="מה נבדק בכל תלוש">
@@ -91,15 +94,18 @@ export default function App() {
         {view !== 'home' && (
           <div className="page-head">
             <nav className="crumbs" aria-label="מיקום"><a href={location.pathname} onClick={(e) => { e.preventDefault(); go('home'); }}>בית</a><span>/</span><span>{current.label}</span></nav>
-            <div className="page-title"><h1>{current.title}</h1><div className="page-tools">{badge}<UploadButton /></div></div>
+            <h1>{current.title}</h1>
           </div>
         )}
-        {view === 'home' && badge && <div className="home-badge">{badge}</div>}
-        <AnimatePresence mode="wait">
-          <motion.div key={view + (month ?? '')} initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -6 }} transition={{ duration: 0.22 }}>
-            <Page {...props} />
-          </motion.div>
-        </AnimatePresence>
+        {/* The sticky band: page controls (portal slot) and the tools, always in the same place. */}
+        <div className="band">
+          <div id="band-slot" className="band-slot" />
+          <div className="page-tools">{badge}{view !== 'home' && <UploadButton />}</div>
+        </div>
+        {/* Fade only: no vertical movement, no exit wait, so the bars never jump. */}
+        <motion.div key={view} initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>
+          <Page {...props} />
+        </motion.div>
       </main>
       <footer className="foot">
         <span>הנתונים נשמרים רק בדפדפן הזה. אין שרת, אין חשבון, ושום תלוש לא נשלח.</span>
