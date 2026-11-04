@@ -4,8 +4,8 @@ import type { ActionValue, AppData, Facet } from '../lib/types';
 import type { Route } from '../lib/route';
 import { ACTIONS, actionOf } from '../lib/facets';
 import { siteUrl, thumbOf } from '../lib/format';
-import { GAP_IDEAS, gapKey } from '../data/gapIdeas';
-import { toast } from './Toasts';
+import { CELL_IDEAS } from '../data/ideas';
+import IdeaList, { HowToBuild } from './IdeaList';
 
 export interface AddPrefill {
   name?: string;
@@ -31,19 +31,6 @@ interface Open {
   above: boolean;
   room: number;
   pinned: boolean;
-}
-
-/** The ready prompt for Claude Code that turns a gap idea into an app. */
-function buildPrompt(title: string, idea: string, action: string, domain: string, near: AppData[]) {
-  const refs = near.map((a) => `- ${a.name}${siteUrl(a) ? `: ${siteUrl(a)}` : ''}`).join('\n');
-  return `אני בונה אפליקציה חדשה: ${title}.
-${idea}
-פעולה: ${action}. תחום: ${domain}.
-${refs ? `אפליקציות קיימות שלי שאפשר להישען עליהן ולקשר אליהן:\n${refs}\n` : ''}
-עבוד לפי הסקיל anat-app-builder: אפיון קצר בתוך התשובה, ואז בנייה מקצה לקצה. עברית ו-RTL, בלי אייקונים, כפתור הלוגו A&I, התקנה מ-Chrome, בדיקות Playwright, פריסה ל-Vercel ומיזוג ל-main.
-AI בתוך האפליקציה: Gemini החינמי (GEMINI_API_KEY) דרך פונקציית Edge, Claude רק כגיבוי. כל טקסט שה-AI כותב לפי תקן הזיקוק: שורת תובנה עד 8 מילים, משפט הסבר עד 20 מילים, והבלטות ב-** למושג המרכזי, לפרמטרים ולמספרים (https://github.com/Anat1969/AppOfApp-GH/blob/main/docs/ai-text-standard.md).
-לפני הבנייה: uipro init --ai claude
-בסוף: הוסף את האפליקציה לתיק העבודות https://appofapp-gh.vercel.app עם פעולה "${action}" ותחום "${domain}".`;
 }
 
 /** Domain against action. Every cell is a door; an empty cell is a gap with a suggested app. */
@@ -110,7 +97,9 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
   const d = open && facets.find((f) => f.kind === 'domain' && f.value === open.domain);
   const a = open && actionOf(open.action);
   const list = open ? cellApps(open.domain, open.action) : [];
-  const idea = open && !list.length ? GAP_IDEAS[gapKey(open.domain, open.action)] : undefined;
+  // Ideas for every cell, filled or empty (Anat, 2026-11-04). An idea that has since been built is left out.
+  const names = new Set(apps.map((x) => x.name.trim()));
+  const ideas = open ? (CELL_IDEAS[`${open.domain}:${open.action}`] ?? []).filter((i) => !names.has(i.title.trim())) : [];
   // Raw material for a gap: apps in the same row (domain) and the same column (action).
   const near = open && !list.length
     ? [...apps.filter((x) => x.domains?.includes(open.domain)).slice(0, 2), ...apps.filter((x) => x.action === open.action).slice(0, 2)]
@@ -196,8 +185,8 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
             aria-label={`${d.label}, ${a.label}`}
             style={{
               top: open.y,
-              left: Math.max(12, Math.min(open.x - 170, document.documentElement.clientWidth - 352)),
-              maxHeight: Math.min(520, open.room),
+              left: Math.max(12, Math.min(open.x - 200, document.documentElement.clientWidth - 432)),
+              maxHeight: Math.min(620, open.room),
               translate: open.above ? '0 -100%' : undefined,
             }}
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -250,44 +239,28 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
                 </div>
               </>
             ) : (
-              <div className="pop-idea">
-                <p className="mono dim">משבצת ריקה. הצעה לאפליקציה שתמלא אותה:</p>
-                <h4>{idea?.title ?? `${a.label} ב${d.label}`}</h4>
-                <p>{idea?.idea ?? 'עדיין אין הצעה למשבצת הזו.'}</p>
-                <div className="pop-actions">
-                  <button className="solid" onClick={() => onAdd({ name: idea?.title, desc: idea?.idea, action: open.action, domain: open.domain })}>
-                    הוספה לתיק מהרעיון
-                  </button>
-                  <button
-                    className="ghost"
-                    onClick={async () => {
-                      const text = buildPrompt(idea?.title ?? '', idea?.idea ?? '', a.label, d.label, near);
-                      try {
-                        await navigator.clipboard.writeText(text);
-                        toast('הפרומפט ל-Claude Code הועתק');
-                      } catch {
-                        toast('לא ניתן להעתיק בדפדפן הזה', 'error');
-                      }
-                    }}
-                  >
-                    העתקת פרומפט ל-Claude Code
-                  </button>
-                </div>
-                {near.length > 0 && (
-                  <div className="pop-near">
-                    <span className="mono dim">אפשר להישען על</span>
-                    <ul className="pop-list">
-                      {near.map((x) => (
-                        <li key={x.id}>
-                          <button className="pop-name" onClick={() => go({ app: x.id })}>
-                            {x.name}
-                          </button>
-                          <span className="mono dim">{actionOf(x.action)?.short}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+              <p className="mono dim pop-empty">משבצת ריקה: עוד אין כאן אפליקציה.</p>
+            )}
+            {ideas.length > 0 && (
+              <div className="pop-ideas">
+                <div className="pop-ideas-head mono">{list.length ? 'רעיונות להמשך במשבצת' : 'רעיונות שימלאו אותה'}</div>
+                <IdeaList ideas={ideas} apps={apps} near={near} actionLabel={a.label} domainLabel={d.label} prefill={{ action: open.action, domain: open.domain }} go={go} onAdd={onAdd} />
+                <HowToBuild />
+              </div>
+            )}
+            {!list.length && near.length > 0 && (
+              <div className="pop-near">
+                <span className="mono dim">אפשר להישען על</span>
+                <ul className="pop-list">
+                  {near.map((x) => (
+                    <li key={x.id}>
+                      <button className="pop-name" onClick={() => go({ app: x.id })}>
+                        {x.name}
+                      </button>
+                      <span className="mono dim">{actionOf(x.action)?.short}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </motion.div>

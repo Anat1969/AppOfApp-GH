@@ -726,7 +726,7 @@ td.name-edit { display: flex; align-items: center; gap: 8px; min-width: 220px; }
 .band-map .band-head { margin-bottom: 10px; padding-bottom: 8px; }
 .band-map .matrix { border-spacing: 4px; min-width: 0; table-layout: fixed; }
 .band-map .matrix thead th:first-child { width: 150px; }
-.band-map .matrix td { height: max(26px, calc((100vh - var(--bar-h) - 330px) / var(--rows, 10))); }
+.band-map .matrix td { height: max(26px, calc((100vh - var(--bar-h) - 360px) / var(--rows, 10))); }
 .band-map .matrix thead th { padding-top: 2px; padding-bottom: 2px; }
 .band-map .matrix tbody th .axis, .band-map .matrix thead .axis { font-size: 0.86rem; white-space: normal; line-height: 1.15; }
 .band-map .cell, .band-map .gap { min-width: 0; }
@@ -781,3 +781,62 @@ a.row-thumb:hover { box-shadow: 0 0 0 2px var(--ink); transform: translateY(-1px
 .table-hint { flex-basis: 100%; }
 .apps-table td.updated b { font-size: 0.92rem; }
 @media (max-width: 1100px) { .table-wrap { overflow-x: auto; } .apps-table { min-width: 1080px; } }
+
+/* Home sections in one bar that stays in place (Anat, 2026-11-04: "כל הסעיפים הם סרגל קבוע בדף ... מקבעים כותרות ורק
+   התוכן משתנה"). Added and updated are two rows. */
+.sec-bar { position: sticky; top: var(--bar-h); z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 28px 0 0; padding: 8px 0; background: var(--bg, #ecebe7); border-bottom: 2px solid var(--ink); }
+.sec-bar > button:not(.sec-add) { height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border: 0; border-radius: 0; background: transparent; color: var(--ink-2); font-size: 0.98rem; transition: background 0.15s, box-shadow 0.15s, transform 0.15s; }
+.sec-bar > button:not(.sec-add):hover { background: #fff; box-shadow: var(--shadow-1); transform: translateY(-1px); }
+.sec-bar > button.on { background: var(--ink); color: #fff; box-shadow: inset 0 -3px 0 #e8a317; transform: none; }
+.sec-bar > button.on .mono { color: #e8a317; }
+.sec-bar .sec-add { margin-inline-start: auto; height: 40px; }
+.sec-section { margin-top: 18px; min-height: calc(100vh - var(--bar-h) - 80px); }
+.sec-section .band-head { margin-bottom: 12px; }
+.recent-rows { display: grid; gap: 22px; }
+.recent-rows .recent-col h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 500; display: flex; align-items: baseline; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+.recent-rows .recent { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.vocab-toggle { margin-top: 10px; }
+.inline-edit { font-size: 0.86rem; color: var(--mid); text-decoration-color: rgba(23, 25, 28, 0.25); }
+.inline-edit:hover { color: var(--ink); }
+.click-edit { cursor: text; border-radius: 0; transition: box-shadow 0.15s, background 0.15s; }
+.click-edit:hover { box-shadow: 0 0 0 6px rgba(232, 163, 23, 0.14); background: rgba(232, 163, 23, 0.06); }
+.panel-tools { display: inline-flex; gap: 14px; align-items: baseline; }
+.cover-change { position: relative; z-index: 3; margin-top: 10px; text-align: center; }
+.block-edit { display: grid; gap: 6px; align-content: start; }
+@media (max-width: 900px) {
+  .recent-rows .recent { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sec-bar .sec-add { margin-inline-start: 0; }
+}
+
+/* Ideas for every cell and beyond the map (Anat, 2026-11-04): new, merge, intersection, distillation. */
+.cell-pop { width: 420px; }
+.pop-empty { margin: 4px 0 8px; }
+.pop-ideas { margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--ink); }
+.pop-ideas-head { color: var(--ink); margin-bottom: 6px; }
+.idea-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.idea-list .pop-idea { position: relative; padding: 10px 12px; background: #fff; box-shadow: var(--shadow-1); border-inline-start: 4px solid var(--k, #1a3a6f); }
+.idea-list .pop-idea h4 { margin: 2px 0 4px; font-size: 1rem; }
+.idea-list .pop-idea p { margin: 0 0 6px; font-size: 0.9rem; line-height: 1.45; }
+.idea-new { --k: #1a3a6f; }
+.idea-merge { --k: #2f8a57; }
+.idea-cut { --k: #c8553d; }
+.idea-distill { --k: #b58900; }
+.idea-kind { display: inline-block; padding: 1px 8px; font-size: 0.7rem; color: #fff; background: var(--k); }
+.idea-yields { color: var(--ink); font-weight: 500; }
+.idea-from { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 0.84rem; }
+.idea-list .pop-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.idea-list .pop-actions .solid, .idea-list .pop-actions .ghost { font-size: 0.8rem; padding: 0.35rem 0.7rem; }
+.how-build { margin-top: 10px; padding: 8px 12px; background: rgba(26, 58, 111, 0.06); font-size: 0.88rem; }
+.how-build summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.how-build ol { margin: 8px 0 2px; padding-inline-start: 20px; display: grid; gap: 4px; }
+.beyond { margin-top: 26px; padding-top: 14px; border-top: 3px double var(--ink); }
+.beyond-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.beyond-tabs button { height: 40px; padding: 0 14px; border: 0; border-radius: 0; background: transparent; color: var(--ink-2); transition: background 0.15s, box-shadow 0.15s; }
+.beyond-tabs button:hover { background: #fff; box-shadow: var(--shadow-1); }
+.beyond-tabs button.on { background: var(--ink); color: #fff; }
+.beyond-note { color: var(--mid); margin: 10px 0; }
+.beyond-grid .idea-list { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.axes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.axis-card { background: var(--paper); padding: 14px; box-shadow: var(--shadow-1); display: grid; gap: 8px; align-content: start; }
+.axis-card h4 { margin: 0; font-size: 1.2rem; }
+.axis-card .idea-list .pop-idea { box-shadow: none; border: 1px solid var(--line); border-inline-start-width: 4px; }

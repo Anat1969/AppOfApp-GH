@@ -297,9 +297,20 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 - DOMAINS IN HEBREW (2026-11-04): five domain values had no vocabulary entry and showed in English. New domains health
   (בריאות וגוף) and knowledge (ידע ורעיונות); the rest moved (`supabase/migrations/20261104_aoa_hebrew_domains.sql`).
   `facetLabel` never shows a raw English key ("לא מסווג").
-- HOME IN THREE SCREENS (2026-11-04): 01 "חדש בתיק" in two columns, added (by creation date) and updated (changed after the
-  day it was added), last 30 days; 02 the map, sized so all domain rows fit one screen (`--rows`); 03 all sheets. Each starts
-  a screen of its own with a double rule between. The hero line is Hebrew.
+- HOME AS A FIXED SECTION BAR (Anat, 2026-11-04: "כל הסעיפים הם סרגל קבוע בדף ואז יש מרחב מחייה לכל סעיף - בו מקבעים
+  כותרות ורק התוכן משתנה"): under a compact hero, one sticky bar `.sec-bar` holds 01 חדש בתיק, 02 מפת התחומים והפעולות,
+  03 כל הגיליונות and the add button. Only the content under it changes (fade, no vertical motion; `?sec=new|map|all`,
+  default new). A search or a filter always shows the sheets. 01: added and updated as two ROWS ("בשורות ולא בטורים"),
+  updated = changed after the day it was added, last 30 days. 02: the map sized so every domain row fits the screen
+  (`--rows`), the vocabulary behind "עריכת מילון התחומים וההקשרים", and BeyondMap below it.
+- IDEAS (Anat, 2026-11-04: more suggestions, mergers that create insight, knowledge, information and new creations, unlike
+  what exists, "מיזוגים וחיתוכים וזיקוקים", new columns and topics, fill every cell, new syntheses): `src/data/ideas.ts`
+  holds 3 ideas for EVERY one of the 91 cells (new / merge / cut / distill; merge, cut and distill name their source apps by
+  id and what they yield), 13 portfolio-wide SYNTHESES and 7 NEW_AXES (five proposed domains, two proposed actions). The
+  cell window lists them (`IdeaList.tsx`) under the cell's apps, each with "הוספה לתיק מהרעיון" and a prompt for Claude Code
+  that includes the source apps and "איך נולדת אפליקציה חדשה אצלי" (7 steps); "איך רעיון הופך לאפליקציה" explains the
+  flow. An idea whose title is already an app name is hidden. Under the map, `BeyondMap.tsx`: syntheses, and new rows and
+  columns (a proposed domain is added to the vocabulary in one click; actions are fixed in code). `gapIdeas.ts` is gone.
 - COVER IMAGE (Anat, 2026-10-27): the frame takes the image's own proportions (a screenshot is never cropped; very tall
   ones are limited to 82vh and the frame narrows to them). In edit mode a screenshot pasted anywhere on the app page
   (Ctrl+V, unless text is pasted into a field) becomes the cover, shows at once as a preview, and uploads once even if
@@ -324,10 +335,12 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   autofill offered addresses typed for one app in the fields of another; every input and textarea gets
   autocomplete="off" (`src/main.tsx`, also for fields added later). In edit mode the app link shows a live picture of
   the address the cover and the button open, and a red warning when another app has the same address.
-- EDIT MODE IS LIT (Anat, 2026-10-27): an amber frame around the screen while editing, pulsing while saving, red while a
-  save is retried; the tag on it says every change is saved automatically. There is no save button: each edit is saved
-  online after a pause, a failed save is kept on the device (`aoa-pending-edits`) and retried (2s, 5s, 15s, then 30s),
-  and closing the tab with an unsaved change asks first. The A&I status shows "נשמר HH:MM".
+- NO EDIT MODE (Anat, 2026-11-04: "כן לערוך ללא מצב עריכה", replacing the lit edit mode of 2026-10-27): there is no
+  "מצב עריכה" anywhere. The table is fields; on the app page every block reads as a page and opens its field on a click
+  (name, description, problem, solution) or by its quiet link (עריכה, שינוי סיווג, עריכת קישורים ופרטים, החלפת תמונה,
+  יומן, הערות); one block is open at a time. There is no save button: each edit is saved online after a pause, a failed
+  save is kept on the device (`aoa-pending-edits`) and retried (2s, 5s, 15s, then 30s), closing the tab with an unsaved
+  change asks first, and the amber frame lights only while a save is being retried. The A&I status shows "נשמר HH:MM".
 - WHERE AM I (Anat, 2026-10-27, chose "ב + ג"): the portfolio is framed like a drawing sheet (double border around the
   screen) with a title stamp at the bottom left ("תיק האפליקציות", the current view or sheet number, "A&I · אד׳ ענת
   שטיבלמן"), under a dark blue top bar with an amber line. Only the portfolio has these; do not copy them into the apps.

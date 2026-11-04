@@ -123,12 +123,24 @@ const browser = await chromium.launch();
   await page.goto(BASE);
   await page.waitForSelector('.card');
   ok(await page.locator('.hero h1').isVisible(), 'home hero renders');
-  ok((await page.locator('.grid .card').count()) === rows.length, `catalog shows all ${rows.length} apps`);
+  ok(await page.locator('.sec-bar').isVisible(), 'home sections sit in one bar');
+  ok((await page.locator('.recent-rows .recent-col').count()) === 2, 'added and updated are two rows');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.waitForSelector('.matrix');
+  await page.waitForTimeout(300);
+  ok(page.url().includes('sec=map'), 'the section is in the address');
   ok((await page.locator('.matrix tbody tr').count()) === 6, 'matrix has a row per domain');
   ok((await page.locator('.matrix .gap').count()) > 0, 'empty cells are shown as gaps');
+  const barY = await page.locator('.sec-bar').evaluate((el) => el.getBoundingClientRect().top);
+  await page.locator('.sec-bar button', { hasText: 'כל הגיליונות' }).click();
+  await page.waitForSelector('.grid .card');
+  ok((await page.locator('.grid .card').count()) === rows.length, `catalog shows all ${rows.length} apps`);
+  ok(Math.abs((await page.locator('.sec-bar').evaluate((el) => el.getBoundingClientRect().top)) - barY) < 2, 'the section bar does not move when the section changes');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.waitForSelector('.matrix');
   ok(await page.locator('ai-menu .logo').isVisible(), 'A&I logo button in the top bar');
   ok((await page.locator('.topbar').getByText('העתקת קישור', { exact: true }).count()) === 0 || !(await page.locator('.topbar >> text=העתקת קישור').first().isVisible()), 'no loose development buttons in the bar');
-  ok(await isEditorDevice(page), 'every device edits, no link needed');
+  ok(!(await isEditorDevice(page)), 'no edit mode item in the logo: editing happens in place');
   ok(await noHScroll(page), 'desktop home: no horizontal scroll');
   await page.locator('ai-menu .logo').click();
   ok((await page.locator('ai-menu a.item', { hasText: 'שיחת הפיתוח' }).getAttribute('href'))?.includes('claude.ai/code/session_'), 'dev chat item links to the session');
@@ -141,10 +153,14 @@ const browser = await chromium.launch();
 
   // matrix cell: domain x action
   await page.locator('.matrix .cell[aria-label^="תכנון עירוני, אבחון"]').click();
+  await page.waitForTimeout(400);
   ok(page.url().includes('action=diagnose') && page.url().includes('domain=urban'), 'matrix cell writes action and domain to the address');
   ok((await page.locator('.grid .card').count()) === 1, 'matrix cell narrows to the one app');
   await page.locator('.chip', { hasText: 'ניקוי הסינון' }).click();
   ok(!page.url().includes('action='), 'clearing removes all filters');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.waitForSelector('.matrix');
+  await page.waitForTimeout(300);
 
   // hover window over a filled cell: one app per line, name links to the app, sheet opens the page
   await page.mouse.move(5, 5);
@@ -167,17 +183,24 @@ const browser = await chromium.launch();
   await page.locator('.cell-pop .pop-sheet').click();
   ok(page.url().includes('app=app-4'), 'the sheet number opens the app page');
   await page.locator('.brand').click();
+  ok(!page.url().includes('?'), 'brand returns to a clean home on the first section');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.waitForSelector('.matrix');
+  await page.waitForTimeout(300);
 
   // empty cell: an idea, apps to build on, a prompt and an add action
   await page.locator('.matrix .gap').first().click();
   await page.waitForSelector('.cell-pop .pop-idea');
-  ok((await page.locator('.cell-pop .pop-idea h4').textContent())?.length > 2, 'an empty cell suggests an app');
+  ok((await page.locator('.cell-pop .pop-idea h4').first().textContent())?.length > 2, 'an empty cell suggests an app');
+  ok((await page.locator('.cell-pop .pop-idea').count()) >= 3, 'every cell offers several ideas');
+  ok((await page.locator('.cell-pop .idea-kind').allTextContents()).some((k) => /מיזוג|חיתוך|זיקוק/.test(k)), 'ideas include merges, intersections or distillations');
+  ok(await page.locator('.cell-pop .how-build').isVisible(), 'the window explains how an idea becomes an app');
   await page.waitForTimeout(300);
   await page.screenshot({ path: SHOTS + 'desktop-gap-idea.png' });
-  await page.locator('.cell-pop .ghost', { hasText: 'העתקת פרומפט' }).click();
+  await page.locator('.cell-pop .ghost', { hasText: 'העתקת פרומפט' }).first().click();
   const prompt = await page.evaluate(() => navigator.clipboard.readText());
-  ok(prompt.includes('anat-app-builder') && prompt.includes('uipro init'), 'the gap prompt for Claude Code is copied');
-  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).click();
+  ok(prompt.includes('anat-app-builder') && prompt.includes('uipro init') && prompt.includes('איך נולדת אפליקציה חדשה'), 'the gap prompt for Claude Code is copied, with how to build');
+  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).first().click();
   ok((await page.locator('.dialog .connect').count()) === 0, 'no editor link field in the add form');
   ok((await page.locator('.dialog input').first().inputValue()).length > 2, 'the form itself opens right away, prefilled');
   await page.locator('.dialog .solid', { hasText: 'הוספה לתיק' }).click();
@@ -188,7 +211,10 @@ const browser = await chromium.launch();
   ok(await page.locator('.hero-add').isVisible(), 'a prominent add button on the home page');
 
   // facet filters combine
+  await page.goto(BASE + '/?sec=map');
+  await page.waitForSelector('.matrix');
   await page.locator('.matrix .axis', { hasText: 'משחק ואימון' }).click();
+  await page.waitForTimeout(400);
   ok((await page.locator('.grid .card').count()) === 2, 'action column filters to 2 apps');
   await page.locator('.filters-panel .chip', { hasText: 'תכנון עירוני' }).click();
   ok((await page.locator('.grid .card').count()) === 1, 'action + domain narrows to 1');
@@ -271,6 +297,8 @@ const browser = await chromium.launch();
   ok(!page.url().includes('?'), 'brand returns to a clean home');
 
   // app page
+  await page.locator('.sec-bar button', { hasText: 'כל הגיליונות' }).click();
+  await page.waitForSelector('.grid .card');
   await page.locator('.grid .card-name', { hasText: 'זיקוק DNA' }).click();
   await page.waitForSelector('.app-page');
   ok(page.url().includes('app=app-1'), 'card opens ?app=app-1');
@@ -295,7 +323,7 @@ const browser = await chromium.launch();
   ok((await page.locator('.app-visual a.cover').getAttribute('href')) === 'https://zikuk-dna.vercel.app/dna', 'cover links to the app itself');
   ok(await page.locator('.app-visual .cover-bar').isVisible(), 'cover says it opens the app without hover');
   ok((await page.locator('.app-visual .cover-host').textContent()) === 'zikuk-dna.vercel.app', 'cover shows the address it opens');
-  ok((await page.locator('.crumbs .ghost').count()) === 0 && (await page.locator('.app-visual button').count()) === 0, 'no paging buttons near the cover');
+  ok((await page.locator('.crumbs .ghost').count()) === 0 && (await page.locator('.app-visual button:not(.inline-edit)').count()) === 0, 'no paging buttons near the cover');
   ok(/מתוך \d+ · /.test((await page.locator('.seq-head').textContent()) ?? ''), 'paging says which list it pages through');
   const nextName = await page.locator('.seq-link.next b').textContent();
   await page.locator('.seq-link.next').click();
@@ -385,11 +413,11 @@ const browser = await chromium.launch();
   await page.locator('ai-menu .logo').click();
   await page.waitForTimeout(300);
   await page.screenshot({ path: SHOTS + 'desktop-menu-editor.png' });
-  await page.locator('ai-menu .item', { hasText: 'מצב עריכה' }).click();
-  await page.waitForTimeout(250);
-  ok((await page.locator('ai-menu .status').textContent()) === 'עריכה פעילה, שמירה אוטומטית', 'logo shows the editing state');
-  ok(await page.locator('.edit-light').isVisible(), 'edit mode lights the frame');
-  ok(await page.locator('.vocab').isVisible(), 'edit mode shows the vocabulary');
+  await page.keyboard.press('Escape');
+  ok((await page.locator('.edit-light').count()) === 0, 'no edit frame: there is no edit mode');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.locator('.vocab-toggle').click();
+  ok(await page.locator('.vocab').isVisible(), 'the vocabulary opens under the map');
   const firstDomain = page.locator('.vocab li').first();
   await firstDomain.locator('button', { hasText: 'שם' }).click();
   await page.waitForTimeout(200);
@@ -407,7 +435,7 @@ const browser = await chromium.launch();
 
   await page.goto(BASE + '/?app=app-1');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
-  await menu(page, 'מצב עריכה');
+  await page.locator('h1.app-title').click();
   await page.waitForSelector('.app-page.is-editing');
   await page.locator('.form label:has-text("שם בתפריט") input').fill('מחקר: זיקוק DNA 2');
   await page.waitForTimeout(1200);
@@ -415,6 +443,8 @@ const browser = await chromium.launch();
   ok(saved?.data?.name === 'מחקר: זיקוק DNA 2' && saved.id === 'app-1', 'editing the name saves the app (debounced)');
   ok(calls.filter((c) => c.action === 'save_app').length === 1, 'typing produces a single save');
 
+  await page.locator('.form .inline-edit', { hasText: 'סיום' }).click();
+  await page.locator('.inline-edit', { hasText: 'שינוי סיווג' }).click();
   await page.locator('.facet-edit .chip', { hasText: 'השראה' }).click();
   await page.locator('.facet-edit .chip', { hasText: 'קיימות וטבע' }).click();
   await page.locator('.facet-edit .kw-add input').fill('בדיקה, זיקוק');
@@ -423,6 +453,7 @@ const browser = await chromium.launch();
   const f = lastOf(calls, 'save_app')?.data;
   ok(f?.action === 'inspire' && f?.domains?.includes('sustainability') && f?.keywords?.includes('זיקוק'), 'action, domain and keywords saved');
 
+  await page.locator('.p-problem .inline-edit').click();
   const ta = page.locator('.p-problem textarea');
   await ta.fill('רעיונות נשארים מופשטים.');
   await ta.evaluate((el) => el.setSelectionRange(8, 14));
@@ -430,19 +461,31 @@ const browser = await chromium.launch();
   await page.waitForTimeout(1100);
   ok(lastOf(calls, 'save_app')?.data?.problem === 'רעיונות **נשארים** מופשטים.', `the emphasis button wraps the selection (${lastOf(calls, 'save_app')?.data?.problem})`);
 
+  await page.locator('.inline-edit', { hasText: 'יומן העבודה' }).click();
   await page.locator('.log-add input').fill('בדיקת יומן');
+  await page.locator('.log-add .solid').click();
+  await page.locator('.inline-edit', { hasText: 'הערות' }).click();
+  await page.locator('.notes .ghost', { hasText: 'הוספת הערה' }).click();
+  await page.waitForTimeout(1100);
+  const s2 = lastOf(calls, 'save_app');
+  ok(s2?.data?.changeLog?.[0]?.text === 'בדיקת יומן', 'work log entry saved');
+  ok(s2?.data?.redNotes?.length === 2, 'note added and saved');
+  await page.locator('.p-problem .inline-edit').click();
+  /*
   await page.locator('.log-add .solid').click();
   await page.locator('.notes .ghost', { hasText: 'הוספת הערה' }).click();
   await page.waitForTimeout(1100);
   const s2 = lastOf(calls, 'save_app');
   ok(s2?.data?.changeLog?.[0]?.text === 'בדיקת יומן', 'work log entry saved');
   ok(s2?.data?.redNotes?.length === 2, 'note added and saved');
+  */
 
   await page.locator('.p-problem .link', { hasText: 'ניסוח אוטומטי' }).click();
   await page.waitForTimeout(300);
   ok(lastOf(calls, 'generate')?.name?.includes('זיקוק'), 'generate request sent');
   ok((await page.locator('.p-problem textarea').inputValue()) === 'בעיה **חדשה**.', 'generated text fills the field');
 
+  await page.locator('.cover-change .inline-edit').click();
   await page.locator('.app-visual input[type=file]').setInputFiles({ name: 'c.png', mimeType: 'image/png', buffer: png });
   await page.waitForTimeout(600);
   ok(/^app-1\/cover-\d+\.png$/.test(lastOf(calls, 'sign_upload')?.path ?? ''), 'upload asks for a signed path');
@@ -450,7 +493,9 @@ const browser = await chromium.launch();
   await page.waitForTimeout(1000);
   ok(lastOf(calls, 'save_app')?.data?.coverImage?.includes('/aoa-media/app-1/cover-'), 'new cover saved on the app');
   ok(await page.evaluate(() => [...document.querySelectorAll('.app-page input, .app-page textarea')].every((e) => e.getAttribute('autocomplete') === 'off')), 'no browser autofill in the editing fields');
+  await page.locator('.inline-edit', { hasText: 'עריכת קישורים' }).click();
   ok(await page.locator('.link-preview').isVisible(), 'the link field shows where the cover and the button go');
+  await page.locator('.cover-change .inline-edit').click();
   // a screenshot pasted anywhere on the page (nothing focused) becomes the cover, once, even when pasted twice fast
   const signsBefore = calls.filter((c) => c.action === 'sign_upload').length;
   await page.evaluate(async (b64) => {
@@ -481,12 +526,12 @@ const browser = await chromium.launch();
   rows[0].data.coverImage = oldCover;
 
   // add from a gap idea: the dialog is prefilled
-  await page.goto(BASE + '/');
+  await page.goto(BASE + '/?sec=map');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
   await page.locator('.matrix .gap').first().click();
   await page.waitForSelector('.cell-pop .pop-idea');
-  const ideaTitle = await page.locator('.cell-pop .pop-idea h4').textContent();
-  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).click();
+  const ideaTitle = await page.locator('.cell-pop .pop-idea h4').first().textContent();
+  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).first().click();
   ok((await page.locator('.dialog input').first().inputValue()) === ideaTitle, 'add dialog is prefilled from the idea');
   ok((await page.locator('.dialog .chip.on').count()) === 2, 'action and domain of the cell are preselected');
   await page.keyboard.press('Escape');
@@ -592,11 +637,10 @@ const browser = await chromium.launch();
   const box = await page.locator('ai-menu .panel').boundingBox();
   ok(box && box.x >= 0 && box.x + box.width <= 391, `mobile menu fits the screen (${JSON.stringify(box)})`);
   await page.screenshot({ path: SHOTS + 'mobile-menu.png' });
-  await page.locator('ai-menu .item', { hasText: 'מצב עריכה' }).click();
-  ok(await noHScroll(page), 'mobile editor: no horizontal scroll');
+  await page.keyboard.press('Escape');
   await page.goto(BASE + '/?app=app-1');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
-  await menu(page, 'מצב עריכה');
+  await page.locator('.inline-edit', { hasText: 'עריכת קישורים' }).click();
   ok(await noHScroll(page), 'mobile app editing: no horizontal scroll');
   await page.screenshot({ path: SHOTS + 'mobile-edit.png', fullPage: true });
   await context.close();
