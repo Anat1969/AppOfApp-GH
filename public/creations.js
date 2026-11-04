@@ -12,6 +12,13 @@
   const TAARUCHA = 'https://taarucha.vercel.app';
   const STYLE_HE = { poster: 'טקסט על תמונה', gradient: 'שדה צבע', veil: 'שקיפות', insight: 'תובנה', quote: 'ציטוט', haiku: 'הייקו', post: 'פוסט', fromto: 'ממה למה', essay: 'מאמר' };
   const ZONES = ['ידע', 'הבנה', 'יישום'];
+  // סמלי קו לשלבים: ידע ספר פתוח, הבנה שני מעגלים שנפגשים, יישום יד מצביעה למטרה (חץ אל מטרה)
+  const ZONE_ICON = {
+    'ידע': '<path d="M8 4.2C6.6 3.3 4.6 3 2.5 3.2v9c2.1-.2 4.1.1 5.5 1 1.4-.9 3.4-1.2 5.5-1v-9C11.4 3 9.4 3.3 8 4.2zM8 4.2v9"/>',
+    'הבנה': '<circle cx="6" cy="8" r="3.8"/><circle cx="10" cy="8" r="3.8"/>',
+    'יישום': '<circle cx="8.6" cy="7.4" r="4.6"/><circle cx="8.6" cy="7.4" r="1.6"/><path d="M2.2 13.8l5.2-5.2"/>',
+  };
+  const zoneIcon = (z) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ZONE_ICON[z] || ''}</svg>`;
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   // טקסט עשיר מינימלי: **מודגש** ו-==מרקר==
   const rich = (s) => esc(s).replace(/==(.+?)==/g, '<mark>$1</mark>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
@@ -22,10 +29,20 @@ app-creations{display:block;direction:rtl;font-family:var(--cr-sans,"IBM Plex Sa
 .cr-head h1{font-size:clamp(28px,3.4vw,46px);font-weight:700;line-height:1.05;margin:0;letter-spacing:-.01em}
 .cr-why{margin:0;color:#55544f;font-size:15px;line-height:1.6}
 .cr-why b{color:#1a1a18}
-.cr-zones{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;max-width:520px;margin:6px 0 4px}
+/* סינון לפי שלב: שלושה כפתורי שלב עם סמל קו, ו"הכול" כקישור שקט בסוף השורה (לא נראה כמו שלב) */
+.cr-zones{display:flex;flex-wrap:wrap;align-items:center;gap:6px 6px;margin:6px 0 4px}
+.cr-zones .cr-btn{min-width:104px;padding:8px 14px}
+.cr-zones .cr-btn svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.cr-zones .cr-btn .cr-n{font-family:var(--cr-mono,"IBM Plex Mono",monospace);font-size:11px;opacity:.6}
+.cr-all{all:unset;box-sizing:border-box;font:inherit;font-size:13px;color:#55544f;cursor:pointer;padding:6px 4px;margin-inline-start:10px;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;text-decoration-color:#b5b4ae;-webkit-tap-highlight-color:transparent}
+.cr-all:hover{color:#1a1a18;text-decoration-color:currentColor}
+.cr-all[aria-pressed="true"]{color:#1a1a18;font-weight:600;text-decoration:none;cursor:default}
+.cr-all:focus-visible{outline:2px solid var(--cr-accent,#1f3a68);outline-offset:2px}
 .cr-btn{font:inherit;font-size:13px;font-weight:500;padding:8px 12px;border:1px solid transparent;border-radius:0;background:#f0efeb;color:#1a1a18;cursor:pointer;text-align:center;text-decoration:none;box-shadow:0 1px 0 rgba(26,26,24,.06),0 2px 6px rgba(26,26,24,.08);transition:transform .15s,box-shadow .15s,background .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .cr-btn:hover{transform:translateY(-1px);box-shadow:0 2px 0 rgba(26,26,24,.08),0 8px 18px rgba(26,26,24,.12)}
 .cr-btn:active{transform:translateY(1px);box-shadow:none}
+app-creations button,.cr-lb button{-webkit-tap-highlight-color:transparent}
+app-creations button:focus:not(:focus-visible),app-creations a:focus:not(:focus-visible),.cr-lb button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .cr-btn:focus-visible{outline:2px solid var(--cr-accent,#1f3a68);outline-offset:2px}
 .cr-btn.on,.cr-btn.primary{background:#1a1a18;color:#fff}
 .cr-room{margin:28px 0 8px;padding-top:16px;border-top:2px solid #1a1a18}
@@ -42,7 +59,7 @@ app-creations{display:block;direction:rtl;font-family:var(--cr-sans,"IBM Plex Sa
 .cr-open{all:unset;cursor:zoom-in;display:block}
 .cr-open:focus-visible{outline:2px solid var(--cr-accent,#1f3a68);outline-offset:3px}
 .cr-empty{padding:24px;background:#f6f5f1;color:#55544f}
-@media (max-width:760px){.cr-room-hd{grid-template-columns:minmax(0,1fr)}.cr-acts{min-width:0}.cr-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+@media (max-width:760px){.cr-zones .cr-btn{min-width:0;padding:8px 10px}.cr-all{margin-inline-start:4px}.cr-room-hd{grid-template-columns:minmax(0,1fr)}.cr-acts{min-width:0}.cr-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
 /* הגדלה בתוך הדף */
 .cr-lb{position:fixed;inset:0;z-index:9000;background:rgba(18,18,16,.86);display:grid;place-items:center;padding:3vh 3vw;cursor:zoom-out}
 .cr-lb .cr-card{height:min(92vh,calc(92vw*1.414));width:auto;box-shadow:0 30px 80px rgba(0,0,0,.5)}
@@ -225,7 +242,8 @@ html.cr-shot body>*:not(.cr-shot-stage){display:none!important}
           <h1>${esc(this.getAttribute('heading') || 'מה האפליקציה יוצרת')}</h1>
           <p class="cr-why">כל נושא שעולה מ<b>ידע</b>, <b>הבנה</b> ו<b>יישום</b> הוא חדר: <b>${topics.length}</b> חדרים, <b>${n}</b> יצירות בתשעה עיצובים. כל יצירה מוכנה לחדר בתערוכה ולהדפסה בגודל A4.</p>
           <div class="cr-zones" role="group" aria-label="סינון לפי שלב">
-            ${['', ...ZONES].map((z) => `<button class="cr-btn${this.zone === z ? ' on' : ''}" data-zone="${z}" aria-pressed="${this.zone === z}">${z || 'הכול'}</button>`).join('')}
+            ${ZONES.map((z) => `<button class="cr-btn${this.zone === z ? ' on' : ''}" data-zone="${z}" aria-pressed="${this.zone === z}">${zoneIcon(z)}<span>${z}</span><span class="cr-n">${topics.filter((t) => t.zone === z).length}</span></button>`).join('')}
+            <button class="cr-all" data-zone="" aria-pressed="${!this.zone}" title="כל החדרים, בלי סינון">הכול</button>
           </div>
         </header>
         ${shown.map((t) => `
