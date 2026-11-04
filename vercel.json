@@ -10,7 +10,11 @@
       "destination": "/api/share?id=:id"
     },
     {
-      "source": "/((?!assets/|api/|sw.js|ai-menu.js|creations.js|guide.js|demo.js|walk.js|streets.js|gis/|ashdod-logo.png|manifest.webmanifest|icon).*)",
+      "source": "/tlush",
+      "destination": "/tlush/index.html"
+    },
+    {
+      "source": "/((?!assets/|tlush|api/|sw.js|ai-menu.js|creations.js|guide.js|demo.js|walk.js|streets.js|gis/|ashdod-logo.png|manifest.webmanifest|icon).*)",
       "destination": "/index.html"
     }
   ],
@@ -112,6 +116,19 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=300, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/tlush/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
         }
       ]
     }

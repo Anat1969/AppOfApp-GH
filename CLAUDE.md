@@ -55,6 +55,25 @@ Run `npm run build` again after every merge, right before pushing.
 
 Playwright comes from the global install: `ln -s "$(npm root -g)/playwright" node_modules/playwright`.
 
+## Payslip reader (`tlush/`, Anat 2026-11-04)
+
+"מה יש בתלוש שלי": https://appofapp-gh.vercel.app/tlush/ (and on Pages `/AppOfApp-GH/tlush/`). Anat's own app (not municipal).
+Second Vite entry (`tlush/index.html`, code `src/tlush/`). Her vision: what is on the slip, income and deductions, what she
+is owed, where to save, the pension and how it splits, how to time things to get more.
+- PRIVACY FIRST: payslips hold her ID, bank account and address. PDFs are read in the browser with pdf.js
+  (`src/tlush/pdf.ts`); slips and parameters live only in localStorage (`tlush-slips-v1`, `tlush-params-v1`). No server, no
+  Supabase, no AI call, never a real slip in the repo or in tests (`tests/tlush.mjs` uses synthetic slips). Backup and restore
+  as a JSON file from the A&I menu; the sw skips `/tlush/`; the page is noindex.
+- Parser `src/tlush/parse.ts` reads Malam payroll ("מלם שכר") slips by text position: summary bar under its labels,
+  detail rows by code and section header, the right panel (credit points, tax rate, "נתוני עזר" employer deposits,
+  vacation and sick balances, cumulative). Checked on her May 2026 slip: every line adds up to the summary. A locked PDF
+  asks for its password.
+- Calculations `src/tlush/calc.ts` are estimates and say so: 2026 tax brackets, credit point 242, pension in today's
+  shekels (return, fees, coefficient 205, retirement age 65, 67% exemption of the 9,430 ceiling, old-age allowance 1,800),
+  every assumption editable on the pension page. Without the current fund balances the forecast counts only future deposits
+  and the page says so in red.
+- Vacation and sick units are not printed on the slip: a days / hours switch on "מה מגיע לי".
+
 ## Data (Supabase cultura-GH, ktqmwpbzcnzkhjskqisy, shared: prefix `aoa_`)
 
 | Table / bucket | Purpose |
