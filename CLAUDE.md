@@ -178,7 +178,7 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 
 - A&I LOGO BUTTON (Anat's standing rule, repeated many times): the top bar holds only the app name (links
   home), search, map/table, and ONE logo button "אד' ענת שטיבלמן A&I". Every editing and development action
-  lives only inside it: מצב עריכה, אפליקציה חדשה, ניסוח, העתקת קישור (copies the full
+  lives only inside it (no edit mode since 2026-11-04): אפליקציה חדשה, ניסוח, העתקת קישור (copies the full
   state: `?app=`, `?cat=`, `?q=`, `?view=table`, `?links=1`), שיחת הפיתוח, פרויקט המחקר, התקנת האפליקציה.
   No floating editor bar, no loose buttons. The component is `public/ai-menu.js`, served to all of Anat's apps
   from https://appofapp-gh.vercel.app/ai-menu.js; React wrapper `src/components/AIMenu.tsx`.
