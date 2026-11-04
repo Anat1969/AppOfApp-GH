@@ -21,6 +21,9 @@ middle of her workday, and she could not deploy anything else. She was not warne
   (the new count). A scheduled task in the development session does it: tests, merge, check Vercel and Pages, one
   Hebrew line. During her day nothing is deployed unless she asks, so the quota is always free for her work.
   Branches `claude/*` make no Vercel preview (`vercel.json` git.deploymentEnabled); previews are screenshots.
+- MUNICIPAL ACCOUNT DEPLOYS AT ONCE (Anat, 2026-11-04: "כל עוד אני עובדת בחשבון העירוני - תפרוס"): while she works from
+  her municipal account (anatdavids@ashdod.muni.il), finished and tested work is merged to `main` and deployed right away,
+  not held for the night windows. The quota estimate before bulk jobs still applies.
 - Free and paid quotas are used deliberately: on days she is not working, use spare capacity for
   heavy jobs. Keep a reserve on days she is working.
 
@@ -79,6 +82,24 @@ is owed, where to save, the pension and how it splits, how to time things to get
   loaded (to the bank / gross), just uploaded, needs a check, missing (the current year counts from January); a cell opens
   the slip. The pension forecast uses the last 12 slips. Share link: https://appofapp-gh.vercel.app/s/app-tlush-reader
 - Vacation and sick units are not printed on the slip: a days / hours switch on "מה מגיע לי".
+
+## Quality bar: MOKED106 (Anat, 2026-11-04: "תסתכל על האפליקציה של מוקד כדי להבין מה רמת הציפייה שלי בעיצוב, בשפה, בסכמה, בפיצ'רים, בניקיון גרפיקה")
+
+Reference: Anat1969/MOKED106-GH (`transparency/index.html` public page, `app/templates/index.html` dashboard). Every app is
+measured against it:
+- SCHEMA: the user's questions are the structure. Three answers at the top (question, big number, one line), then numbered
+  sections whose titles are questions ("עמדו בהבטחה?"), a sticky index of the sections, and a closing "איך מודדים".
+- LANGUAGE: plain words of the person using it, never system terms; every chart and table has a computed insight sentence
+  under its title; every section ends with its source ("מקור: ...").
+- HONESTY: a benchmark next to every number (a bar with a gold target tick, red below it); real data vs estimate or demo
+  is visibly different (dashed line, hollow point, "הערכה" / "הדגמה" tag); a consistency check is shown as a badge
+  ("בדיקת התאמה") and explained; privacy and limits are written in the app.
+- FEATURES: trend over 12 months per line (sparkline), change from the previous month, sort and filter toggles, a map or
+  grid when there is a place or time axis, two audiences when relevant (management dashboard + public page).
+- GRAPHICS: two colours (navy #1a3a6f, gold #d4af37) on warm white #f8f6f1 and white cards, one red #a23b2a for problems
+  only; bold headings (800) and big bold numbers; quiet shadows; generous white space; 17px body. Square corners and no
+  icons stay (Anat's standing rules), even though MOKED uses rounded pills and thin line icons.
+Applied first to the payslip reader (2026-11-04).
 
 ## Data (Supabase cultura-GH, ktqmwpbzcnzkhjskqisy, shared: prefix `aoa_`)
 
