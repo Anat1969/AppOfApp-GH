@@ -46,13 +46,15 @@ ok(await page.locator('ai-menu .logo').isVisible(), 'A&I logo button in the top 
 await page.evaluate((s) => localStorage.setItem('tlush-slips-v1', JSON.stringify(s)), [slip(1, 13580), slip(2, 13600), slip(4, 13700)]);
 await page.reload();
 ok(await page.locator('.map').isVisible(), 'the map of slips is on the home page');
+ok((await page.locator('.answers .answer').count()) === 3, 'three answers at the top of the home page');
+ok((await page.textContent('.match-badge')).includes('3 מתוך 3'), 'match badge counts the checked slips');
 ok((await page.textContent('.map-head')).includes('מרץ 2026'), 'the map names the missing month');
 ok((await page.locator('.map-grid .cell.on').count()) === 3, 'three loaded cells on the map');
 await page.locator('.map-grid .cell.on').first().click();
 ok(page.url().includes('m=2026-01'), 'a map cell opens its slip');
 await page.goto(`${BASE}/tlush/`);
 ok((await page.textContent('.kpis')).includes('3'), 'home counts three slips');
-for (const [label, expect] of [['מה יש בתלוש', 'מהברוטו לבנק'], ['הכנסות והוצאות', 'מכל 100'], ['מה מגיע לי', 'נקודות זיכוי'], ['איפה לחסוך', 'דמי ניהול'], ['פנסיה', 'איך הקצבה תחולק'], ['תכנון זמן', 'ציר זמן']]) {
+for (const [label, expect] of [['מה יש בתלוש', 'מהברוטו לבנק'], ['הכנסות והוצאות', 'מכל 100'], ['מה מגיע לי', 'נקודות זיכוי'], ['איפה לחסוך', 'דמי ניהול'], ['פנסיה', 'איך הקצבה תחולק'], ['תכנון זמן', 'מתי צריך להחליט'], ['איך מחשבים', 'בדיקת התאמה מלאה']]) {
   await page.click(`.nav-btn:has-text("${label}")`);
   await page.waitForTimeout(350);
   ok(await page.locator('.page-title button:has-text("העלאת כל התלושים")').isVisible(), `${label}: upload button in the page head`);

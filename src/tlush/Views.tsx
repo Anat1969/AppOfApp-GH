@@ -5,11 +5,11 @@ import {
 import { explain } from './glossary';
 import { MONTH_NAMES } from './parse';
 import type { Row, Slip } from './types';
-import { Insight, Kpi, M, NumField, Section, Stack } from './ui';
+import { Est, Insight, Kpi, M, Meter, NumField, Section, Source, Spark, Stack, Toc } from './ui';
 import Upload, { Jobs } from './Upload';
 import SlipMap from './SlipMap';
 
-export type View = 'home' | 'slip' | 'flow' | 'owed' | 'save' | 'pension' | 'time';
+export type View = 'home' | 'slip' | 'flow' | 'owed' | 'save' | 'pension' | 'time' | 'method';
 export const VIEWS: { id: View; label: string; title: string }[] = [
   { id: 'home', label: 'בית', title: 'מה יש בתלוש שלי' },
   { id: 'slip', label: 'מה יש בתלוש', title: 'כל שורה בתלוש, במילים פשוטות' },
@@ -18,6 +18,7 @@ export const VIEWS: { id: View; label: string; title: string }[] = [
   { id: 'save', label: 'איפה לחסוך', title: 'איפה אפשר לחסוך' },
   { id: 'pension', label: 'פנסיה', title: 'כמה תהיה הפנסיה ואיך היא תחולק' },
   { id: 'time', label: 'תכנון זמן', title: 'איך לתזמן כדי לקבל יותר' },
+  { id: 'method', label: 'איך מחשבים', title: 'איך מחשבים, ומה נבדק' },
 ];
 
 const monthLabel = (s: Slip) => `${MONTH_NAMES[s.month - 1]} ${s.year}`;
@@ -67,6 +68,26 @@ export function Home({ slips, params, go }: P) {
         </div>
       </section>
 
+      {last && f && (
+        <section className="answers" aria-label="שלוש התשובות">
+          <article className="answer">
+            <h2>כמה נכנס לי לבנק?</h2>
+            <p className="big">{nis(avg(slips.map((s) => s.summary.bank)))}</p>
+            <p className="sub">{`בממוצע בחודש, ${Math.round((sum(slips.map((s) => s.summary.bank)) / sum(slips.map((s) => s.summary.totalPay))) * 100)}% מהברוטו.`}</p>
+          </article>
+          <article className="answer">
+            <h2>מה צברתי ועוד לא קיבלתי?</h2>
+            <p className="big">{nis((last.vacation?.close ?? 0) * ((params.vacUnit === 'days' ? last.info.dayValue : last.info.hourValue) ?? 0))}</p>
+            <p className="sub">{`יתרת חופשה ${n2(last.vacation?.close ?? 0)} ${params.vacUnit === 'days' ? 'ימים' : 'שעות'}, נפדית בסיום העבודה.`}</p>
+          </article>
+          <article className="answer">
+            <h2>כמה אקבל בפרישה? <Est /></h2>
+            <p className="big">{nis(f.totalNet)}</p>
+            <p className="sub">{`נטו בחודש מגיל ${params.retireAge}, כולל ביטוח לאומי.${Object.values(params.balances).some((b) => b > 0) ? '' : ' עוד בלי הצבירה הקיימת.'}`}</p>
+          </article>
+        </section>
+      )}
+
       <Upload compact={!!last} />
       <Jobs />
       <SlipMap slips={slips} go={(id) => go('slip', id)} />
@@ -78,12 +99,12 @@ export function Home({ slips, params, go }: P) {
         </>
       )}
 
+
       {last && f && (
         <>
           <div className="kpis">
             <Kpi label="תלושים שנקראו" value={`${slips.length}`} note={missing.length ? `חסרים ${missing.length} מתחילת ${last.year}; פירוט במפה` : 'כל החודשים עד עכשיו'} />
             <Kpi label="ברוטו ממוצע בחודש" value={nis(avg(slips.map((s) => s.summary.totalPay)))} />
-            <Kpi label="לבנק בממוצע" value={nis(avg(slips.map((s) => s.summary.bank)))} tone="green" />
             <Kpi label="המעסיק מפקיד בשבילך" value={nis(avg(slips.map(employerTotal)))} note="בכל חודש, מעבר לברוטו" tone="blue" />
           </div>
           <div className="doors">
@@ -100,13 +121,14 @@ export function Home({ slips, params, go }: P) {
 }
 
 /* ---------- One slip, explained ---------- */
-function Rows({ rows, sign = 1, extra }: { rows: Row[]; sign?: number; extra?: (r: Row) => string | undefined }) {
+function Rows({ rows, sign = 1, extra, trend }: { rows: Row[]; sign?: number; extra?: (r: Row) => string | undefined; trend?: (r: Row) => number[] }) {
   return (
     <table className="rows">
       <tbody>
         {rows.map((r) => (
           <tr key={r.code + r.name}>
             <td className="r-name"><b>{r.name}</b><span className="r-code">{r.code}</span>{explain(r.name) && <span className="r-explain">{explain(r.name)}</span>}{extra?.(r) && <span className="r-extra">{extra(r)}</span>}</td>
+            {trend && <td className="r-trend"><Spark values={trend(r)} /></td>}
             <td className={`r-amt ${sign < 0 ? 'neg' : ''}`}>{nis(sign * r.amount, 2)}</td>
           </tr>
         ))}
@@ -126,13 +148,17 @@ export function SlipView({ slips, params, go, month, onSlip, onRemove }: P) {
     return !p || Math.abs(p.amount - r.amount) > 1;
   }) : [];
   const unit = params.vacUnit === 'days' ? 'ימים' : 'שעות';
+  const recent = slips.slice(Math.max(0, slips.indexOf(s) - 11), slips.indexOf(s) + 1);
+  const trend = (r: Row) => recent.map((x) => x.payments.concat(x.mandatory, x.personal, x.funds).find((y) => y.code === r.code)?.amount ?? 0);
+  const src = `תלוש ${monthLabel(s)}${s.fileName ? `, ${s.fileName}` : ''}`;
   return (
     <div>
       <div className="chips" role="tablist" aria-label="חודש">
         {slips.map((x) => <button key={x.id} type="button" role="tab" aria-selected={x.id === s.id} className={`chip ${x.id === s.id ? 'on' : ''}`} onClick={() => go('slip', x.id)}>{monthLabel(x)}</button>)}
       </div>
+      <Toc items={[['s-fall', 'מהברוטו לבנק'], ['s-pay', 'תשלומים'], ['s-tax', 'מס וביטוח'], ['s-save', 'חיסכון'], ['s-imp', 'שווי שנזקף'], ['s-bal', 'יתרות']]} />
 
-      <Section n="01" title={`${monthLabel(s)}: מהברוטו לבנק`} lead={`מתוך **${nis(s.summary.totalPay)}** ברוטו נכנסו לבנק **${nis(s.summary.bank)}**, כלומר ${Math.round((s.summary.bank / s.summary.totalPay) * 100)}%.`}>
+      <Section n="01" id="s-fall" title={`כמה מהברוטו הגיע לבנק ב${monthLabel(s)}?`} lead={`מתוך **${nis(s.summary.totalPay)}** ברוטו נכנסו לבנק **${nis(s.summary.bank)}**, כלומר ${Math.round((s.summary.bank / s.summary.totalPay) * 100)}%.`}>
         <div className="fall">
           {[
             { l: 'סך התשלומים (ברוטו)', v: s.summary.totalPay, t: 'ink' },
@@ -156,14 +182,14 @@ export function SlipView({ slips, params, go, month, onSlip, onRemove }: P) {
         )}
       </Section>
 
-      <Section n="02" title="תשלומים" lead="מה שהעירייה משלמת לך החודש.">
-        <Rows rows={s.payments} extra={(r) => (r.qty && r.rate ? `${n2(r.qty)} x ${nis(r.rate, 2)}` : undefined)} />
+      <Section n="02" id="s-pay" title="על מה שילמו לי?" lead="כל רכיב בשכר, עם המגמה שלו ב-12 החודשים האחרונים.">
+        <Rows trend={trend} rows={s.payments} extra={(r) => (r.qty && r.rate ? `${n2(r.qty)} x ${nis(r.rate, 2)}` : undefined)} />
       </Section>
-      <Section n="03" title="ניכויי חובה" lead="מס וביטוחים שהחוק קובע.">
-        <Rows rows={s.mandatory} sign={-1} />
+      <Section n="03" id="s-tax" title="כמה לקחו מס וביטוח?" lead="ניכויים שהחוק קובע, לא בחירה.">
+        <Rows trend={trend} rows={s.mandatory} sign={-1} />
         <p className="note"><M>{`המס השולי שלך **${n2(s.info.marginalTax ?? 0)}%**: מכל שקל נוסף ברוטו יורדים ${n2(s.info.marginalTax ?? 0)} אגורות למס, לפני ביטוח לאומי.`}</M></p>
       </Section>
-      <Section n="04" title="חיסכון: פנסיה והשתלמות" lead="מה יורד ממך, ומה המעסיק מוסיף לאותה קופה.">
+      <Section n="04" id="s-save" title="כמה נחסך לי, ומי שם את הכסף?" lead="מה יורד ממך, ומה המעסיק מוסיף לאותה קופה.">
         <table className="rows funds">
           <thead><tr><th>קופה</th><th>ממך</th><th>מהמעסיק</th><th>פיצויים</th><th>סה"כ בחודש</th></tr></thead>
           <tbody>
@@ -177,18 +203,19 @@ export function SlipView({ slips, params, go, month, onSlip, onRemove }: P) {
           </tbody>
         </table>
         <p className="note"><M>{`על כל **${nis(s.summary.fundsDed)}** שיורדים ממך, המעסיק מוסיף **${nis(employerTotal(s))}**.`}</M></p>
+        <Source>{`${src}: "קופות גמל" והפרשות המעסיק ב"נתוני עזר".`}</Source>
       </Section>
       {s.personal.length > 0 && (
-        <Section n="05" title="ניכויים אישיים" lead="ניכויים שבחרת בהם, לא חובה.">
-          <Rows rows={s.personal} sign={-1} extra={(r) => (r.name.includes('ביטוח') ? `${nis(r.amount * 12)} בשנה` : undefined)} />
+        <Section n="05" title="מה ירד לפי בחירה שלי?" lead="ניכויים שבחרת בהם, לא חובה.">
+          <Rows trend={trend} rows={s.personal} sign={-1} extra={(r) => (r.name.includes('ביטוח') ? `${nis(r.amount * 12)} בשנה` : undefined)} />
         </Section>
       )}
       {imp.length > 0 && (
-        <Section n="06" title="שווי שנזקף לשכר" lead="סכומים שלא נכנסים לחשבון, אבל משלמים עליהם מס.">
+        <Section n="06" id="s-imp" title="על מה אני משלמת מס בלי לקבל כסף?" lead="סכומים שלא נכנסים לחשבון, אבל נוספים לשכר החייב במס.">
           <Rows rows={imp} extra={(r) => `מס משוער: ${nis((r.amount * (s.info.marginalTax ?? 0)) / 100)} בחודש`} />
         </Section>
       )}
-      <Section n="07" title="יתרות ונתונים אישיים">
+      <Section n="07" id="s-bal" title="מה צברתי?">
         <div className="kpis">
           {s.vacation && <Kpi label={`חופשה (${unit})`} value={n2(s.vacation.close)} note={`נצבר ${n2(s.vacation.credit)}, נוצל ${n2(s.vacation.used)}`} />}
           {s.sick && <Kpi label={`מחלה (${unit})`} value={n2(s.sick.close)} note={`נצבר ${n2(s.sick.credit)}, נוצל ${n2(s.sick.used)}`} />}
@@ -198,8 +225,8 @@ export function SlipView({ slips, params, go, month, onSlip, onRemove }: P) {
         </div>
         <div className="row-actions">
           <button type="button" className="btn ghost danger" onClick={() => { if (confirm(`למחוק את ${monthLabel(s)} מהמכשיר?`)) onRemove(s.id); }}>מחיקת החודש מהמכשיר</button>
-          <span className="note">{s.fileName}</span>
         </div>
+        <Source>{`${src}. ${s.warnings.length ? 'בדיקת התאמה: יש הפרש, ראי למעלה.' : 'בדיקת התאמה: כל השורות מסתכמות לשורת הסיכום.'}`}</Source>
       </Section>
     </div>
   );
@@ -221,7 +248,8 @@ export function Flow({ slips, go, onSlip }: P) {
   const per100 = (v: number) => Math.round((v / gross) * 100);
   return (
     <div>
-      <Section n="01" title={`${slips.length} חודשים יחד`} lead={`מכל **100 ₪** ברוטו: ${per100(parts[0].value)} לבנק, ${per100(parts[1].value)} מס הכנסה, ${per100(parts[2].value)} ביטוח לאומי ובריאות, ${per100(parts[3].value)} לחיסכון שלך.`}>
+      <Toc items={[['f-all', 'לאן הולך כל שקל'], ['f-months', 'חודש אחרי חודש'], ['f-table', 'כל המספרים']]} />
+      <Section n="01" id="f-all" title="לאן הולך כל שקל?" lead={`מכל **100 ₪** ברוטו: ${per100(parts[0].value)} לבנק, ${per100(parts[1].value)} מס הכנסה, ${per100(parts[2].value)} ביטוח לאומי ובריאות, ${per100(parts[3].value)} לחיסכון שלך.`}>
         <Stack parts={parts} total={gross} />
         <div className="kpis">
           <Kpi label="ברוטו מצטבר" value={nis(gross)} />
@@ -229,8 +257,9 @@ export function Flow({ slips, go, onSlip }: P) {
           <Kpi label="הפקדות המעסיק" value={nis(tot(employerTotal))} note="לא בתוך הברוטו" tone="blue" />
           <Kpi label="עלות מלאה שלך למעסיק" value={nis(gross + tot(employerTotal))} note="בלי ביטוח לאומי מעסיק" />
         </div>
+        <Source>{`${slips.length} תלושים, שורת הסיכום בתחתית כל תלוש.`}</Source>
       </Section>
-      <Section n="02" title="חודש אחרי חודש" lead="כל עמודה היא חודש. החלק הבהיר למעלה הוא **מה שהמעסיק מפקיד** מעבר לברוטו. לחיצה פותחת את התלוש.">
+      <Section n="02" id="f-months" title="איך זה משתנה מחודש לחודש?" lead="כל עמודה היא חודש. החלק הבהיר למעלה הוא **מה שהמעסיק מפקיד** מעבר לברוטו. לחיצה פותחת את התלוש.">
         <div className="cols" role="list">
           {slips.map((s) => {
             const segs = [
@@ -247,7 +276,7 @@ export function Flow({ slips, go, onSlip }: P) {
           })}
         </div>
       </Section>
-      <Section n="03" title="הטבלה המלאה">
+      <Section n="03" id="f-table" title="כל המספרים, חודש בחודש">
         <div className="scroll-x">
           <table className="grid">
             <thead><tr><th>חודש</th><th>ברוטו</th><th>מס הכנסה</th><th>ב"ל ובריאות</th><th>חיסכון שלך</th><th>אישיים</th><th>לבנק</th><th>מהמעסיק</th></tr></thead>
@@ -315,6 +344,7 @@ export function Owed({ slips, params, setParams, onSlip }: P) {
           </ul>
         </article>
         <article className="card">
+          <Meter label="בסיס ההפקדה לפנסיה מתוך שכר היסוד" value={baseSalary ? (pensionBase / baseSalary) * 100 : 0} target={100} max={110} fmt={(n) => `${Math.round(n)}%`} />
           {pensionBase >= baseSalary - 1
             ? <Insight title="הפנסיה מופקדת על כל שכר היסוד" tone="green">{`בסיס ההפקדה **${nis(pensionBase)}** שווה לשכר היסוד. זה המצב התקין.`}</Insight>
             : <Insight title="חלק מהשכר לא מבוטח לפנסיה" tone="red">{`בסיס ההפקדה **${nis(pensionBase)}** נמוך משכר היסוד **${nis(baseSalary)}**. כדאי לבקש הסבר.`}</Insight>}
@@ -349,7 +379,10 @@ export function Save({ slips, params, setParams, onSlip }: P) {
   const life = last.personal.filter((p) => /ביטוח/.test(p.name));
   return (
     <div>
-      <Section n="01" title="דמי ניהול" lead="הסעיף הגדול ביותר שאפשר לשנות בטלפון אחד לקרן.">
+      <Toc items={[['v-fee', 'דמי ניהול'], ['v-imp', 'שווי שנזקף'], ['v-ins', 'ביטוחים'], ['v-don', 'תרומות']]} />
+      <Section n="01" id="v-fee" title="כמה עולים לי דמי הניהול?" lead="הסעיף הגדול ביותר שאפשר לשנות בשיחת טלפון אחת לקרן.">
+        <Meter label="דמי ניהול מהצבירה" value={params.feeBalance} target={params.targetFee} max={0.6} lowerIsBetter fmt={(n) => `${n2(n)}%`} note="התקרה בחוק לקרן פנסיה: 0.5%" />
+        <Meter label="דמי ניהול מההפקדה" value={params.feeDeposit} target={1} max={6.5} lowerIsBetter fmt={(n) => `${n2(n)}%`} note="התקרה בחוק: 6%" />
         <div className="params">
           <NumField label="דמי ניהול מהצבירה היום" value={params.feeBalance} step={0.01} suffix="%" onChange={(v) => setParams({ feeBalance: v })} help="בדוח השנתי של הקרן" />
           <NumField label="דמי ניהול יעד" value={params.targetFee} step={0.01} suffix="%" onChange={(v) => setParams({ targetFee: v })} help="מה שאפשר לבקש במשא ומתן" />
@@ -358,7 +391,7 @@ export function Save({ slips, params, setParams, onSlip }: P) {
         {!Object.values(params.balances).some((b) => b > 0) && <p className="note">החישוב עוד בלי הצבירה הקיימת, ולכן ההפרש האמיתי גדול יותר. את הצבירה מזינים בדף הפנסיה.</p>}
       </Section>
       {imp.length > 0 && (
-        <Section n="02" title="שווי שנזקף לשכר" lead="על הסכומים האלה משלמים מס, למרות שהם לא נכנסים לחשבון.">
+        <Section n="02" id="v-imp" title="כמה מס על שווי שלא נכנס לחשבון?" lead="על הסכומים האלה משלמים מס, למרות שהם לא נכנסים לחשבון.">
           <div className="cards">
             {imp.map((r) => (
               <article key={r.code} className="card">
@@ -369,11 +402,11 @@ export function Save({ slips, params, setParams, onSlip }: P) {
         </Section>
       )}
       {life.length > 0 && (
-        <Section n="03" title="ביטוחים בתלוש">
+        <Section n="03" id="v-ins" title="האם הביטוח בתלוש נחוץ?">
           {life.map((r) => <Insight key={r.code} title={`${r.name}: ${nis(r.amount * 12)} בשנה`} tone="amber">{`לבדוק אם הכיסוי לא **כפול** לביטוח שכבר כלול בקרן הפנסיה (שארים ונכות), ואם הסכום עדיין נחוץ.`}</Insight>)}
         </Section>
       )}
-      <Section n="04" title="תרומות" lead="תרומה למוסד עם סעיף 46 מחזירה 35% ממנה כזיכוי ממס.">
+      <Section n="04" id="v-don" title="כמה יחזור לי מתרומות?" lead="תרומה למוסד עם סעיף 46 מחזירה 35% ממנה כזיכוי ממס.">
         <div className="params"><NumField label="סכום תרומות בשנה" value={params.donation} step={100} suffix="₪" onChange={(v) => setParams({ donation: v })} /></div>
         <Insight title={`החזר מס: ${nis(params.donation * 0.35)}`} tone="green">{`על תרומה של **${nis(params.donation)}** חוזרים **35%**, כל עוד הקבלה רשומה על שמך ומוגשת עד סוף השנה הבאה.`}</Insight>
       </Section>
@@ -393,17 +426,19 @@ export function Pension({ slips, params, setParams, onSlip }: P) {
   return (
     <div>
       {!hasBalances && <Insight title="חסרה הצבירה שכבר יש לך" tone="red">{`בלי הצבירה הקיימת התחזית סופרת רק **הפקדות מהיום והלאה**. את הסכום מעתיקים מהדוח השנתי של כל קרן, למטה.`}</Insight>}
-      <Section n="01" title={`כ-${nis(f.totalNet)} נטו בחודש`} lead={`הערכה ב**שקלים של היום**, מ${fmtDate(f.retireDate)} (גיל ${params.retireAge}), עוד **${f.months} חודשי** הפקדה.`}>
+      <Toc items={[['p-sum', 'כמה אקבל'], ['p-split', 'איך תחולק'], ['p-assume', 'ההנחות']]} />
+      <Section n="01" id="p-sum" title={`כמה אקבל בחודש בפרישה? כ-${nis(f.totalNet)} נטו`} lead={`הערכה ב**שקלים של היום**, מ${fmtDate(f.retireDate)} (גיל ${params.retireAge}), עוד **${f.months} חודשי** הפקדה.`}>
         <div className="kpis">
-          <Kpi label="קצבה ברוטו מהקרנות" value={nis(f.pension)} tone="blue" />
-          <Kpi label="פטור ממס (קיבוע זכויות)" value={nis(f.exempt)} tone="green" />
-          <Kpi label="מס משוער" value={nis(-f.tax)} tone="red" />
-          <Kpi label="קצבת זקנה, ביטוח לאומי" value={nis(f.oldAge)} note="הערכה" />
-          <Kpi label="ביחס לנטו היום" value={`${Math.round(share)}%`} note={`נטו ממוצע היום ${nis(netNow)}`} />
-          <Kpi label="קרן השתלמות בפרישה" value={nis(f.hishtalmut)} note="סכום חד-פעמי, פטור ממס" tone="green" />
+          <Kpi est label="קצבה ברוטו מהקרנות" value={nis(f.pension)} tone="blue" />
+          <Kpi est label="פטור ממס (קיבוע זכויות)" value={nis(f.exempt)} tone="green" />
+          <Kpi est label="מס משוער" value={nis(-f.tax)} tone="red" />
+          <Kpi est label="קצבת זקנה, ביטוח לאומי" value={nis(f.oldAge)} />
+          <Kpi est label="קרן השתלמות בפרישה" value={nis(f.hishtalmut)} note="סכום חד-פעמי, פטור ממס" tone="green" />
         </div>
+        <Meter label="הכנסה בפרישה מתוך הנטו היום" value={share} target={70} max={110} fmt={(n) => `${Math.round(n)}%`} note={`כלל אצבע בתכנון פנסיוני. נטו ממוצע היום ${nis(netNow)}`} />
+        <Source>{`ממוצע ההפקדות ב-${Math.min(12, slips.length)} התלושים האחרונים, והנחות שאפשר לשנות למטה.`}</Source>
       </Section>
-      <Section n="02" title="איך הקצבה תחולק" lead="מאילו מקורות יגיע הכסף בכל חודש, ומה ממנו פטור.">
+      <Section n="02" id="p-split" title="איך הקצבה תחולק?" lead="מאילו מקורות יגיע הכסף בכל חודש, ומה ממנו פטור.">
         <Stack parts={[
           ...f.funds.map((x, i) => ({ label: x.name, value: x.pension, tone: i % 2 ? 'blue-light' : 'blue' })),
           { label: 'ביטוח לאומי', value: f.oldAge, tone: 'amber' },
@@ -414,7 +449,7 @@ export function Pension({ slips, params, setParams, onSlip }: P) {
           <tbody>{f.funds.map((x) => <tr key={x.key}><td className="r-name"><b>{x.name}</b></td><td className="r-amt">{nis(x.deposit)}</td><td className="r-amt">{nis(x.balanceNow)}</td><td className="r-amt">{nis(x.balance)}</td><td className="r-amt strong">{nis(x.pension)}</td></tr>)}</tbody>
         </table>
       </Section>
-      <Section n="03" title="ההנחות" lead="כל מספר כאן ניתן לשינוי, והתחזית מתעדכנת מיד ונשמרת במכשיר.">
+      <Section n="03" id="p-assume" title="על מה התחזית מבוססת?" lead="כל מספר כאן ניתן לשינוי, והתחזית מתעדכנת מיד ונשמרת במכשיר.">
         <div className="params">
           {groups.filter((g) => g.kind === 'pension').map((g) => (
             <NumField key={g.key} label={`צבירה היום: ${g.name}`} value={params.balances[g.key] ?? 0} step={1000} suffix="₪" onChange={(v) => setParams({ balances: { ...params.balances, [g.key]: v } })} help="מהדוח השנתי או מהאזור האישי" />
@@ -470,7 +505,7 @@ export function Time({ slips, params, onSlip }: P) {
   ];
   return (
     <div>
-      <Section n="01" title="כל שנה נוספת שווה כסף" lead="אותן הנחות של דף הפנסיה, בגילי פרישה שונים. המקדם עולה בכ-8 לכל שנה מוקדמת (**הערכה גסה**).">
+      <Section n="01" title="כמה שווה עוד שנת עבודה?" lead="אותן הנחות של דף הפנסיה, בגילי פרישה שונים. המקדם עולה בכ-8 לכל שנה מוקדמת (**הערכה גסה**).">
         <div className="scroll-x">
           <table className="grid">
             <thead><tr><th>גיל פרישה</th><th>מועד</th><th>חודשי הפקדה</th><th>קצבה נטו</th><th>+ ביטוח לאומי</th><th>סה"כ בחודש</th><th>שכר לבנק עד אז</th></tr></thead>
@@ -487,20 +522,76 @@ export function Time({ slips, params, onSlip }: P) {
         </div>
         <p className="note"><M>{`כל שנת עבודה נוספת מוסיפה גם **${nis(bankAvg * 12)}** שכר לבנק, ודוחה את תחילת הקצבה בשנה.`}</M></p>
       </Section>
-      <Section n="02" title="ציר זמן" lead="המועדים שבהם החלטה עושה הבדל.">
+      <Section n="02" title="מתי צריך להחליט?" lead="המועדים שבהם החלטה עושה הבדל.">
         <ol className="timeline">
           {dates.filter((x) => x.d).sort((a, b) => a.d!.getTime() - b.d!.getTime()).map((x) => (
             <li key={x.t}><span className="tl-date">{fmtDate(x.d)}</span><b>{x.t}</b><span>{x.x}</span>{x.d && x.d > today && <i>בעוד {Math.round(monthsBetween(today, x.d) / 12 * 10) / 10} שנים</i>}</li>
           ))}
         </ol>
       </Section>
-      <Section n="03" title="ניהול נכון של הזמן">
+      <Section n="03" title="איך לנהל את הזמן נכון?">
         <div className="cards">
           <article className="card"><Insight title="חופשה: לנצל או לצבור" tone="amber">{`כל ${params.vacUnit === 'days' ? 'יום' : 'שעה'} שנצבר שווה היום **${nis(unitValue, 2)}**, וערכו עולה עם השכר. מעל תקרת הצבירה הוא נמחק, ולכן לנצל לפני שמגיעים אליה.`}</Insight></article>
           <article className="card"><Insight title="מועד הפרישה בתוך השנה" tone="blue">{`פדיון חופשה ומענקים בפרישה חייבים במס. **פריסה** על כמה שנות מס מקטינה אותו; לבדוק עם יועץ מס לפני שקובעים תאריך.`}</Insight></article>
           <article className="card"><Insight title="השתלמות: לא למשוך כשנפתחת" tone="green">{`קרן נזילה ממשיכה לצבור **פטור ממס** על הרווחים. משיכה רק כשיש לכסף שימוש טוב יותר.`}</Insight></article>
           <article className="card"><Insight title="פעם בשנה: הדוח השנתי" tone="blue">{`כשמגיע הדוח השנתי מהקרנות, לעדכן כאן את **הצבירה** ואת **דמי הניהול**. התחזית מתעדכנת מיד.`}</Insight></article>
         </div>
+      </Section>
+    </div>
+  );
+}
+
+/* ---------- How it is calculated (MOKED106: "איך מודדים") ---------- */
+export function Method({ slips, params, go }: P) {
+  const ok = slips.filter((s) => !s.warnings.length);
+  const bad = slips.filter((s) => s.warnings.length);
+  const last = slips[slips.length - 1];
+  return (
+    <div>
+      <Section n="01" title="האם כל תלוש נקרא נכון?" lead={slips.length ? `**${ok.length} מתוך ${slips.length}** תלושים עברו בדיקת התאמה מלאה.` : 'עוד אין תלושים.'}>
+        {slips.length > 0 && <Meter label="תלושים שעברו בדיקת התאמה" value={(ok.length / slips.length) * 100} target={100} max={100} fmt={(n) => `${Math.round(n)}%`} />}
+        {bad.map((s) => (
+          <Insight key={s.id} title={`${monthLabel(s)}: לבדיקה`} tone="red">{s.warnings.join(' ')}</Insight>
+        ))}
+        {bad.length > 0 && <p className="note">אפשר לפתוח את החודש בדף "מה יש בתלוש" ולהשוות למסמך המקורי.</p>}
+        <dl className="method">
+          <dt>מה נבדק</dt>
+          <dd>בכל תלוש: סכום שורות התשלום שווה ל"סך תשלומים", סכום ניכויי החובה שווה לסיכום שלהם, וסכום ההפקדות לקופות שווה ל"ניכויי חו"ז". תלוש שלא עובר מסומן במפה ובדף הזה.</dd>
+        </dl>
+      </Section>
+      <Section n="02" title="מאיפה כל מספר מגיע?">
+        <dl className="method">
+          <dt>מקור הנתונים</dt>
+          <dd>קובצי ה-PDF של מלם שכר, כפי שהעלית אותם. הטקסט נקרא לפי המיקום שלו בדף: שורת הסיכום, טבלת התשלומים והניכויים, ו"נתונים אישיים" בצד.</dd>
+          <dt>לבנק</dt>
+          <dd>"סכום בבנק" בתחתית התלוש: נטו פחות ניכויים אישיים ופחות החלק שלך בפנסיה ובהשתלמות.</dd>
+          <dt>המעסיק מפקיד</dt>
+          <dd>הפרשות המעסיק ל"תגמולים" ול"פיצויים" מתוך "נתוני עזר". הן לא חלק מהברוטו, ולכן מוצגות בנפרד.</dd>
+          <dt>שווי שנזקף</dt>
+          <dd>רכב צמוד, טלפון, הטבות ועד והשתלמות מעל התקרה. המס עליהם מחושב לפי המס השולי שבתלוש.</dd>
+          <dt>יתרות</dt>
+          <dd>חופשה ומחלה כפי שבתלוש. התלוש לא כותב את היחידה; בחרת: {params.vacUnit === 'days' ? 'ימים' : 'שעות'}.</dd>
+        </dl>
+      </Section>
+      <Section n="03" title="מה הוא חישוב ומה הוא הערכה?" lead="כל מה שמסומן **הערכה** תלוי בהנחות; כל השאר מועתק מהתלוש.">
+        <dl className="method">
+          <dt>מועתק מהתלוש</dt>
+          <dd>ברוטו, ניכויים, לבנק, הפקדות, יתרות, נקודות זיכוי, מס שולי ומצטברים.</dd>
+          <dt>הערכה</dt>
+          <dd>{`קצבה: תשואה ריאלית ${n2(params.realReturn)}%, דמי ניהול ${n2(params.feeBalance)}% מהצבירה ו-${n2(params.feeDeposit)}% מההפקדה, מקדם ${params.coefficient}, גיל פרישה ${params.retireAge}, פטור ${params.exemptPct}% מתקרה של ${nis(params.exemptCeiling)}, קצבת זקנה ${nis(params.oldAge)}. מס: מדרגות 2026, נקודת זיכוי ${nis(params.pointValue)}.`}</dd>
+          <dt>שינוי הנחה</dt>
+          <dd><button type="button" className="btn" onClick={() => go('pension')}>לשינוי ההנחות בדף הפנסיה</button></dd>
+        </dl>
+      </Section>
+      <Section n="04" title="מי רואה את הנתונים?">
+        <dl className="method">
+          <dt>פרטיות</dt>
+          <dd>הקבצים נקראים בתוך הדפדפן ונשמרים רק במכשיר הזה. אין שרת, אין חשבון, אין שליחה לבינה מלאכותית. מעבר למכשיר אחר: גיבוי לקובץ מתפריט A&I.</dd>
+          <dt>מה האפליקציה לא עושה</dt>
+          <dd>היא לא ייעוץ פנסיוני או ייעוץ מס, ולא מחליפה את הדוח השנתי של הקרנות. היא מראה מה כתוב בתלוש ומה כדאי לבדוק.</dd>
+          <dt>עדכון אחרון</dt>
+          <dd>{last ? `התלוש האחרון: ${monthLabel(last)}.` : '—'}</dd>
+        </dl>
       </Section>
     </div>
   );

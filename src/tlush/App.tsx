@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSlips } from './store';
 import { UploadButton, UploaderProvider } from './Upload';
 import type { Slip } from './types';
-import { Flow, Home, Owed, Pension, Save, SlipView, Time, VIEWS, type View } from './Views';
+import { Flow, Home, Method, Owed, Pension, Save, SlipView, Time, VIEWS, type View } from './Views';
 
 interface MenuElement extends HTMLElement { items: { label: string; hint?: string; danger?: boolean; onSelect: () => unknown }[]; status: string }
 // The 'ai-menu' JSX type is declared once, in src/components/AIMenu.tsx.
@@ -64,7 +64,13 @@ export default function App() {
 
   const props = { slips, params, setParams, go, month, onSlip: add, onRemove: remove };
   const current = VIEWS.find((x) => x.id === view)!;
-  const Page = { home: Home, slip: SlipView, flow: Flow, owed: Owed, save: Save, pension: Pension, time: Time }[view];
+  const Page = { home: Home, slip: SlipView, flow: Flow, owed: Owed, save: Save, pension: Pension, time: Time, method: Method }[view];
+  const okCount = slips.filter((s) => !s.warnings.length).length;
+  const badge = slips.length > 0 && (
+    <button type="button" className={`match-badge ${okCount < slips.length ? 'bad' : ''}`} onClick={() => go('method')} title="מה נבדק בכל תלוש">
+      {`בדיקת התאמה: ${okCount} מתוך ${slips.length} תואמים`}
+    </button>
+  );
 
   return (
     <UploaderProvider onSlip={add} has={(id) => slips.some((s) => s.id === id)}>
@@ -85,9 +91,10 @@ export default function App() {
         {view !== 'home' && (
           <div className="page-head">
             <nav className="crumbs" aria-label="מיקום"><a href={location.pathname} onClick={(e) => { e.preventDefault(); go('home'); }}>בית</a><span>/</span><span>{current.label}</span></nav>
-            <div className="page-title"><h1>{current.title}</h1><UploadButton /></div>
+            <div className="page-title"><h1>{current.title}</h1><div className="page-tools">{badge}<UploadButton /></div></div>
           </div>
         )}
+        {view === 'home' && badge && <div className="home-badge">{badge}</div>}
         <AnimatePresence mode="wait">
           <motion.div key={view + (month ?? '')} initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? undefined : { opacity: 0, y: -6 }} transition={{ duration: 0.22 }}>
             <Page {...props} />
