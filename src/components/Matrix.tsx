@@ -119,7 +119,7 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
 
   return (
     <div className="matrix-wrap">
-      <table className="matrix">
+      <table className="matrix" style={{ '--rows': domains.length } as React.CSSProperties}>
         <thead>
           <tr>
             <th className="corner mono">תחום / פעולה</th>

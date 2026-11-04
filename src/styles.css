@@ -715,3 +715,69 @@ td.name-edit { display: flex; align-items: center; gap: 8px; min-width: 220px; }
 .shoot-now img { width: 100%; max-height: 30vh; object-fit: contain; background: var(--bg); opacity: 0.85; }
 .shoot-now figcaption { font-size: 0.72rem; color: var(--dim); }
 @media (prefers-reduced-motion: reduce) { .phone-wait { animation: none; } }
+
+/* Home in three sections, each a screen of its own (Anat, 2026-11-04): what is new (added and updated apart), the map
+   whole inside the screen, and all the sheets. */
+.band-screen { min-height: calc(100vh - var(--bar-h) - 24px); scroll-margin-top: calc(var(--bar-h) + 8px); padding-top: 8px; }
+.band-screen + .band-screen { border-top: 3px double var(--ink); padding-top: 28px; }
+.recent-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.recent-col h3 { margin: 0 0 14px; font-size: 1.1rem; font-weight: 500; display: flex; align-items: baseline; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+.recent-col .recent { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
+.band-map .band-head { margin-bottom: 10px; padding-bottom: 8px; }
+.band-map .matrix { border-spacing: 4px; min-width: 0; table-layout: fixed; }
+.band-map .matrix thead th:first-child { width: 150px; }
+.band-map .matrix td { height: max(26px, calc((100vh - var(--bar-h) - 330px) / var(--rows, 10))); }
+.band-map .matrix thead th { padding-top: 2px; padding-bottom: 2px; }
+.band-map .matrix tbody th .axis, .band-map .matrix thead .axis { font-size: 0.86rem; white-space: normal; line-height: 1.15; }
+.band-map .cell, .band-map .gap { min-width: 0; }
+.band-map .cell-stack { top: 3px; height: calc(100% - 6px); width: auto; }
+.band-map .cell-n { bottom: 50%; transform: translateY(50%); }
+@media (max-width: 900px) {
+  .recent-split { grid-template-columns: minmax(0, 1fr); }
+  .band-map .matrix { min-width: 640px; }
+  .band-map .matrix td { height: 40px; }
+}
+
+/* Table that fits the screen (Anat, 2026-11-04): fixed column widths, text wraps instead of widening the table, platform
+   icons, a thumbnail that opens the app, arrows on every header, the sorted column dark, and every cell edited in place. */
+.apps-table { table-layout: fixed; width: 100%; font-size: 0.86rem; }
+.apps-table thead th { white-space: normal; }
+.apps-table thead th > button { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 9px 8px; line-height: 1.15; }
+.apps-table thead th.sorted { background: var(--ink); }
+.apps-table thead th.sorted > button { color: #fff; font-weight: 700; box-shadow: inset 0 -3px 0 var(--amber, #e8a317); }
+.apps-table thead th.plain { padding: 9px 8px; }
+.sort-arrows { flex: none; fill: currentColor; }
+.apps-table tbody td { padding: 6px 8px; overflow-wrap: anywhere; vertical-align: middle; }
+.apps-table tbody td:first-child { white-space: normal; }
+.apps-table td.center { text-align: center; }
+.apps-table td.sorted:not(.grouped) { background: rgba(23, 25, 28, 0.05); }
+.apps-table .tag { white-space: normal; text-align: right; line-height: 1.25; padding: 2px 7px; font-size: 0.78rem; }
+.apps-table td.tags { display: table-cell; white-space: normal; }
+.apps-table td.tags span + span { margin-inline-start: 0; }
+.apps-table .tag { max-width: 100%; }
+.apps-table td.mono.dim { font-size: 0.72rem; }
+.apps-table td.tags > span { display: inline-block; margin: 0 0 3px 3px; }
+.apps-table .tag:has(.plat) { padding: 3px; border-radius: 0; display: inline-grid; place-items: center; }
+.plat { display: block; width: 20px; height: 20px; }
+.name-cell { display: table-cell; }
+.name-cell::after { content: ''; display: block; clear: both; }
+.name-cell > * { vertical-align: middle; }
+.row-thumb { float: right; width: 64px; height: 42px; margin-inline-end: 8px; border: 1px solid var(--line-2); background: #e9e7e2; overflow: hidden; display: grid; place-items: center; color: var(--mid); font-weight: 600; transition: box-shadow 0.2s, transform 0.2s; }
+.row-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+a.row-thumb:hover { box-shadow: 0 0 0 2px var(--ink); transform: translateY(-1px); }
+.name-stack { display: grid; gap: 1px; min-width: 0; overflow: hidden; }
+.name-stack .mono { font-size: 0.68rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.apps-table .cell-field.cell-field { width: 100%; min-width: 0; border: 1px solid transparent; border-radius: 0; background: transparent; box-shadow: none; padding: 3px 4px; font: inherit; color: var(--ink); text-overflow: ellipsis; }
+.apps-table .cell-field.cell-field:hover { border-color: var(--line-2); background: #fff; }
+.apps-table .cell-field.cell-field:focus { border-color: var(--ink); background: #fff; outline: 2px solid #e8a317; outline-offset: 0; text-overflow: clip; }
+.cell-field::placeholder { color: #b3b0aa; }
+.name-field { font-weight: 600; font-size: 0.92rem; }
+.link-cell { display: flex; align-items: center; gap: 4px; }
+.link-cell a { flex: none; display: grid; place-items: center; }
+.link-cell img { width: 18px; height: 18px; display: block; }
+.link-cell .cell-field { font-family: var(--mono); font-size: 0.7rem; }
+.apps-table td.flash { animation: cell-saved 1.4s ease-out; }
+@keyframes cell-saved { 0% { box-shadow: inset 0 0 0 2px #2f8a57; background-color: rgba(47, 138, 87, 0.16); } 100% { box-shadow: inset 0 0 0 2px transparent; } }
+.table-hint { flex-basis: 100%; }
+.apps-table td.updated b { font-size: 0.92rem; }
+@media (max-width: 1100px) { .table-wrap { overflow-x: auto; } .apps-table { min-width: 1080px; } }

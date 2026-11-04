@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import type { ActionValue, AppData, Facet } from '../lib/types';
 import { hasFilters, type Route } from '../lib/route';
-import { activityOf } from '../lib/format';
+import { createdOf, time } from '../lib/format';
 import { ACTIONS, actionOf, facetLabel } from '../lib/facets';
 import AppCard from './AppCard';
 import Filters from './Filters';
@@ -35,8 +35,18 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
   const filtering = hasFilters(route);
   const domainsOf = (a: AppData) => (a.domains ?? []).map((d) => facetLabel(facets, 'domain', d)).join(' · ');
 
-  const recent = useMemo(
-    () => apps.filter((a) => Date.now() - activityOf(a) < 30 * 86_400_000).sort((a, b) => activityOf(b) - activityOf(a)).slice(0, 6),
+  // Added and updated are two lists (Anat, 2026-11-04): an app counts as updated only when it changed after the day it was added.
+  const MONTH = 30 * 86_400_000;
+  const added = useMemo(() => apps.filter((a) => Date.now() - createdOf(a) < MONTH).sort((a, b) => createdOf(b) - createdOf(a)).slice(0, 6), [apps]);
+  const updated = useMemo(
+    () =>
+      apps
+        .filter((a) => {
+          const u = time(a.updatedAt);
+          return Date.now() - u < MONTH && u - createdOf(a) > 86_400_000;
+        })
+        .sort((a, b) => time(b.updatedAt) - time(a.updatedAt))
+        .slice(0, 6),
     [apps],
   );
 
@@ -63,7 +73,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
         </motion.div>
         <motion.div className="hero-text" style={{ y: titleY }}>
           <div className="mono kicker">
-            PORTFOLIO · {apps.length} APPS · {ACTIONS.length} ACTIONS · {facets.filter((f) => f.kind === 'domain').length} DOMAINS
+            תיק אפליקציות · {apps.length} אפליקציות · {ACTIONS.length} פעולות · {facets.filter((f) => f.kind === 'domain').length} תחומים
           </div>
           <h1>
             בחר: תחום, נושא
@@ -82,22 +92,48 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
         <div className="hero-demo" data-aoa-demo="large" />
       </section>
 
-      {!filtering && recent.length > 0 && (
-        <section className="band">
+      {!filtering && (added.length > 0 || updated.length > 0) && (
+        <section className="band band-screen">
           <header className="band-head">
             <span className="mono">01</span>
-            <h2>נוספו או עודכנו לאחרונה</h2>
+            <h2>חדש בתיק</h2>
+            <span className="band-note">שלושים הימים האחרונים</span>
           </header>
-          <div className="recent">
-            {recent.map((a, i) => (
-              <AppCard key={a.id} app={a} sheet={sheets.get(a.id) ?? ''} category={domainsOf(a)} onOpen={() => go({ app: a.id })} index={i} compact />
-            ))}
+          <div className="recent-split">
+            <div className="recent-col">
+              <h3>
+                נוספו לאחרונה <span className="mono dim">{added.length}</span>
+              </h3>
+              {added.length ? (
+                <div className="recent">
+                  {added.map((a, i) => (
+                    <AppCard key={a.id} app={a} sheet={sheets.get(a.id) ?? ''} category={domainsOf(a)} onOpen={() => go({ app: a.id })} index={i} compact />
+                  ))}
+                </div>
+              ) : (
+                <p className="dim">לא נוספו אפליקציות בחודש האחרון.</p>
+              )}
+            </div>
+            <div className="recent-col">
+              <h3>
+                עודכנו לאחרונה <span className="mono dim">{updated.length}</span>
+              </h3>
+              {updated.length ? (
+                <div className="recent">
+                  {updated.map((a, i) => (
+                    <AppCard key={a.id} app={a} sheet={sheets.get(a.id) ?? ''} category={domainsOf(a)} onOpen={() => go({ app: a.id })} index={i} compact />
+                  ))}
+                </div>
+              ) : (
+                <p className="dim">אין עדכונים לאפליקציות ותיקות בחודש האחרון.</p>
+              )}
+            </div>
           </div>
         </section>
       )}
 
       {!filtering && (
-        <section className="band">
+        <section className="band band-screen band-map">
           <header className="band-head">
             <span className="mono">02</span>
             <h2>מפת התחומים והפעולות</h2>
@@ -108,7 +144,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
         </section>
       )}
 
-      <section className="band" id="catalog">
+      <section className={`band ${filtering ? '' : 'band-screen'}`} id="catalog">
         <header className="band-head">
           <span className="mono">{filtering ? 'Q' : '03'}</span>
           <h2>{filtering ? `${results.length} אפליקציות` : 'כל הגיליונות'}</h2>

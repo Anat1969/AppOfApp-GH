@@ -4,6 +4,9 @@
 
 - Always answer Anat in Hebrew. No icons or emoji, also not in the UI (no decorative arrows).
 - Work by the end-to-end-builder skill. Merge every PR to `main` after green checks without asking: Anat gave standing approval.
+- ALWAYS MERGE AND DEPLOY (Anat, 2026-11-04: "סיכמנו שאתה תמיד ממזג ופורס. כל שיחה כל פרויקט"): at the end of every task,
+  in every conversation and every project, merge to `main` and check the deployment right away. Never leave work waiting
+  for a night window and never ask whether to merge. This replaces the deploy windows below for ordinary work.
 - Delivery: final URL plus one line. Every correction Anat makes is added to this file.
 
 ## Service quotas (Anat's correction, 2026-10-24)
@@ -16,10 +19,8 @@ middle of her workday, and she could not deploy anything else. She was not warne
 - A job that would use more than about half of a daily quota is scheduled for a quiet day or hour,
   or split across days. Cut usage first: skip preview deploys, merge in batches, and deploy only the
   latest commit of each project.
-- DEPLOY WINDOWS (Anat, 2026-10-26: "פרוס בשלוש בבוקר ושעתיים לפני ניצול מכסת הפריסות"): work is merged to `main`
-  only in two night windows, Israel time: 01:00 (uses what is left before the 24-hour count rolls over) and 03:00
-  (the new count). A scheduled task in the development session does it: tests, merge, check Vercel and Pages, one
-  Hebrew line. During her day nothing is deployed unless she asks, so the quota is always free for her work.
+- DEPLOY WINDOWS (2026-10-26) are only for BULK jobs across many projects (they would use more than about half of the
+  daily 100): those run at 01:00 / 03:00 Israel time. Single tasks are merged and deployed at once (see Communication).
   Branches `claude/*` make no Vercel preview (`vercel.json` git.deploymentEnabled); previews are screenshots.
 - MUNICIPAL ACCOUNT DEPLOYS AT ONCE (Anat, 2026-11-04: "כל עוד אני עובדת בחשבון העירוני - תפרוס"): while she works from
   her municipal account (anatdavids@ashdod.muni.il), finished and tested work is merged to `main` and deployed right away,
@@ -268,12 +269,23 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   line (larger), `**words**` render as a highlighter mark, and when a text has no markers the app's own keywords,
   concepts and domain labels found in it are emphasized automatically (up to three). In edit mode every text
   field has a "הדגשה" button that wraps the selection in `**` (`RichText.tsx`, `MarkedTextarea.tsx`).
-- TABLE (Anat, 2026-10-27): a big "עודכן" column (the date she last changed the app, `data.updatedAt`, with "היום / לפני N
-  ימים"), default sort newest first. Sorting any column colours that column only by group (dates by age, links by
-  present/missing, labels by value) with a legend above the table.
-- RENAME IN THE TABLE (Anat, 2026-10-27, consistent names by subject): in edit mode the name cell is a field (Enter or
-  leaving it saves). The name lives once in `data.name`, so every page shows the new one; the page title follows when it
-  equalled the old name, and the first old name stays in `originalName` for search. "פתיחה" next to it opens the app.
+- TABLE (Anat, 2026-10-27; reworked 2026-11-04): a big "עודכן" column (`data.updatedAt`, with "היום / לפני N ימים"), default
+  sort newest first. Sorting any column colours that column only by group with a legend; dates group BY DAY ("תאריכים שונים
+  באותו צבע"): one colour per calendar day. The whole table fits the screen width (fixed column widths, text wraps; under
+  1100px it scrolls inside its frame). Every header has drawn sort arrows; the sorted header is dark with an amber line.
+  Next to the name a thumbnail opens the app; the project name sits under the name; the sheet number opens the app page.
+  Platforms, code and database are icons (favicons), all column names are Hebrew (מסד נתונים, קוד, ממשק).
+  EDIT WHILE VIEWING ("האם חייב להפריד בין עריכה לתצוגה?"): the table has no edit mode. Every cell is a field that looks like
+  text; Enter or leaving it saves at once (the store's autosave) and the cell flashes green; Escape restores. Link cells show
+  the short name and the full address on focus. A saved row keeps its place until the sort, filter or app count changes.
+  RENAME: the name lives once in `data.name`; the page title follows when it equalled the old name, and the first old name
+  stays in `originalName` for search.
+- DOMAINS IN HEBREW (2026-11-04): five domain values had no vocabulary entry and showed in English. New domains health
+  (בריאות וגוף) and knowledge (ידע ורעיונות); the rest moved (`supabase/migrations/20261104_aoa_hebrew_domains.sql`).
+  `facetLabel` never shows a raw English key ("לא מסווג").
+- HOME IN THREE SCREENS (2026-11-04): 01 "חדש בתיק" in two columns, added (by creation date) and updated (changed after the
+  day it was added), last 30 days; 02 the map, sized so all domain rows fit one screen (`--rows`); 03 all sheets. Each starts
+  a screen of its own with a double rule between. The hero line is Hebrew.
 - COVER IMAGE (Anat, 2026-10-27): the frame takes the image's own proportions (a screenshot is never cropped; very tall
   ones are limited to 82vh and the frame narrows to them). In edit mode a screenshot pasted anywhere on the app page
   (Ctrl+V, unless text is pasted into a field) becomes the cover, shows at once as a preview, and uploads once even if

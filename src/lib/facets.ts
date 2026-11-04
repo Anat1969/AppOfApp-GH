@@ -17,8 +17,9 @@ export const ACTIONS: { value: ActionValue; label: string; short: string; questi
 
 export const actionOf = (v?: string) => ACTIONS.find((a) => a.value === v);
 
+/** A value without a vocabulary entry is never shown as its raw English key (Anat, 2026-11-04). */
 export const facetLabel = (facets: Facet[], kind: Facet['kind'], v: string) =>
-  facets.find((f) => f.kind === kind && f.value === v)?.label ?? v;
+  facets.find((f) => f.kind === kind && f.value === v)?.label ?? (/^[\x00-\x7f]+$/.test(v) ? 'לא מסווג' : v);
 
 const norm = (s: string) => s.toLowerCase().replace(/["'״׳]/g, '').trim();
 
