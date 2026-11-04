@@ -209,12 +209,23 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   line (larger), `**words**` render as a highlighter mark, and when a text has no markers the app's own keywords,
   concepts and domain labels found in it are emphasized automatically (up to three). In edit mode every text
   field has a "הדגשה" button that wraps the selection in `**` (`RichText.tsx`, `MarkedTextarea.tsx`).
-- TABLE (Anat, 2026-10-27): a big "עודכן" column (the date she last changed the app, `data.updatedAt`, with "היום / לפני N
-  ימים"), default sort newest first. Sorting any column colours that column only by group (dates by age, links by
-  present/missing, labels by value) with a legend above the table.
-- RENAME IN THE TABLE (Anat, 2026-10-27, consistent names by subject): in edit mode the name cell is a field (Enter or
-  leaving it saves). The name lives once in `data.name`, so every page shows the new one; the page title follows when it
-  equalled the old name, and the first old name stays in `originalName` for search. "פתיחה" next to it opens the app.
+- TABLE (Anat, 2026-10-27; reworked 2026-11-04): a big "עודכן" column (`data.updatedAt`, with "היום / לפני N ימים"), default
+  sort newest first. Sorting any column colours that column only by group with a legend; dates group BY DAY ("תאריכים שונים
+  באותו צבע"): one colour per calendar day. The whole table fits the screen width (fixed column widths, text wraps; under
+  1100px it scrolls inside its frame). Every header has drawn sort arrows; the sorted header is dark with an amber line.
+  Next to the name a thumbnail opens the app; the project name sits under the name; the sheet number opens the app page.
+  Platforms, code and database are icons (favicons), all column names are Hebrew (מסד נתונים, קוד, ממשק).
+  EDIT WHILE VIEWING ("האם חייב להפריד בין עריכה לתצוגה?"): the table has no edit mode. Every cell is a field that looks like
+  text; Enter or leaving it saves at once (the store's autosave) and the cell flashes green; Escape restores. Link cells show
+  the short name and the full address on focus. A saved row keeps its place until the sort, filter or app count changes.
+  RENAME: the name lives once in `data.name`; the page title follows when it equalled the old name, and the first old name
+  stays in `originalName` for search.
+- DOMAINS IN HEBREW (2026-11-04): five domain values had no vocabulary entry and showed in English. New domains health
+  (בריאות וגוף) and knowledge (ידע ורעיונות); the rest moved (`supabase/migrations/20261104_aoa_hebrew_domains.sql`).
+  `facetLabel` never shows a raw English key ("לא מסווג").
+- HOME IN THREE SCREENS (2026-11-04): 01 "חדש בתיק" in two columns, added (by creation date) and updated (changed after the
+  day it was added), last 30 days; 02 the map, sized so all domain rows fit one screen (`--rows`); 03 all sheets. Each starts
+  a screen of its own with a double rule between. The hero line is Hebrew.
 - COVER IMAGE (Anat, 2026-10-27): the frame takes the image's own proportions (a screenshot is never cropped; very tall
   ones are limited to 82vh and the frame narrows to them). In edit mode a screenshot pasted anywhere on the app page
   (Ctrl+V, unless text is pasted into a field) becomes the cover, shows at once as a preview, and uploads once even if

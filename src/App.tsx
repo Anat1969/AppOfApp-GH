@@ -174,7 +174,7 @@ export default function App() {
                 onReceive={store.receiveApp}
               />
             ) : route.view === 'table' ? (
-              <TableView key="table" apps={apps} facets={facets} sheets={sheets} editing={editing} onOpen={(id) => go({ app: id, view: 'home' })} onChange={store.updateApp} />
+              <TableView key="table" apps={apps} facets={facets} sheets={sheets} onOpen={(id) => go({ app: id, view: 'home' })} onChange={store.updateApp} />
             ) : (
               <Home
                 key="home"
