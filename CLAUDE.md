@@ -169,6 +169,8 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   sized in `--u` (cqw), fitted so text never leaves the frame. Print one creation or a room as A4; "העלאה לחדר בתערוכה"
   opens TAARUCHA `/studio/import`. JPG export: `tools/creations-render.cjs`. Standard: `docs/creations-standard.md`.
   First five apps: Amirot, Refua, Tzuna, PrasNovel, Olam.
+  04.11.2026, ענת: "כפתור 'הכל' לא יכול להראות כמו כפתור ידע, הבנה, יישום". ידע, הבנה ויישום הם כפתורי שלב עם סמל קו
+  ומספר חדרים; "הכול" הוא קישור טקסט שקט בסוף השורה. לחיצה לא משאירה מסגרת: טבעת מיקוד רק במקלדת (`:focus-visible`).
 - WALK AT EYE HEIGHT (2026-11-03, from a reel on spaceplanner.co, Anat approved): `public/walk.js` serves `<space-walk>` to all
   her apps, like `ai-menu.js`. A plan (JSON, meters) becomes 3D and a first-person walk at a chosen eye height (95 child,
   120 seated, 160 standing), with a live count of what blocks the view and a plan map with a legend. three.js 0.160 is
