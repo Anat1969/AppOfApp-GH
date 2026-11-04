@@ -138,7 +138,9 @@ export function pensionTax(pension: number, p: Params) {
   return { exempt, tax };
 }
 
-export function forecast(slips: Slip[], p: Params, retireAge = p.retireAge, coefficient = p.coefficient): Forecast {
+export function forecast(all: Slip[], p: Params, retireAge = p.retireAge, coefficient = p.coefficient): Forecast {
+  // Deposits from the last 12 slips: older years had a different salary.
+  const slips = all.slice(-12);
   const last = slips[slips.length - 1];
   const birth = parseDate(last?.info.birthDate);
   const retireDate = birth ? new Date(birth.getFullYear() + Math.floor(retireAge), birth.getMonth() + Math.round((retireAge % 1) * 12), 1) : null;

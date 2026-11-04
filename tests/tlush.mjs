@@ -31,14 +31,31 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 
 await page.goto(`${BASE}/tlush/`);
-ok(await page.locator('.drop').isVisible(), 'empty state shows the upload area');
+ok(await page.locator('.upload').isVisible(), 'empty state shows the upload area');
+ok(await page.locator('button:has-text("העלאת כל התלושים")').first().isVisible(), 'main button: upload all slips');
+// A PDF that is not a payslip, and a non-PDF, go through the same pipeline and are reported, not swallowed.
+const pdfPage = await ctx.newPage();
+await pdfPage.setContent('<p>not a payslip</p>');
+const notSlip = await pdfPage.pdf();
+await pdfPage.close();
+await page.setInputFiles('[data-testid=slip-files]', [{ name: 'other.pdf', mimeType: 'application/pdf', buffer: notSlip }, { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('x') }]);
+await page.waitForSelector('.jobs li.error', { timeout: 15000 });
+ok((await page.textContent('.jobs')).includes('פירוט תשלומים'), 'a non-payslip PDF says why it was not read');
+ok((await page.textContent('.jobs-box')).includes('דילגתי') || (await page.textContent('.jobs-box')).includes('לא קובצי PDF'), 'a non-PDF file is skipped and reported');
 ok(await page.locator('ai-menu .logo').isVisible(), 'A&I logo button in the top bar');
-await page.evaluate((s) => localStorage.setItem('tlush-slips-v1', JSON.stringify(s)), [slip(1, 13580), slip(2, 13600), slip(3, 13700)]);
+await page.evaluate((s) => localStorage.setItem('tlush-slips-v1', JSON.stringify(s)), [slip(1, 13580), slip(2, 13600), slip(4, 13700)]);
 await page.reload();
+ok(await page.locator('.map').isVisible(), 'the map of slips is on the home page');
+ok((await page.textContent('.map-head')).includes('מרץ 2026'), 'the map names the missing month');
+ok((await page.locator('.map-grid .cell.on').count()) === 3, 'three loaded cells on the map');
+await page.locator('.map-grid .cell.on').first().click();
+ok(page.url().includes('m=2026-01'), 'a map cell opens its slip');
+await page.goto(`${BASE}/tlush/`);
 ok((await page.textContent('.kpis')).includes('3'), 'home counts three slips');
 for (const [label, expect] of [['מה יש בתלוש', 'מהברוטו לבנק'], ['הכנסות והוצאות', 'מכל 100'], ['מה מגיע לי', 'נקודות זיכוי'], ['איפה לחסוך', 'דמי ניהול'], ['פנסיה', 'איך הקצבה תחולק'], ['תכנון זמן', 'ציר זמן']]) {
   await page.click(`.nav-btn:has-text("${label}")`);
   await page.waitForTimeout(350);
+  ok(await page.locator('.page-title button:has-text("העלאת כל התלושים")').isVisible(), `${label}: upload button in the page head`);
   ok((await page.textContent('main')).includes(expect), `${label}: shows "${expect}"`);
   await page.screenshot({ path: `${SHOTS}tlush-${label.replace(/\s/g, '-')}.png`, fullPage: true });
 }

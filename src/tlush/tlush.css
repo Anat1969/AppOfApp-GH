@@ -62,7 +62,6 @@ ai-menu { flex: 0 0 auto; }
 .sheet-row.red b { color: var(--red); } .sheet-row.blue b { color: var(--blue); } .sheet-row.green b { color: var(--green); font-size: 1.3rem; }
 
 /* Upload */
-.upload { margin: 8px 0 24px; }
 .drop { width: 100%; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; text-align: start; padding: 28px; cursor: pointer; border: 2px dashed var(--blue); background: var(--blue-wash);
   box-shadow: var(--sh-1); transition: transform .15s, box-shadow .15s, background .15s; border-radius: 0; }
 .drop:hover, .drop.over { transform: translateY(-2px); box-shadow: var(--sh-2); background: #dfe8f4; }
@@ -212,4 +211,48 @@ ai-menu { flex: 0 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Upload: one prominent button on every page (2026-11-04) */
+.upload { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: center; padding: 24px 28px; border: 2px dashed var(--blue); background: var(--blue-wash); box-shadow: var(--sh-1); transition: background .15s, box-shadow .15s; }
+.upload.over { background: #dfe8f4; box-shadow: var(--sh-2); }
+.upload-text { display: flex; flex-direction: column; gap: 6px; }
+.upload.compact { padding: 16px 20px; }
+.upload-btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.upload-btns.big .btn.primary { font-size: 1.15rem; padding: 14px 26px; }
+.btn.primary { background: linear-gradient(180deg, var(--deep-2), var(--deep)); color: #fff; border-color: var(--deep); font-weight: 500; box-shadow: 0 2px 0 var(--brass), var(--sh-1); }
+.btn.primary:hover { box-shadow: 0 2px 0 var(--brass), var(--sh-2); }
+.btn:disabled { opacity: .55; cursor: wait; transform: none; box-shadow: none; }
+.page-title { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.page-title .btn { font-size: .9rem; padding: 7px 12px; }
+.jobs-box { margin: 12px 0 0; }
+.jobs-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; }
+.jobs { max-height: 320px; overflow-y: auto; }
+.jobs li.replaced { border-color: var(--blue); } .jobs li.skipped { border-color: var(--line-2); opacity: .8; }
+
+/* Map of slips: year x month */
+.map { background: var(--paper); border: 1px solid var(--line); box-shadow: var(--sh-1); padding: 20px 24px; margin: 20px 0; }
+.map-head h2 { font-size: 1.45rem; }
+.map-head p { margin: 4px 0 14px; color: var(--ink-2); }
+.map-grid { display: grid; gap: 4px; overflow-x: auto; }
+.map-row { display: grid; grid-template-columns: 52px repeat(12, minmax(46px, 1fr)) 96px; gap: 4px; align-items: stretch; min-width: 760px; }
+.map-row.head span { font: 500 .72rem var(--mono); color: var(--dim); text-align: center; }
+.map-year { font: 600 .95rem var(--mono); align-self: center; }
+.map-total { font: 500 .8rem var(--mono); align-self: center; text-align: start; direction: ltr; color: var(--green); }
+.cell { min-height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; font: .75rem var(--mono); border: 1px solid var(--line); background: transparent; border-radius: 0; padding: 2px; }
+.cell.on { background: var(--green-wash); border-color: var(--green); cursor: pointer; box-shadow: var(--sh-1); transition: transform .12s, box-shadow .12s; }
+.cell.on:hover { transform: translateY(-2px); box-shadow: var(--sh-2); }
+.cell.on:active { transform: translateY(0); box-shadow: none; }
+.cell.on b { color: var(--green); font-weight: 600; }
+.cell.on i { font-style: normal; color: var(--dim); font-size: .68rem; }
+.cell.fresh { outline: 2px solid var(--brass); outline-offset: -2px; }
+.cell.warn { background: var(--amber-wash); border-color: var(--amber); }
+.cell.missing { border: 1px dashed var(--red); color: var(--red); background: var(--red-wash); }
+.cell.future { border-style: dotted; opacity: .5; }
+.map-legend { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .82rem; color: var(--ink-2); }
+.map-legend li { display: flex; align-items: center; gap: 6px; }
+.cell.sw { min-height: 14px; width: 18px; padding: 0; box-shadow: none; }
+@media (max-width: 760px) {
+  .upload { grid-template-columns: minmax(0, 1fr); padding: 18px; }
+  .map { padding: 16px; }
 }

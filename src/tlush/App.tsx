@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSlips } from './store';
+import { UploadButton, UploaderProvider } from './Upload';
 import type { Slip } from './types';
 import { Flow, Home, Owed, Pension, Save, SlipView, Time, VIEWS, type View } from './Views';
 
@@ -66,7 +67,7 @@ export default function App() {
   const Page = { home: Home, slip: SlipView, flow: Flow, owed: Owed, save: Save, pension: Pension, time: Time }[view];
 
   return (
-    <>
+    <UploaderProvider onSlip={add} has={(id) => slips.some((s) => s.id === id)}>
       <header className="bar">
         <a className="brand" href={location.pathname} onClick={(e) => { e.preventDefault(); go('home'); }}>
           <span className="brand-mark" aria-hidden="true">₪</span>
@@ -84,7 +85,7 @@ export default function App() {
         {view !== 'home' && (
           <div className="page-head">
             <nav className="crumbs" aria-label="מיקום"><a href={location.pathname} onClick={(e) => { e.preventDefault(); go('home'); }}>בית</a><span>/</span><span>{current.label}</span></nav>
-            <h1>{current.title}</h1>
+            <div className="page-title"><h1>{current.title}</h1><UploadButton /></div>
           </div>
         )}
         <AnimatePresence mode="wait">
@@ -97,6 +98,6 @@ export default function App() {
         <span>הנתונים נשמרים רק בדפדפן הזה. אין שרת, אין חשבון, ושום תלוש לא נשלח.</span>
         <span>החישובים הם הערכה לתכנון, לא ייעוץ פנסיוני או מס.</span>
       </footer>
-    </>
+    </UploaderProvider>
   );
 }

@@ -6,7 +6,8 @@ import { explain } from './glossary';
 import { MONTH_NAMES } from './parse';
 import type { Row, Slip } from './types';
 import { Insight, Kpi, M, NumField, Section, Stack } from './ui';
-import Upload from './Upload';
+import Upload, { Jobs } from './Upload';
+import SlipMap from './SlipMap';
 
 export type View = 'home' | 'slip' | 'flow' | 'owed' | 'save' | 'pension' | 'time';
 export const VIEWS: { id: View; label: string; title: string }[] = [
@@ -24,17 +25,18 @@ const fmtDate = (d: Date | null) => (d ? d.toLocaleDateString('he-IL', { month: 
 
 interface P { slips: Slip[]; params: Params; setParams: (p: Partial<Params>) => void; go: (v: View, m?: string) => void; month?: string; onSlip: (s: Slip) => void; onRemove: (id: string) => void }
 
-function Empty({ onSlip }: { onSlip: (s: Slip) => void }) {
+function Empty(_: { onSlip: (s: Slip) => void }) {
   return (
     <div className="empty">
       <Insight title="עוד אין תלושים במכשיר הזה" tone="amber">כדי לראות את החלק הזה צריך **לפחות תלוש אחד**. העלי את קובצי ה-PDF כאן.</Insight>
-      <Upload onSlip={onSlip} />
+      <Upload />
+      <Jobs />
     </div>
   );
 }
 
 /* ---------- Home ---------- */
-export function Home({ slips, params, go, onSlip }: P) {
+export function Home({ slips, params, go }: P) {
   const last = slips[slips.length - 1];
   const f = useMemo(() => (slips.length ? forecast(slips, params) : null), [slips, params]);
   const missing = last ? Array.from({ length: last.month }, (_, i) => i + 1).filter((m) => !slips.some((s) => s.year === last.year && s.month === m)) : [];
@@ -65,7 +67,9 @@ export function Home({ slips, params, go, onSlip }: P) {
         </div>
       </section>
 
-      <Upload onSlip={onSlip} compact={!!last} />
+      <Upload compact={!!last} />
+      <Jobs />
+      <SlipMap slips={slips} go={(id) => go('slip', id)} />
       {!last && (
         <>
           <div className="doors muted">
@@ -77,7 +81,7 @@ export function Home({ slips, params, go, onSlip }: P) {
       {last && f && (
         <>
           <div className="kpis">
-            <Kpi label="תלושים שנקראו" value={`${slips.length}`} note={missing.length ? `חסרים: ${missing.map((m) => MONTH_NAMES[m - 1]).join(', ')}` : 'כל החודשים עד עכשיו'} />
+            <Kpi label="תלושים שנקראו" value={`${slips.length}`} note={missing.length ? `חסרים ${missing.length} מתחילת ${last.year}; פירוט במפה` : 'כל החודשים עד עכשיו'} />
             <Kpi label="ברוטו ממוצע בחודש" value={nis(avg(slips.map((s) => s.summary.totalPay)))} />
             <Kpi label="לבנק בממוצע" value={nis(avg(slips.map((s) => s.summary.bank)))} tone="green" />
             <Kpi label="המעסיק מפקיד בשבילך" value={nis(avg(slips.map(employerTotal)))} note="בכל חודש, מעבר לברוטו" tone="blue" />

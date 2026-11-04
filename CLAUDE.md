@@ -72,6 +72,12 @@ is owed, where to save, the pension and how it splits, how to time things to get
   shekels (return, fees, coefficient 205, retirement age 65, 67% exemption of the 9,430 ceiling, old-age allowance 1,800),
   every assumption editable on the pension page. Without the current fund balances the forecast counts only future deposits
   and the page says so in red.
+- UPLOAD ALL AND MAP (Anat, 2026-11-04: "כפתור בו אני מעלה את כל התלושים שיש לי ואתה ממפה אותם"): "העלאת כל התלושים"
+  (many PDFs) and "בחירת תיקייה שלמה" (webkitdirectory) on the home page and in the head of every page; drag and drop too.
+  One shared uploader (`UploaderProvider` in `src/tlush/Upload.tsx`) reads the files one by one and lists each result
+  (read, replaced the same month, not a payslip, locked, skipped non-PDF). `SlipMap.tsx` maps every slip by year x month:
+  loaded (to the bank / gross), just uploaded, needs a check, missing (the current year counts from January); a cell opens
+  the slip. The pension forecast uses the last 12 slips. Share link: https://appofapp-gh.vercel.app/s/app-tlush-reader
 - Vacation and sick units are not printed on the slip: a days / hours switch on "מה מגיע לי".
 
 ## Data (Supabase cultura-GH, ktqmwpbzcnzkhjskqisy, shared: prefix `aoa_`)
