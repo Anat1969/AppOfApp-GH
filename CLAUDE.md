@@ -312,8 +312,12 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   row header sorts the columns, a second click restores. Quieter traffic light: MOKED106 red #a23b2a, green #3f7a58, gold
   marker instead of yellow, no browser-yellow `mark`. Fewer frames: button groups (filters, chips, segmented buttons,
   legend) have no frame or border; buttons lift on hover and the pressed one is navy.
+- BREATHING ROOM (Anat, 2026-11-04, the same day: "המסך עכשיו חנוק. כן צריך שטח מת למעלה ובצד כדי לתת לעכבר לנוע בלי
+  שיקפצו מסכים, ועדיין לארגן מידע בתוך מסגרת המסך"): a quiet margin under the top bar (`--air`, 18px) and at both sides
+  (`--gutter`, 36-96px, page up to 1680px) where the pointer can rest without opening anything; the sticky bars keep the
+  margin when stuck (a background shadow fills it); the map still fits 1900x940. Balance: compact, never cramped.
 - NEW COLUMNS (Anat, 2026-11-04: "בהתאם להמלצה. תוסיף עמודות זיקוק והחלטה"): actions `distill` (זיקוק, walk away with the
-  essence) and `decide` (החלטה, walk away with a choice), nine actions in all; 26 more idea cells in `ideas.ts`.
+  essence) and `decide` (החלטה, walk away with a choice), nine actions in all; 26 more idea cells in `ideas.ts`. Ten apps moved there ("כן תעביר", `supabase/migrations/20261104_aoa_distill_decide.sql`).
 - IDEAS (Anat, 2026-11-04: more suggestions, mergers that create insight, knowledge, information and new creations, unlike
   what exists, "מיזוגים וחיתוכים וזיקוקים", new columns and topics, fill every cell, new syntheses): `src/data/ideas.ts`
   holds 3 ideas for EVERY one of the 91 cells (new / merge / cut / distill; merge, cut and distill name their source apps by

@@ -899,3 +899,20 @@ mark.hl { color: var(--ink); font-weight: 600; padding: 0 2px; background: linea
 .stage, .foot { max-width: 1800px; padding-inline: 32px; }
 .topbar-inner { max-width: 1800px; }
 .sec-bar > button.on:hover { background: var(--ink); color: #fff; transform: none; }
+
+/* Breathing room (Anat, 2026-11-04: "המסך עכשיו חנוק. כן צריך שטח מת למעלה ובצד כדי לתת לעכבר לנוע בלי שיקפצו מסכים, ועדיין
+   לארגן מידע בתוך מסגרת המסך"): a quiet margin under the top bar and at both sides, where the pointer can rest without
+   opening anything; the sticky bars keep that margin when stuck, and the map still fits the screen. */
+:root { --gutter: clamp(36px, 4.5vw, 96px); --air: 18px; }
+.stage, .foot { max-width: 1680px; padding-inline: var(--gutter); }
+.topbar-inner { max-width: 1680px; padding-inline: var(--gutter); }
+.home { padding-top: var(--air); }
+.sec-bar { top: calc(var(--bar-h) + var(--air)); box-shadow: 0 calc(var(--air) * -1) 0 var(--bg); }
+.sec-section > .band-head { top: calc(var(--bar-h) + var(--air) + var(--secbar-h)); }
+.sec-section { margin-top: 16px; }
+.band-map .matrix td { height: max(26px, calc((100vh - var(--bar-h) - var(--secbar-h) - var(--air) - 262px) / var(--rows, 10))); }
+.band-map .matrix-wrap { margin-bottom: var(--air); }
+.table-view { padding-top: var(--air); }
+.table-top { top: calc(var(--bar-h) + var(--air)); box-shadow: 0 calc(var(--air) * -1) 0 var(--bg); }
+@media (min-width: 1101px) { .apps-table thead th { top: calc(var(--bar-h) + var(--air) + var(--tt-h, 120px)); } }
+@media (max-width: 700px) { :root { --gutter: 16px; --air: 10px; } }
