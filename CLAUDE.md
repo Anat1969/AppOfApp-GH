@@ -112,6 +112,11 @@ Applied first to the payslip reader (2026-11-04).
   (`src/tlush/Chart.tsx`); "כל גרף - ההסבר שלו והתובנות שעולות ממנו": every chart has "איך לקרוא" and "מה רואים" (computed).
   Income opposite expenses and gross next to net, side by side. "סדר את המידע ... מסיכום לפרוט": top-down from summary to
   detail. A "כללי אצבע" page: each rule, the user's number against it and a traffic light, red first.
+  "תאפשר לראות את הגרפים גם אחד מעל השני": every line chart has "יחד" / "אחד מעל השני" (each figure on its own scale and
+  average). The home page has one chart of all summary figures with buttons: "תמונת מצב" (one month or the average, every
+  figure as a bar, sort by type or size) and "לאורך השנה" (pick the figures, compare the months) (`src/tlush/Dashboard.tsx`).
+  "אני רוצה את השורה התחתונה": the home page opens with "השורה התחתונה", what everything means in one sentence, three
+  points in traffic-light colours and the one next step (`BottomLine`).
 
 ## Data (Supabase cultura-GH, ktqmwpbzcnzkhjskqisy, shared: prefix `aoa_`)
 

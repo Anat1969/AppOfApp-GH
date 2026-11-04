@@ -489,3 +489,59 @@ h1, h2 { font-weight: 700; letter-spacing: 0; color: var(--deep); }
 @media (max-width: 760px) { .band .page-tools { display: none; } }
 .rule-mine, .vs i, .io-col h3 span { direction: rtl; unicode-bidi: plaintext; }
 .rule-mine { text-align: start; }
+
+/* ===== Bottom line, home chart, stacked charts (Anat, 2026-11-04) ===== */
+.bottom { background: var(--deep); color: #fff; padding: 22px 26px; margin: 4px 0 18px; box-shadow: var(--sh-2); border-bottom: 4px solid var(--brass); }
+.bottom-eyebrow { font-weight: 800; color: var(--brass); font-size: .9rem; letter-spacing: .02em; }
+.bottom-main { font-size: clamp(1.15rem, 2.4vw, 1.5rem); font-weight: 700; line-height: 1.45; margin: 6px 0 12px; }
+.bottom mark { background: transparent; color: var(--brass); padding: 0; font-weight: 800; }
+.bottom-points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.bottom-points li { background: rgba(255, 255, 255, .08); padding: 10px 12px; border-top: 3px solid; font-size: .95rem; }
+.bottom-points li.pos, .bottom-points li.green { border-color: #5fc08a; }
+.bottom-points li.amber { border-color: #f0b84a; }
+.bottom-points li.red { border-color: #f08070; }
+.bottom-next { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding: 10px 12px; background: #fff; color: var(--ink); border-inline-start: 6px solid; }
+.bottom-next.red { border-color: var(--red); } .bottom-next.amber { border-color: var(--amber); } .bottom-next.green { border-color: var(--green); }
+.bottom-next span { flex: 1 1 260px; }
+.hero.small { padding: 4px 0 12px; grid-template-columns: minmax(0, 1fr); }
+.hero.small .hero-sheet { display: none; }
+.hero.small h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin: 4px 0 6px; }
+.hero.small .hero-lead { font-size: 1rem; }
+
+.dash { background: var(--paper); box-shadow: var(--sh-1); padding: 20px 24px; margin: 0 0 20px; }
+.dash-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+.dash-head h2 { font-size: 1.45rem; font-weight: 800; }
+.dash-controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.seg-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 6px; }
+.seg-row.wrap { flex-wrap: wrap; overflow: visible; }
+.hbars { display: grid; gap: 8px; }
+.hbar { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr) 110px 48px; gap: 12px; align-items: center; }
+.hbar-l { font-weight: 600; font-size: .95rem; }
+.hbar-track { height: 22px; background: var(--bg); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .06); }
+.hbar-track span { display: block; height: 100%; transition: width .45s; }
+.hbar.pos .hbar-track span { background: var(--green); } .hbar.neg .hbar-track span { background: var(--red); }
+.hbar.save .hbar-track span { background: var(--blue); } .hbar.warn .hbar-track span { background: var(--amber); }
+.hbar.ink .hbar-track span { background: var(--ink-2); }
+.hbar b { font-weight: 800; direction: ltr; text-align: start; }
+.hbar.pos b { color: var(--green); } .hbar.neg b { color: var(--red); } .hbar.save b { color: var(--blue); } .hbar.warn b { color: var(--amber); }
+.hbar i { font-style: normal; color: var(--dim); font-size: .85rem; text-align: end; }
+.month-strip { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 6px; }
+
+.lc-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.lc-top .lc-legend { margin: 0; }
+.lc-layout { display: flex; gap: 8px; order: 2; }
+.lc-svg.mini { margin-bottom: 6px; border-bottom: 1px solid var(--line); }
+.lc-mini-title { font: 800 13px var(--sans); }
+.lc-mini-title.pos { fill: var(--green); } .lc-mini-title.neg { fill: var(--red); } .lc-mini-title.save { fill: var(--blue); }
+.lc-mini-title.warn { fill: var(--amber); } .lc-mini-title.ink { fill: var(--ink-2); }
+
+@media (max-width: 760px) {
+  .bottom { padding: 16px; }
+  .bottom-points { grid-template-columns: minmax(0, 1fr); }
+  .hbar { grid-template-columns: minmax(0, 1fr) 96px; }
+  .hbar-track { grid-column: 1 / -1; grid-row: 2; }
+  .hbar i { display: none; }
+  .dash { padding: 16px; }
+}
+/* SVG anchors in a right-to-left page: measure them left to right, so axis numbers sit left of the axis and labels stay inside. */
+.lc-svg text { direction: ltr; unicode-bidi: plaintext; }

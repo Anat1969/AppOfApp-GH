@@ -6,9 +6,10 @@ import { explain } from './glossary';
 import { MONTH_NAMES } from './parse';
 import type { Row, Slip } from './types';
 import { Band, Est, Insight, Kpi, M, Meter, NumField, Section, Source, Spark, Stack, Toc } from './ui';
-import { ChartCard, LineChart, insightsFor } from './Chart';
+import { ChartCard, LineChart, insightsFor, kfmt } from './Chart';
 import Upload, { Jobs } from './Upload';
 import SlipMap from './SlipMap';
+import Dashboard, { BottomLine } from './Dashboard';
 
 export type View = 'home' | 'slip' | 'flow' | 'rules' | 'owed' | 'save' | 'pension' | 'time' | 'method';
 export const VIEWS: { id: View; label: string; title: string }[] = [
@@ -53,7 +54,9 @@ export function Home({ slips, params, go }: P) {
   ] : [];
   return (
     <div className="home">
-      <section className="hero">
+      {/* The bottom line comes first: summary, then the detail (Anat, 2026-11-04). */}
+      {last && f && <BottomLine slips={slips} params={params} go={(v) => go(v)} />}
+      <section className={`hero ${last ? 'small' : ''}`}>
         <div className="hero-text">
           <span className="eyebrow">תלושי שכר {last?.year ?? 2026}</span>
           <h1>מה יש בתלוש שלי</h1>
@@ -90,6 +93,7 @@ export function Home({ slips, params, go }: P) {
         </section>
       )}
 
+      {last && <Dashboard slips={slips} open={(id) => go('slip', id)} />}
       <Upload compact={!!last} />
       <Jobs />
       <SlipMap slips={slips} go={(id) => go('slip', id)} />
@@ -257,7 +261,7 @@ export function Flow({ slips, go, onSlip }: P) {
   const emp = tot(employerTotal);
   const per100 = (v: number) => Math.round((v / gross) * 100);
   const labels = slips.map((s) => MONTH_NAMES[s.month - 1].slice(0, 3) + (new Set(slips.map((x) => x.year)).size > 1 ? ` ${String(s.year).slice(2)}` : ''));
-  const k = (n: number) => `${Math.round(n / 100) / 10}K`;
+  const k = kfmt;
   const bankSeries = slips.map((s) => s.summary.bank);
   return (
     <div>
@@ -332,11 +336,10 @@ export function Flow({ slips, go, onSlip }: P) {
 }
 
 /* ---------- Rules of thumb ---------- */
-type Light = 'green' | 'amber' | 'red';
-interface Rule { title: string; rule: string; mine: string; light: Light; why: string }
+export type Light = 'green' | 'amber' | 'red';
+export interface Rule { title: string; rule: string; mine: string; light: Light; why: string }
 
-export function Rules({ slips, params, go, onSlip }: P) {
-  if (!slips.length) return <Empty onSlip={onSlip} />;
+export function computeRules(slips: Slip[], params: Params): Rule[] {
   const last = slips[slips.length - 1];
   const groups = fundGroups(last);
   const base = sum(last.payments.filter((p) => /שכר יסוד/.test(p.name)).map((p) => p.amount)) || last.summary.base;
@@ -354,7 +357,7 @@ export function Rules({ slips, params, go, onSlip }: P) {
   const marg = last.info.marginalTax ?? 0;
   const life = last.personal.filter((p) => /ביטוח/.test(p.name));
   const havraa = slips.some((s) => s.payments.some((p) => /הבראה/.test(p.name)));
-  const rules: Rule[] = [
+  return [
     { title: 'חיסכון לפנסיה', rule: 'לפחות 18.5% מהשכר (6% עובד, 6.5% מעסיק, 6% פיצויים)', mine: `${n2(pensPct)}%`, light: pensPct >= 18.5 ? 'green' : 'red', why: pensPct >= 18.5 ? 'מעל המינימום בחוק: ההפקדות מלאות.' : 'מתחת למינימום. לבדוק מול מחלקת השכר.' },
     { title: 'פנסיה על כל השכר', rule: 'בסיס ההפקדה שווה לשכר היסוד', mine: `${nis(pensBase)} מתוך ${nis(base)}`, light: pensBase >= base - 1 ? 'green' : 'red', why: pensBase >= base - 1 ? 'כל שכר היסוד מבוטח.' : 'חלק מהשכר לא מבוטח לפנסיה.' },
     { title: 'קרן השתלמות', rule: '10% בסך הכול (2.5% ממך, 7.5% מהמעסיק)', mine: hish ? `${n2(hishPct)}%` : 'אין', light: hishPct >= 10 ? 'green' : hish ? 'amber' : 'red', why: hishPct >= 10 ? 'בתקרה המלאה: חיסכון פטור ממס.' : 'כדאי לבדוק אם אפשר להגדיל.' },
@@ -366,6 +369,12 @@ export function Rules({ slips, params, go, onSlip }: P) {
     { title: 'ביטוח חיים בתלוש', rule: 'לא לשלם פעמיים על אותו כיסוי', mine: life.length ? `${nis(sum(life.map((l) => l.amount)) * 12)} בשנה` : 'אין', light: life.length ? 'amber' : 'green', why: life.length ? 'קרן הפנסיה כבר כוללת כיסוי שארים. לבדוק כפילות.' : 'אין ניכוי ביטוח אישי.' },
     { title: 'דמי הבראה', rule: 'משולמים פעם בשנה', mine: havraa ? 'שולמו' : 'עוד לא הופיעו', light: havraa ? 'green' : 'amber', why: havraa ? 'נמצאה שורת הבראה בתלושים.' : 'אם עד הסתיו אין שורה כזו, לשאול במחלקת השכר.' },
   ];
+}
+
+export function Rules({ slips, params, go, onSlip }: P) {
+  if (!slips.length) return <Empty onSlip={onSlip} />;
+  const last = slips[slips.length - 1];
+  const rules = computeRules(slips, params);
   const count = (l: Light) => rules.filter((r) => r.light === l).length;
   return (
     <div>

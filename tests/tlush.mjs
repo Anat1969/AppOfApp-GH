@@ -48,6 +48,18 @@ await page.evaluate((s) => localStorage.setItem('tlush-slips-v1', JSON.stringify
 await page.reload();
 ok(await page.locator('.map').isVisible(), 'the map of slips is on the home page');
 ok((await page.locator('.answers .answer').count()) === 3, 'three answers at the top of the home page');
+ok(await page.locator('.bottom').isVisible() && (await page.textContent('.bottom')).includes('מכל 100'), 'the bottom line is on the home page');
+ok((await page.locator('.bottom').boundingBox()).y < (await page.locator('.answers').boundingBox()).y, 'the bottom line comes before the answers');
+await page.click('.dash button:has-text("תמונת מצב")');
+ok((await page.locator('.hbar').count()) === 8, 'snapshot: every summary figure as a bar');
+await page.click('.dash .chip:has-text("לפי גודל")');
+const firstBar = await page.locator('.hbar .hbar-l').first().textContent();
+ok(firstBar.includes('ברוטו'), 'sorting by size puts gross first');
+await page.click('.dash button:has-text("לאורך השנה")');
+ok(await page.locator('.dash .lc-svg').first().isVisible(), 'over the year: line chart on the home page');
+await page.click('.dash .lc-key:has-text("אחד מעל השני")');
+ok((await page.locator('.dash .lc-svg.mini').count()) === 3, 'one above the other: a chart per figure');
+await page.screenshot({ path: `${SHOTS}tlush-home.png`, fullPage: true });
 ok((await page.textContent('.match-badge')).includes('3 מתוך 3'), 'match badge counts the checked slips');
 ok((await page.textContent('.map-head')).includes('מרץ 2026'), 'the map names the missing month');
 ok((await page.locator('.map-grid .cell.on').count()) === 3, 'three loaded cells on the map');
