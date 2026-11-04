@@ -21,6 +21,9 @@ middle of her workday, and she could not deploy anything else. She was not warne
   (the new count). A scheduled task in the development session does it: tests, merge, check Vercel and Pages, one
   Hebrew line. During her day nothing is deployed unless she asks, so the quota is always free for her work.
   Branches `claude/*` make no Vercel preview (`vercel.json` git.deploymentEnabled); previews are screenshots.
+- MUNICIPAL ACCOUNT DEPLOYS AT ONCE (Anat, 2026-11-04: "כל עוד אני עובדת בחשבון העירוני - תפרוס"): while she works from
+  her municipal account (anatdavids@ashdod.muni.il), finished and tested work is merged to `main` and deployed right away,
+  not held for the night windows. The quota estimate before bulk jobs still applies.
 - Free and paid quotas are used deliberately: on days she is not working, use spare capacity for
   heavy jobs. Keep a reserve on days she is working.
 
