@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { ActionValue, AppData, Facet } from '../lib/types';
 import { hasFilters, type Route } from '../lib/route';
 import { createdOf, time } from '../lib/format';
@@ -29,9 +29,6 @@ interface Props {
 }
 
 export default function Home({ apps, results, searched, facets, sheets, route, go, sort, setSort, vocab, reasons, near, onAdd, saveFacet, deleteFacet }: Props) {
-  const { scrollY } = useScroll();
-  const ghostY = useTransform(scrollY, [0, 600], [0, 140]);
-  const titleY = useTransform(scrollY, [0, 600], [0, -40]);
   const filtering = hasFilters(route);
   const domainsOf = (a: AppData) => (a.domains ?? []).map((d) => facetLabel(facets, 'domain', d)).join(' · ');
 
@@ -86,31 +83,6 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
 
   return (
     <div className="home">
-      <section className="hero">
-        <motion.div className="hero-ghost" style={{ y: ghostY }} aria-hidden>
-          Apps
-        </motion.div>
-        <motion.div className="hero-text" style={{ y: titleY }}>
-          <div className="mono kicker">
-            תיק אפליקציות · {apps.length} אפליקציות · {ACTIONS.length} פעולות · {facets.filter((f) => f.kind === 'domain').length} תחומים
-          </div>
-          <h1>
-            בחר: תחום, נושא
-            <br />
-            או אפליקציה
-          </h1>
-          <p className="lead">כל גיליון פותח עולם שלם: בעיה, פתרון, ותוצר שעובד בפועל.</p>
-          <div className="hero-cta">
-            <button className="solid hero-add" onClick={() => onAdd()}>
-              הוספת אפליקציה חדשה
-            </button>
-            <span className="dim">שם, קישור, פעולה ותחום. היא מקבלת מיד מקום במפה ובחיפוש.</span>
-          </div>
-        </motion.div>
-        {/* "סרטון הדגמה": public/demo.js mounts the button here when aoa_apps holds a demo for this page. */}
-        <div className="hero-demo" data-aoa-demo="large" />
-      </section>
-
       <nav className="sec-bar" ref={bar} aria-label="חלקי דף הבית">
         {SECTIONS.map((x) => (
           <button key={x.key} className={sec === x.key ? 'on' : ''} aria-pressed={sec === x.key} onClick={() => pick(x.key)}>
@@ -119,7 +91,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
             {x.n !== undefined && <span className="mono dim">{x.n}</span>}
           </button>
         ))}
-        <button className="solid sec-add" onClick={() => onAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}>
+        <button className={`solid sec-add ${sec === 'new' ? 'is-hidden' : ''}`} onClick={() => onAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}>
           הוספת אפליקציה חדשה
         </button>
       </nav>
@@ -127,6 +99,24 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
       <AnimatePresence mode="wait">
       <motion.div key={sec} className="sec-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
 
+      {sec === 'new' && (
+        <section className="hero hero-strip">
+          <div className="hero-text">
+            <div className="mono kicker">
+              תיק אפליקציות · {apps.length} אפליקציות · {ACTIONS.length} פעולות · {facets.filter((f) => f.kind === 'domain').length} תחומים
+            </div>
+            <h1>בחר: תחום, נושא או אפליקציה</h1>
+            <p className="lead">כל גיליון פותח עולם שלם: בעיה, פתרון, ותוצר שעובד בפועל.</p>
+          </div>
+          <div className="hero-cta">
+            <button className="solid hero-add" onClick={() => onAdd()}>
+              הוספת אפליקציה חדשה
+            </button>
+            {/* "סרטון הדגמה": public/demo.js mounts its button here when aoa_apps holds a demo for this page. */}
+            <div className="hero-demo" data-aoa-demo="" />
+          </div>
+        </section>
+      )}
       {sec === 'new' && (
         <section className="band sec-section">
           <header className="band-head">

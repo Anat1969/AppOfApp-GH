@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { AppData, Facet } from '../lib/types';
 import { actionOf, facetLabel } from '../lib/facets';
@@ -88,6 +88,17 @@ export default function TableView({ apps, facets, sheets, onOpen, onChange }: Pr
   const [q, setQ] = useState('');
   const [flash, setFlash] = useState('');
   const orderRef = useRef<{ key: string; ids: string[] }>({ key: '', ids: [] });
+  const viewRef = useRef<HTMLDivElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const top = topRef.current;
+    if (!top) return;
+    const set = () => viewRef.current?.style.setProperty('--tt-h', `${top.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(top);
+    return () => ro.disconnect();
+  }, []);
   const save = (a: AppData, key: string) => {
     onChange(a);
     setFlash(key);
@@ -242,7 +253,9 @@ export default function TableView({ apps, facets, sheets, onOpen, onChange }: Pr
   const MAX_LEGEND = 16;
 
   return (
-    <motion.div className="table-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div className="table-view" ref={viewRef} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      {/* The controls and the legend stay in place while the rows scroll (Anat, 2026-11-04); the column headers stick under them. */}
+      <div className="table-top" ref={topRef}>
       <header className="band-head">
         <span className="mono">T</span>
         <h2>טבלת אפליקציות</h2>
@@ -272,6 +285,7 @@ export default function TableView({ apps, facets, sheets, onOpen, onChange }: Pr
           {groups.order.length > MAX_LEGEND && <span className="dim">ועוד {groups.order.length - MAX_LEGEND}</span>}
         </div>
       )}
+      </div>
       <div className="table-wrap">
         <table className="apps-table">
           <colgroup>

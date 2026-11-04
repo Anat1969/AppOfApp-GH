@@ -840,3 +840,62 @@ a.row-thumb:hover { box-shadow: 0 0 0 2px var(--ink); transform: translateY(-1px
 .axis-card { background: var(--paper); padding: 14px; box-shadow: var(--shadow-1); display: grid; gap: 8px; align-content: start; }
 .axis-card h4 { margin: 0; font-size: 1.2rem; }
 .axis-card .idea-list .pop-idea { box-shadow: none; border: 1px solid var(--line); border-inline-start-width: 4px; }
+
+/* Composition to the screen (Anat, 2026-11-04: "לא יתכן שכך יראה מסך - חתוך!", "יותר מידי שטח מת", "גלגול מזיז את סרגלי
+   הכפתורים"): the section bar is the first thing on the page and is stuck from the first pixel, the hero is one compact
+   strip in section 01 only, each section's own header sticks under the bar, and the map fits whatever is left. */
+:root { --secbar-h: 54px; }
+.sec-bar { margin: 0; padding: 7px 0; min-height: var(--secbar-h); }
+.sec-bar .sec-add.is-hidden { visibility: hidden; }
+.hero.hero-strip { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px 28px; padding: 18px 0 6px; overflow: visible; }
+.hero-strip h1 { font-size: clamp(1.6rem, 2.4vw, 2.3rem); line-height: 1.15; margin: 4px 0 2px; font-weight: 300; }
+.hero-strip .lead { margin: 0; font-size: 1rem; }
+.hero-strip .hero-cta { margin: 0; flex-wrap: nowrap; }
+.hero-strip .hero-add { font-size: 1rem; padding: 0.7rem 1.2rem; }
+.hero-strip .hero-demo { position: static; }
+.sec-section { margin-top: 10px; min-height: 0; }
+.sec-section > .band-head { position: sticky; top: calc(var(--bar-h) + var(--secbar-h)); z-index: 20; background: var(--bg); margin-bottom: 10px; padding-top: 8px; }
+.band-map .matrix td { height: max(26px, calc((100vh - var(--bar-h) - var(--secbar-h) - 225px) / var(--rows, 10))); }
+.band-map .matrix th.sorted .axis { color: #fff; background: var(--ink); padding-inline: 6px; box-shadow: inset 0 -3px 0 #d4af37; }
+.band-map .matrix .axis[aria-pressed='false']:hover { background: #fff; }
+@media (max-width: 900px) {
+  .hero.hero-strip { grid-template-columns: minmax(0, 1fr); }
+  .hero-strip .hero-cta { flex-wrap: wrap; }
+  .hero-strip .hero-demo { max-width: 100%; }
+  .sec-section > .band-head { position: static; }
+}
+
+/* Quieter traffic light (Anat, 2026-11-04: "הטונים של הרמזור פלורסנטים מידי"): MOKED106 red, a deep green, gold instead
+   of the yellow highlighter, and no browser-yellow mark anywhere. */
+:root {
+  --p-red: #a23b2a; --p-red-ink: #6e2619; --p-red-tint: rgba(162, 59, 42, 0.09); --p-red-wash: #f8f1ee;
+  --s-green: #3f7a58; --s-green-ink: #26503a; --s-green-tint: rgba(63, 122, 88, 0.14); --s-green-wash: #f0f5f1;
+  --marker: rgba(212, 175, 55, 0.30);
+}
+mark.hl { color: var(--ink); font-weight: 600; padding: 0 2px; background: linear-gradient(180deg, transparent 55%, var(--marker) 55%, var(--marker) 94%, transparent 94%); }
+.idea-new { --k: #1a3a6f; }
+.idea-merge { --k: #3f7a58; }
+.idea-cut { --k: #a23b2a; }
+.idea-distill { --k: #a8862a; }
+
+/* Fewer frames around groups of buttons (Anat, 2026-11-04): button groups stand on the page, buttons have no border,
+   lift on hover, the pressed one is filled navy. */
+.filters-panel { background: none; border: 0; box-shadow: none; padding: 0; border-radius: 0; }
+.chip { border: 0; border-radius: 0; background: rgba(23, 25, 28, 0.05); box-shadow: none; }
+.chip:hover:not(:disabled):not(.on) { background: #fff; box-shadow: var(--shadow-1); transform: translateY(-1px); }
+.chip.on { background: #1a3a6f; color: #fff; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25); }
+.seg { border: 0; background: none; gap: 4px; }
+.seg button { background: rgba(23, 25, 28, 0.05); }
+.seg button.on { background: #1a3a6f; }
+.legend { border: 0; background: none; padding: 4px 0; }
+.table-view { padding-top: 0; }
+.table-top { position: sticky; top: var(--bar-h); z-index: 25; background: var(--bg); padding-top: 14px; }
+.table-top .band-head { margin-bottom: 6px; }
+@media (min-width: 1101px) {
+  .table-wrap { overflow: visible; }
+  .apps-table thead th { position: sticky; top: calc(var(--bar-h) + var(--tt-h, 120px)); z-index: 15; }
+}
+/* Use the width of a large screen (Anat, 2026-11-04: "יותר מידי שטח מת"). */
+.stage, .foot { max-width: 1800px; padding-inline: 32px; }
+.topbar-inner { max-width: 1800px; }
+.sec-bar > button.on:hover { background: var(--ink); color: #fff; transform: none; }

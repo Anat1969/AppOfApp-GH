@@ -106,15 +106,22 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
         .filter((x, i, arr) => arr.findIndex((y) => y.id === x.id) === i)
     : [];
 
+  // Sorting stays inside the map (Anat, 2026-11-04: "מיון לפי שורה או עמודה - בתוך העמוד שלה"): a column header orders the
+  // rows by how many apps they have in that column, a row header orders the columns; a second click restores the order.
+  const [rowBy, setRowBy] = useState<ActionValue | null>(null);
+  const [colBy, setColBy] = useState<string | null>(null);
+  const rows = rowBy ? [...domains].sort((x, y) => cellApps(y.value, rowBy).length - cellApps(x.value, rowBy).length) : domains;
+  const cols = colBy ? [...ACTIONS].sort((x, y) => cellApps(colBy, y.value).length - cellApps(colBy, x.value).length) : ACTIONS;
+
   return (
     <div className="matrix-wrap">
       <table className="matrix" style={{ '--rows': domains.length } as React.CSSProperties}>
         <thead>
           <tr>
             <th className="corner mono">תחום / פעולה</th>
-            {ACTIONS.map((ac) => (
-              <th key={ac.value} scope="col">
-                <button className="axis" onClick={() => go({ action: ac.value, domain: null, app: null })} title={ac.question}>
+            {cols.map((ac) => (
+              <th key={ac.value} scope="col" className={rowBy === ac.value ? 'sorted' : ''}>
+                <button className="axis" aria-pressed={rowBy === ac.value} onClick={() => setRowBy((v) => (v === ac.value ? null : ac.value))} title={`${ac.question}. לחיצה ממיינת את התחומים לפי העמודה`}>
                   {ac.label}
                 </button>
               </th>
@@ -122,14 +129,14 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
           </tr>
         </thead>
         <tbody>
-          {domains.map((dm, i) => (
+          {rows.map((dm, i) => (
             <tr key={dm.value}>
-              <th scope="row">
-                <button className="axis" onClick={() => go({ domain: dm.value, action: null, app: null })}>
+              <th scope="row" className={colBy === dm.value ? 'sorted' : ''}>
+                <button className="axis" aria-pressed={colBy === dm.value} onClick={() => setColBy((v) => (v === dm.value ? null : dm.value))} title="לחיצה ממיינת את הפעולות לפי השורה">
                   {dm.label}
                 </button>
               </th>
-              {ACTIONS.map((ac) => {
+              {cols.map((ac) => {
                 const cell = cellApps(dm.value, ac.value);
                 const n = cell.length;
                 const isOpen = open?.domain === dm.value && open.action === ac.value;
@@ -145,7 +152,7 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
                         onPointerEnter={(e) => e.pointerType === 'mouse' && show(dm.value, ac.value, e.currentTarget)}
                         onPointerLeave={hideSoon}
                         onFocus={(e) => show(dm.value, ac.value, e.currentTarget)}
-                        onClick={() => go({ domain: dm.value, action: ac.value, app: null })}
+                        onClick={(e) => show(dm.value, ac.value, e.currentTarget, true)}
                         aria-label={`${dm.label}, ${ac.label}: ${n} אפליקציות`}
                       >
                         <span className="cell-stack" aria-hidden>
