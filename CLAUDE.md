@@ -4,6 +4,9 @@
 
 - Always answer Anat in Hebrew. No icons or emoji, also not in the UI (no decorative arrows).
 - Work by the end-to-end-builder skill. Merge every PR to `main` after green checks without asking: Anat gave standing approval.
+- ALWAYS MERGE AND DEPLOY (Anat, 2026-11-04: "סיכמנו שאתה תמיד ממזג ופורס. כל שיחה כל פרויקט"): at the end of every task,
+  in every conversation and every project, merge to `main` and check the deployment right away. Never leave work waiting
+  for a night window and never ask whether to merge. This replaces the deploy windows below for ordinary work.
 - Delivery: final URL plus one line. Every correction Anat makes is added to this file.
 
 ## Service quotas (Anat's correction, 2026-10-24)
@@ -16,10 +19,8 @@ middle of her workday, and she could not deploy anything else. She was not warne
 - A job that would use more than about half of a daily quota is scheduled for a quiet day or hour,
   or split across days. Cut usage first: skip preview deploys, merge in batches, and deploy only the
   latest commit of each project.
-- DEPLOY WINDOWS (Anat, 2026-10-26: "פרוס בשלוש בבוקר ושעתיים לפני ניצול מכסת הפריסות"): work is merged to `main`
-  only in two night windows, Israel time: 01:00 (uses what is left before the 24-hour count rolls over) and 03:00
-  (the new count). A scheduled task in the development session does it: tests, merge, check Vercel and Pages, one
-  Hebrew line. During her day nothing is deployed unless she asks, so the quota is always free for her work.
+- DEPLOY WINDOWS (2026-10-26) are only for BULK jobs across many projects (they would use more than about half of the
+  daily 100): those run at 01:00 / 03:00 Israel time. Single tasks are merged and deployed at once (see Communication).
   Branches `claude/*` make no Vercel preview (`vercel.json` git.deploymentEnabled); previews are screenshots.
 - Free and paid quotas are used deliberately: on days she is not working, use spare capacity for
   heavy jobs. Keep a reserve on days she is working.
