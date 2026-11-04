@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSlips } from './store';
-import { UploadButton, UploaderProvider } from './Upload';
+import { Jobs, MenuBridge, UploaderProvider } from './Upload';
 import type { Slip } from './types';
 import { Flow, Home, Method, Owed, Pension, Rules, Save, SlipView, Time, VIEWS, type View } from './Views';
 
@@ -44,17 +44,6 @@ export default function App() {
     URL.revokeObjectURL(a.href);
   }, [slips, params]);
 
-  useEffect(() => {
-    const el = menu.current;
-    if (!el) return;
-    el.items = [
-      { label: 'גיבוי הנתונים לקובץ', hint: `${slips.length} תלושים`, onSelect: backup },
-      { label: 'טעינת גיבוי', hint: 'ממכשיר אחר', onSelect: () => fileIn.current?.click() },
-      { label: 'מחיקת כל התלושים מהמכשיר', hint: 'דורש אישור', danger: true, onSelect: () => { if (confirm('למחוק את כל התלושים מהמכשיר הזה? אי אפשר לשחזר בלי קובץ גיבוי.')) clear(); } },
-    ];
-    el.status = savedAt && slips.length ? `נשמר במכשיר ${new Date(savedAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}` : '';
-  }, [slips.length, savedAt, backup, clear]);
-
   const restore = async (f?: File) => {
     if (!f) return;
     try {
@@ -88,6 +77,7 @@ export default function App() {
           ))}
         </nav>
         <ai-menu ref={menu} chat={CHAT} />
+        <MenuBridge menu={menu} count={slips.length} savedAt={savedAt} backup={backup} restore={() => fileIn.current?.click()} clear={() => { if (confirm('למחוק את כל התלושים מהמכשיר הזה? אי אפשר לשחזר בלי קובץ גיבוי.')) clear(); }} />
       </header>
       <input ref={fileIn} type="file" accept="application/json,.json" hidden onChange={(e) => { restore(e.target.files?.[0]); e.target.value = ''; }} />
       <main className="main">
@@ -100,8 +90,9 @@ export default function App() {
         {/* The sticky band: page controls (portal slot) and the tools, always in the same place. */}
         <div className="band">
           <div id="band-slot" className="band-slot" />
-          <div className="page-tools">{badge}{view !== 'home' && <UploadButton />}</div>
+          <div className="page-tools">{badge}</div>
         </div>
+        <Jobs />
         {/* Fade only: no vertical movement, no exit wait, so the bars never jump. */}
         <motion.div key={view} initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>
           <Page {...props} />

@@ -5,9 +5,9 @@ import {
 import { explain } from './glossary';
 import { MONTH_NAMES } from './parse';
 import type { Row, Slip } from './types';
-import { Band, Est, Insight, Kpi, M, Meter, NumField, Section, Source, Spark, Stack, Toc } from './ui';
+import { Band, Bars, Est, Insight, Kpi, M, Meter, NextSteps, NumField, Section, Source, Spark, Stack, Toc } from './ui';
 import { ChartCard, LineChart, insightsFor, kfmt } from './Chart';
-import Upload, { Jobs } from './Upload';
+import Upload from './Upload';
 import SlipMap from './SlipMap';
 import Dashboard, { BottomLine } from './Dashboard';
 
@@ -34,7 +34,6 @@ function Empty(_: { onSlip: (s: Slip) => void }) {
     <div className="empty">
       <Insight title="עוד אין תלושים במכשיר הזה" tone="amber">כדי לראות את החלק הזה צריך **לפחות תלוש אחד**. העלי את קובצי ה-PDF כאן.</Insight>
       <Upload />
-      <Jobs />
     </div>
   );
 }
@@ -43,7 +42,6 @@ function Empty(_: { onSlip: (s: Slip) => void }) {
 export function Home({ slips, params, go }: P) {
   const last = slips[slips.length - 1];
   const f = useMemo(() => (slips.length ? forecast(slips, params) : null), [slips, params]);
-  const missing = last ? Array.from({ length: last.month }, (_, i) => i + 1).filter((m) => !slips.some((s) => s.year === last.year && s.month === m)) : [];
   const doors: { v: View; t: string; d: string }[] = last ? [
     { v: 'slip', t: 'מה יש בתלוש', d: `${last.payments.length + last.mandatory.length + last.personal.length + last.funds.length} שורות ב${monthLabel(last)}, כל אחת מוסברת.` },
     { v: 'flow', t: 'הכנסות והוצאות', d: `מכל 100 ₪ ברוטו מגיעים לבנק ${Math.round((sum(slips.map((s) => s.summary.bank)) / sum(slips.map((s) => s.summary.totalPay))) * 100)} ₪.` },
@@ -94,8 +92,7 @@ export function Home({ slips, params, go }: P) {
       )}
 
       {last && <Dashboard slips={slips} open={(id) => go('slip', id)} />}
-      <Upload compact={!!last} />
-      <Jobs />
+      {!last && <Upload />}
       <SlipMap slips={slips} go={(id) => go('slip', id)} />
       {!last && (
         <>
@@ -108,11 +105,6 @@ export function Home({ slips, params, go }: P) {
 
       {last && f && (
         <>
-          <div className="kpis">
-            <Kpi label="תלושים שנקראו" value={`${slips.length}`} note={missing.length ? `חסרים ${missing.length} מתחילת ${last.year}; פירוט במפה` : 'כל החודשים עד עכשיו'} />
-            <Kpi label="ברוטו ממוצע בחודש" value={nis(avg(slips.map((s) => s.summary.totalPay)))} />
-            <Kpi label="המעסיק מפקיד בשבילך" value={nis(avg(slips.map(employerTotal)))} note="בכל חודש, מעבר לברוטו" tone="blue" />
-          </div>
           <div className="doors">
             {doors.map((d, i) => (
               <button key={d.v} type="button" className="door" onClick={() => go(d.v)}>
@@ -243,6 +235,12 @@ export function SlipView({ slips, params, go, month, onSlip, onRemove }: P) {
         </div>
         <Source>{`${src}. ${s.warnings.length ? 'בדיקת התאמה: יש הפרש, ראי למעלה.' : 'בדיקת התאמה: כל השורות מסתכמות לשורת הסיכום.'}`}</Source>
       </Section>
+      <NextSteps items={[
+        ...(s.warnings.length ? [{ text: 'יש הפרש בין השורות לסיכום. כדאי להשוות לתלוש המקורי.', light: 'red' as const, action: { label: 'איך מחשבים', onClick: () => go('method') } }] : []),
+        ...(changes.length && prev ? [{ text: `השתנו ${changes.length} שורות לעומת ${monthLabel(prev)}. אם השינוי לא ברור, לשאול במחלקת השכר.`, light: 'amber' as const, action: { label: monthLabel(prev), onClick: () => go('slip', prev.id) } }] : []),
+        ...(imp.length ? [{ text: `על שווי של **${nis(sum(imp.map((r) => r.amount)))}** בחודש את משלמת מס בלי לקבל כסף. כדאי להבין אם זה משתלם.`, light: 'amber' as const, action: { label: 'איפה לחסוך', onClick: () => go('save') } }] : []),
+        { text: 'לראות את כל החודשים יחד, ומה השתנה לאורך השנה.', light: 'green' as const, action: { label: 'הכנסות והוצאות', onClick: () => go('flow') } },
+      ]} />
     </div>
   );
 }
@@ -388,7 +386,7 @@ export function Rules({ slips, params, go, onSlip }: P) {
           {[...rules].sort((a, b) => ['red', 'amber', 'green'].indexOf(a.light) - ['red', 'amber', 'green'].indexOf(b.light)).map((r) => (
             <li key={r.title} className={`rule ${r.light}`}>
               <span className="light" aria-label={{ green: 'ירוק', amber: 'כתום', red: 'אדום' }[r.light]} />
-              <div className="rule-body"><b>{r.title}</b><span className="rule-rule">{r.rule}</span><span className="rule-why">{r.why}</span></div>
+              <div className="rule-body"><b>{r.title}</b><span className="rule-rule">{r.rule}</span><span className="rule-why"><M>{r.why}</M></span></div>
               <div className="rule-mine">{r.mine}</div>
             </li>
           ))}
@@ -439,6 +437,7 @@ export function Owed({ slips, params, setParams, onSlip }: P) {
           {!havraa.length && <p className="todo">כשיעלו כל החודשים: אם עדיין אין הבראה, לשאול במחלקת השכר.</p>}
         </article>
         <article className="card">
+          <Meter label="נקודות זיכוי מול הבסיס לתושבת" value={cp} target={2.75} max={Math.max(7, cp + 1)} fmt={(n) => n2(n)} />
           <Insight title={`${n2(cp)} נקודות זיכוי, ${nis(cp * params.pointValue)} בחודש`} tone="green">{`כל נקודה מורידה **${nis(params.pointValue)}** מהמס בחודש. בסיס לתושבת: **2.75**; יש לך עוד ${n2(Math.max(0, cp - 2.75))}, לרוב בגלל ילדים.`}</Insight>
           <ul className="check">
             <li>תואר אקדמי שהסתיים בשנים האחרונות: נקודה או חצי לשנים הראשונות.</li>
@@ -467,6 +466,11 @@ export function Owed({ slips, params, setParams, onSlip }: P) {
           </ul>
         </article>
       </div>
+      <NextSteps items={[
+        { text: 'לבקש ממשאבי אנוש את תקרת צבירת החופשה, והאם יש פדיון ימי מחלה בפרישה.', light: 'amber' },
+        ...(!havraa.length ? [{ text: 'דמי הבראה עוד לא הופיעו. אם עד הסתיו אין שורה כזו, לשאול במחלקת השכר.', light: 'amber' as const }] : []),
+        { text: 'לבדוק אם מגיעות לך נקודות זיכוי נוספות, ואם כן להגיש בקשה להחזר מס עד 6 שנים אחורה.', light: 'green' },
+      ]} />
     </div>
   );
 }
@@ -490,6 +494,10 @@ export function Save({ slips, params, setParams, onSlip }: P) {
           <NumField label="דמי ניהול מהצבירה היום" value={params.feeBalance} step={0.01} suffix="%" onChange={(v) => setParams({ feeBalance: v })} help="בדוח השנתי של הקרן" />
           <NumField label="דמי ניהול יעד" value={params.targetFee} step={0.01} suffix="%" onChange={(v) => setParams({ targetFee: v })} help="מה שאפשר לבקש במשא ומתן" />
         </div>
+        <Bars fmt={nis} rows={[
+          { label: `צבירה בפרישה, ${n2(params.feeBalance)}%`, value: sum(now.funds.map((f) => f.balance)), tone: 'neg' },
+          { label: `צבירה בפרישה, ${n2(params.targetFee)}%`, value: sum(better.funds.map((f) => f.balance)), tone: 'pos' },
+        ]} />
         <Insight title={`הפרש בפנסיה: ${nis(better.pension - now.pension)} בחודש`} tone="green">{`הורדה מ-**${n2(params.feeBalance)}%** ל-**${n2(params.targetFee)}%** מגדילה את הצבירה בפרישה בכ-**${nis(sum(better.funds.map((f) => f.balance)) - sum(now.funds.map((f) => f.balance)))}**.`}</Insight>
         {!Object.values(params.balances).some((b) => b > 0) && <p className="note">החישוב עוד בלי הצבירה הקיימת, ולכן ההפרש האמיתי גדול יותר. את הצבירה מזינים בדף הפנסיה.</p>}
       </Section>
@@ -513,6 +521,11 @@ export function Save({ slips, params, setParams, onSlip }: P) {
         <div className="params"><NumField label="סכום תרומות בשנה" value={params.donation} step={100} suffix="₪" onChange={(v) => setParams({ donation: v })} /></div>
         <Insight title={`החזר מס: ${nis(params.donation * 0.35)}`} tone="green">{`על תרומה של **${nis(params.donation)}** חוזרים **35%**, כל עוד הקבלה רשומה על שמך ומוגשת עד סוף השנה הבאה.`}</Insight>
       </Section>
+      <NextSteps items={[
+        { text: `להתקשר לקרן הפנסיה ולבקש דמי ניהול של **${n2(params.targetFee)}%** מהצבירה. זו שיחה אחת.`, light: params.feeBalance > params.targetFee ? 'red' : 'green' },
+        ...(life.length ? [{ text: 'לבדוק שביטוח החיים בתלוש לא כפול לכיסוי שבקרן הפנסיה.', light: 'amber' as const }] : []),
+        { text: 'לשמור קבלות על תרומות, ולהגיש אותן בבקשה להחזר מס.', light: 'green' },
+      ]} />
     </div>
   );
 }
@@ -575,12 +588,17 @@ export function Pension({ slips, params, setParams, onSlip }: P) {
           <li>{`פיצויים, פדיון חופשה וההשתלמות לא כלולים בקצבה החודשית. נתוני הבסיס נלקחו מ-${slips.length} תלושים, האחרון ${monthLabel(last)}.`}</li>
         </ul>
       </Section>
+      <NextSteps items={[
+        ...(!hasBalances ? [{ text: 'להעתיק מהדוח השנתי של כל קרן את הצבירה של היום, לשדות למעלה. בלי זה התחזית נמוכה מהאמת.', light: 'red' as const, action: { label: 'לשדות', onClick: () => document.getElementById('p-assume')?.scrollIntoView({ behavior: 'smooth' }) } }] : []),
+        { text: 'לאמת את גיל הפרישה בסימולטור של ביטוח לאומי.', light: 'amber' },
+        { text: 'לבדוק בתקנון הקרן את מקדם ההמרה לגיל שלך, ולעדכן כאן.', light: 'amber' },
+      ]} />
     </div>
   );
 }
 
 /* ---------- Time planning ---------- */
-export function Time({ slips, params, onSlip }: P) {
+export function Time({ slips, params, go, onSlip }: P) {
   if (!slips.length) return <Empty onSlip={onSlip} />;
   const last = slips[slips.length - 1];
   const birth = parseDate(last.info.birthDate);
@@ -623,6 +641,7 @@ export function Time({ slips, params, onSlip }: P) {
             </tbody>
           </table>
         </div>
+        <Bars fmt={nis} rows={rows.map((r) => ({ label: `פרישה בגיל ${r.a}`, value: r.total, tone: r.a === params.retireAge ? 'pos' : 'save', note: r.a === params.retireAge ? 'הנבחר' : '' }))} />
         <p className="note"><M>{`כל שנת עבודה נוספת מוסיפה גם **${nis(bankAvg * 12)}** שכר לבנק, ודוחה את תחילת הקצבה בשנה.`}</M></p>
       </Section>
       <Section n="02" title="מתי צריך להחליט?" lead="המועדים שבהם החלטה עושה הבדל.">
@@ -640,6 +659,10 @@ export function Time({ slips, params, onSlip }: P) {
           <article className="card"><Insight title="פעם בשנה: הדוח השנתי" tone="blue">{`כשמגיע הדוח השנתי מהקרנות, לעדכן כאן את **הצבירה** ואת **דמי הניהול**. התחזית מתעדכנת מיד.`}</Insight></article>
         </div>
       </Section>
+      <NextSteps items={[
+        { text: 'לפני סוף השנה: תרומות והפקדות עצמאיות, כדי שייכנסו לשנת המס הזאת.', light: 'amber' },
+        { text: 'לקבוע גיל פרישה מועדף בדף הפנסיה, ולראות כאן מה כל שנה מוסיפה.', light: 'green', action: { label: 'לדף הפנסיה', onClick: () => go('pension') } },
+      ]} />
     </div>
   );
 }

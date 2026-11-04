@@ -33,7 +33,9 @@ export default function Dashboard({ slips, open }: { slips: Slip[]; open: (id: s
   const [mode, setMode] = useState<'now' | 'year'>(slips.length > 1 ? 'year' : 'now');
   const [when, setWhen] = useState<string>('avg');
   const [sort, setSort] = useState<'size' | 'group'>('group');
-  const [picked, setPicked] = useState<string[]>(['bank', 'gross', 'tax']);
+  const DEFAULT = ['bank', 'gross', 'tax'];
+  const [picked, setPicked] = useState<string[]>(DEFAULT);
+  const [adding, setAdding] = useState(false);
   const multiYear = new Set(slips.map((s) => s.year)).size > 1;
   const labels = slips.map((s) => short(s, multiYear));
   const one = slips.find((s) => s.id === when);
@@ -90,13 +92,27 @@ export default function Dashboard({ slips, open }: { slips: Slip[]; open: (id: s
       ) : (
         <>
           <div className="dash-controls">
-            <div className="seg-row wrap" role="group" aria-label="מה להציג">
-              {MEASURES.map((m) => (
-                <button key={m.key} type="button" className={`lc-key ${m.tone} ${picked.includes(m.key) ? 'on' : ''}`} aria-pressed={picked.includes(m.key)} onClick={() => toggle(m.key)}>
+            {/* Chosen figures, "+ הוספה" for more, "איפוס" back to the default (Anat, 2026-11-04). */}
+            <div className="pick-row" role="group" aria-label="סכומים בגרף">
+              {sel.map((m) => (
+                <button key={m.key} type="button" className={`lc-key ${m.tone} on`} aria-pressed onClick={() => toggle(m.key)} title="לחיצה מסירה מהגרף">
                   <span className="lc-dot" />{m.label}
                 </button>
               ))}
+              {sel.length < MEASURES.length && (
+                <button type="button" className={`btn add ${adding ? 'primary' : ''}`} aria-expanded={adding} onClick={() => setAdding(!adding)}>+ הוספה</button>
+              )}
+              <button type="button" className="btn ghost reset" disabled={picked.join() === DEFAULT.join()} onClick={() => { setPicked(DEFAULT); setAdding(false); }}>איפוס</button>
             </div>
+            {adding && (
+              <div className="pick-add" role="group" aria-label="הוספת סכום">
+                {MEASURES.filter((m) => !picked.includes(m.key)).map((m) => (
+                  <button key={m.key} type="button" className={`lc-key ${m.tone}`} onClick={() => { toggle(m.key); if (MEASURES.length - picked.length <= 1) setAdding(false); }}>
+                    <span className="lc-dot" />{`+ ${m.label}`}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <ChartCard
             q="איך כל סכום השתנה בין החודשים?"

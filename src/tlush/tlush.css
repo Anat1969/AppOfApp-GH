@@ -545,3 +545,58 @@ h1, h2 { font-weight: 700; letter-spacing: 0; color: var(--deep); }
 }
 /* SVG anchors in a right-to-left page: measure them left to right, so axis numbers sit left of the axis and labels stay inside. */
 .lc-svg text { direction: ltr; unicode-bidi: plaintext; }
+
+/* ===== Grid, alignment, no overflow (Anat, 2026-11-04) =====
+   Text never leaves its frame; an amount and its unit never break; cards in a row share one height and one inner grid,
+   so titles, numbers and notes line up whatever the text length. */
+.sec, .card, .kpi, .answer, .vs, .io-col, .door, .rule, .dash, .bottom, .chart-card2, .next { min-width: 0; overflow-wrap: anywhere; }
+.sent { display: block; }
+.sent + .sent { margin-top: 2px; }
+.kpi-value, .answer .big, .vs b, .io-col h3 b, .io-dl dd, .r-amt, .hbar b, .rule-mine, .fall-row b, .legend b, .meter-top b, .grid td, .map-total, .cell b, .cell i { white-space: nowrap; overflow-wrap: normal; }
+.answers, .kpis, .vs3, .doors, .cards { align-items: stretch; grid-auto-rows: 1fr; }
+.answer, .kpi, .vs { display: grid; grid-template-rows: minmax(2.6em, auto) 1fr auto; align-content: start; }
+.answer .big, .vs b, .kpi-value { align-self: end; }
+.answer h2 { align-items: flex-start; }
+.door { display: grid; grid-template-rows: auto auto 1fr; }
+.card { display: flex; flex-direction: column; }
+.card .todo, .card .check { margin-top: auto; }
+.hbar { grid-template-columns: 200px minmax(0, 1fr) 120px 56px; }
+.hbar-l { overflow-wrap: anywhere; }
+.fall-row { grid-template-columns: 200px minmax(0, 1fr) 130px; }
+.legend li { min-width: 0; }
+.legend li > :not(b):not(i):not(.dot) { overflow-wrap: anywhere; }
+.rows td.r-name { overflow-wrap: anywhere; }
+.io-col .rows td.r-amt { width: 1%; }
+.lc-key { min-width: 0; padding: 0 14px; }
+
+/* Picking figures: chosen, + הוספה, איפוס */
+.pick-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn.add { min-width: 112px; font-weight: 800; }
+.btn.reset { min-width: 0; color: var(--dim); }
+.btn.reset:disabled { opacity: .4; }
+.pick-add { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: var(--bg); margin-top: 6px; }
+
+/* What to do now */
+.next { background: var(--paper); box-shadow: var(--sh-1); padding: 20px 24px; margin: 4px 0 18px; border-top: 4px solid var(--brass); }
+.next h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+.next ol { margin: 0; padding: 0; list-style: none; counter-reset: n; display: grid; gap: 8px; }
+.next li { counter-increment: n; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; background: var(--bg); border-inline-start: 5px solid; }
+.next li::before { content: counter(n); font-weight: 800; color: var(--deep); font-size: 1.1rem; text-align: center; }
+.next li.red { border-color: var(--red); } .next li.amber { border-color: var(--amber); } .next li.green { border-color: var(--green); }
+.next-text { min-width: 0; }
+
+/* Drop anywhere */
+body.dropping::after { content: 'שחררי כאן את קובצי התלושים'; position: fixed; inset: 12px; z-index: 50; display: grid; place-items: center;
+  background: rgba(26, 58, 111, .88); color: #fff; font: 800 1.6rem var(--sans); border: 3px dashed var(--brass); pointer-events: none; }
+
+@media (max-width: 760px) {
+  .hbar { grid-template-columns: minmax(0, 1fr) 110px; }
+  .fall-row { grid-template-columns: minmax(0, 1fr) 120px; }
+  .next li { grid-template-columns: 28px minmax(0, 1fr); }
+  .next li .btn { grid-column: 2; justify-self: start; }
+  .answers, .kpis, .vs3, .doors, .cards { grid-auto-rows: auto; }
+}
+/* Equal height only within a row; content cards keep their own row height. */
+.cards { grid-auto-rows: auto; }
+.card .check { margin-top: 8px; }
+.doors { grid-auto-rows: auto; }

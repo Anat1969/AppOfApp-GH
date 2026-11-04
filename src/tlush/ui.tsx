@@ -3,8 +3,11 @@ import { createPortal } from 'react-dom';
 
 /** Text standard: `**word**` becomes a marker. */
 export function M({ children }: { children: string }) {
-  const parts = children.split(/\*\*(.+?)\*\*/g);
-  return <>{parts.map((p, i) => (i % 2 ? <mark key={i}>{p}</mark> : <Fragment key={i}>{p}</Fragment>))}</>;
+  // Every sentence on its own line (Anat, 2026-11-04: "אחרי נקודה שורה חדשה של משפט"); "2.5%" and "₪." stay intact.
+  const sentences = children.split(/(?<=[.!?])\s+(?=[^\d\s])/);
+  const inline = (t: string) => t.split(/\*\*(.+?)\*\*/g).map((p, i) => (i % 2 ? <mark key={i}>{p}</mark> : <Fragment key={i}>{p}</Fragment>));
+  if (sentences.length < 2) return <>{inline(children)}</>;
+  return <>{sentences.map((t, i) => <span key={i} className="sent">{inline(t)}</span>)}</>;
 }
 
 /** Insight line (up to 8 words) + one explanation sentence. */
@@ -122,4 +125,39 @@ export function Band({ children }: { children: ReactNode }) {
   const [el, setEl] = useState<HTMLElement | null>(null);
   useLayoutEffect(() => setEl(document.getElementById('band-slot')), []);
   return el ? createPortal(children, el) : null;
+}
+
+/** Know, understand, act: every page ends with what to do now (Anat, 2026-11-04). */
+export function NextSteps({ items }: { items: { text: string; light?: 'green' | 'amber' | 'red'; action?: { label: string; onClick: () => void } }[] }) {
+  if (!items.length) return null;
+  return (
+    <section className="next" aria-label="מה עושים עכשיו">
+      <h2>מה עושים עכשיו?</h2>
+      <ol>
+        {items.map((it) => (
+          <li key={it.text} className={it.light ?? 'amber'}>
+            <span className="next-text"><M>{it.text}</M></span>
+            {it.action && <button type="button" className="btn" onClick={it.action.onClick}>{it.action.label}</button>}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** Horizontal bars with a fixed label column, so values line up whatever the label length. */
+export function Bars({ rows, fmt }: { rows: { label: string; value: number; tone: string; note?: string }[]; fmt: (n: number) => string }) {
+  const max = Math.max(...rows.map((r) => r.value), 1);
+  return (
+    <div className="hbars">
+      {rows.map((r) => (
+        <div key={r.label} className={`hbar ${r.tone}`}>
+          <span className="hbar-l">{r.label}</span>
+          <span className="hbar-track"><span style={{ width: `${(r.value / max) * 100}%` }} /></span>
+          <b>{fmt(r.value)}</b>
+          <i>{r.note ?? ''}</i>
+        </div>
+      ))}
+    </div>
+  );
 }

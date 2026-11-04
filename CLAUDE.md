@@ -117,6 +117,15 @@ Applied first to the payslip reader (2026-11-04).
   figure as a bar, sort by type or size) and "לאורך השנה" (pick the figures, compare the months) (`src/tlush/Dashboard.tsx`).
   "אני רוצה את השורה התחתונה": the home page opens with "השורה התחתונה", what everything means in one sentence, three
   points in traffic-light colours and the one next step (`BottomLine`).
+  Round 3 (Anat, 2026-11-04): "לעלות מסמכים - בחלון הלוגו שלי": upload ("העלאת כל התלושים", "בחירת תיקייה שלמה") lives in the
+  A&I menu (`MenuBridge`), files can be dropped anywhere on the page; the first-run page keeps its upload box. Text never
+  leaves its frame: an audit walks every text node of every card on every page at 1280 and 390 (scratchpad
+  `overflow.cjs`, to be turned into a test). Grid and alignment regardless of text length: fixed label columns, cards in
+  a row share a height and an inner grid (title, number at the bottom, note), amounts never wrap. "אחרי נקודה שורה חדשה":
+  `M` puts every sentence on its own line. "אותו מידע בשורה ובתור ולא מפוצל": a value and its unit stay together.
+  Know, understand, act: every page ends with "מה עושים עכשיו?" (`NextSteps`). Hierarchy: the home page goes bottom line,
+  answers, one chart, map, doors; the duplicate KPI row was removed. Picking figures: chosen ones pressed, "+ הוספה" for
+  more, "איפוס" back to the default.
 
 ## Data (Supabase cultura-GH, ktqmwpbzcnzkhjskqisy, shared: prefix `aoa_`)
 

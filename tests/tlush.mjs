@@ -48,6 +48,7 @@ await page.evaluate((s) => localStorage.setItem('tlush-slips-v1', JSON.stringify
 await page.reload();
 ok(await page.locator('.map').isVisible(), 'the map of slips is on the home page');
 ok((await page.locator('.answers .answer').count()) === 3, 'three answers at the top of the home page');
+ok((await page.locator('.next').count()) === 0, 'no next-steps box on the home page (the bottom line has it)');
 ok(await page.locator('.bottom').isVisible() && (await page.textContent('.bottom')).includes('מכל 100'), 'the bottom line is on the home page');
 ok((await page.locator('.bottom').boundingBox()).y < (await page.locator('.answers').boundingBox()).y, 'the bottom line comes before the answers');
 await page.click('.dash button:has-text("תמונת מצב")');
@@ -57,6 +58,11 @@ const firstBar = await page.locator('.hbar .hbar-l').first().textContent();
 ok(firstBar.includes('ברוטו'), 'sorting by size puts gross first');
 await page.click('.dash button:has-text("לאורך השנה")');
 ok(await page.locator('.dash .lc-svg').first().isVisible(), 'over the year: line chart on the home page');
+await page.click('.dash .btn.add');
+await page.click('.dash .pick-add .lc-key:has-text("נטו")');
+ok((await page.locator('.dash .pick-row .lc-key.on').count()) === 4, '+ הוספה adds a figure to the chart');
+await page.click('.dash .btn.reset');
+ok((await page.locator('.dash .pick-row .lc-key.on').count()) === 3, 'איפוס returns to the default figures');
 await page.click('.dash .lc-key:has-text("אחד מעל השני")');
 ok((await page.locator('.dash .lc-svg.mini').count()) === 3, 'one above the other: a chart per figure');
 await page.screenshot({ path: `${SHOTS}tlush-home.png`, fullPage: true });
@@ -66,11 +72,11 @@ ok((await page.locator('.map-grid .cell.on').count()) === 3, 'three loaded cells
 await page.locator('.map-grid .cell.on').first().click();
 ok(page.url().includes('m=2026-01'), 'a map cell opens its slip');
 await page.goto(`${BASE}/tlush/`);
-ok((await page.textContent('.kpis')).includes('3'), 'home counts three slips');
+ok((await page.textContent('.map-head')).includes('3 תלושים'), 'home counts three slips');
 for (const [label, expect] of [['מה יש בתלוש', 'מה נכנס ומה יצא'], ['הכנסות והוצאות', 'מכל 100'], ['כללי אצבע', 'כל כלל, והמספר שלך מולו'], ['מה מגיע לי', 'נקודות זיכוי'], ['איפה לחסוך', 'דמי ניהול'], ['פנסיה', 'איך הקצבה תחולק'], ['תכנון זמן', 'מתי צריך להחליט'], ['איך מחשבים', 'בדיקת התאמה מלאה']]) {
   await page.click(`.nav-btn:has-text("${label}")`);
   await page.waitForTimeout(350);
-  ok(await page.locator('.band button:has-text("העלאת כל התלושים")').isVisible(), `${label}: upload button in the sticky band`);
+  ok((await page.evaluate(() => document.querySelector('ai-menu').items.map((i) => i.label))).includes('העלאת כל התלושים'), `${label}: upload lives in the A&I menu`);
   ok((await page.textContent('main')).includes(expect), `${label}: shows "${expect}"`);
   await page.screenshot({ path: `${SHOTS}tlush-${label.replace(/\s/g, '-')}.png`, fullPage: true });
 }

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { readPdf } from './pdf';
 import type { Slip } from './types';
 import { MONTH_NAMES } from './parse';
@@ -61,6 +61,15 @@ export function UploaderProvider({ children, onSlip, has }: { children: ReactNod
     setJobs([...fresh, ...skipped]);
     fresh.reduce((p, j) => p.then(() => run(j)), Promise.resolve());
   }, [run]);
+
+  // Drop payslips anywhere on the page: the upload itself lives in the A&I menu (Anat, 2026-11-04).
+  useEffect(() => {
+    const over = (e: DragEvent) => { if (e.dataTransfer?.types.includes('Files')) { e.preventDefault(); document.body.classList.add('dropping'); } };
+    const leave = (e: DragEvent) => { if (!e.relatedTarget) document.body.classList.remove('dropping'); };
+    const drop = (e: DragEvent) => { if (e.dataTransfer?.files.length) { e.preventDefault(); document.body.classList.remove('dropping'); take(e.dataTransfer.files); } };
+    addEventListener('dragover', over); addEventListener('dragleave', leave); addEventListener('drop', drop);
+    return () => { removeEventListener('dragover', over); removeEventListener('dragleave', leave); removeEventListener('drop', drop); };
+  }, [take]);
 
   const value: Uploader = {
     jobs,
@@ -144,4 +153,24 @@ export function Jobs() {
       </ul>
     </div>
   );
+}
+
+interface MenuEl extends HTMLElement { items: { label: string; hint?: string; danger?: boolean; onSelect: () => unknown }[]; status: string }
+
+/** The A&I menu holds the upload (Anat, 2026-11-04: "לעלות מסמכים - בחלון הלוגו שלי"), then backup, restore and delete. */
+export function MenuBridge({ menu, count, savedAt, backup, restore, clear }: { menu: RefObject<MenuEl | null>; count: number; savedAt: number | null; backup: () => void; restore: () => void; clear: () => void }) {
+  const u = useUploader();
+  useEffect(() => {
+    const el = menu.current;
+    if (!el) return;
+    el.items = [
+      { label: 'העלאת כל התלושים', hint: 'קובצי PDF, כמה יחד', onSelect: u.pick },
+      { label: 'בחירת תיקייה שלמה', hint: 'כל התלושים בתיקייה', onSelect: u.pickFolder },
+      { label: 'גיבוי הנתונים לקובץ', hint: `${count} תלושים`, onSelect: backup },
+      { label: 'טעינת גיבוי', hint: 'ממכשיר אחר', onSelect: restore },
+      { label: 'מחיקת כל התלושים מהמכשיר', hint: 'דורש אישור', danger: true, onSelect: clear },
+    ];
+    el.status = u.busy ? 'קורא תלושים...' : savedAt && count ? `נשמר במכשיר ${new Date(savedAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}` : '';
+  }, [menu, count, savedAt, backup, restore, clear, u]);
+  return null;
 }
