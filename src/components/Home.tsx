@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion';
 import type { ActionValue, AppData, Facet } from '../lib/types';
 import { hasFilters, type Route } from '../lib/route';
 import { createdOf, time } from '../lib/format';
@@ -8,6 +8,7 @@ import AppCard from './AppCard';
 import Filters from './Filters';
 import Matrix, { type AddPrefill } from './Matrix';
 import Vocabulary from './Vocabulary';
+import BeyondMap from './BeyondMap';
 
 interface Props {
   apps: AppData[];
@@ -19,7 +20,6 @@ interface Props {
   go: (p: Partial<Route>) => void;
   sort: 'date' | 'alpha';
   setSort: (s: 'date' | 'alpha') => void;
-  editing: boolean;
   vocab: { actions: ActionValue[]; domains: string[]; contexts: string[] };
   reasons: Map<string, string>;
   near: boolean;
@@ -28,7 +28,7 @@ interface Props {
   deleteFacet: (f: Facet) => Promise<boolean>;
 }
 
-export default function Home({ apps, results, searched, facets, sheets, route, go, sort, setSort, editing, vocab, reasons, near, onAdd, saveFacet, deleteFacet }: Props) {
+export default function Home({ apps, results, searched, facets, sheets, route, go, sort, setSort, vocab, reasons, near, onAdd, saveFacet, deleteFacet }: Props) {
   const { scrollY } = useScroll();
   const ghostY = useTransform(scrollY, [0, 600], [0, 140]);
   const titleY = useTransform(scrollY, [0, 600], [0, -40]);
@@ -65,6 +65,25 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
     route.links && 'עם אתר',
   ].filter(Boolean);
 
+  // The sections sit in one bar that stays in place; only the content under it changes (Anat, 2026-11-04). A search or a
+  // filter always shows the sheets.
+  const sec = filtering ? 'all' : route.sec;
+  const bar = useRef<HTMLElement>(null);
+  const [vocabOpen, setVocabOpen] = useState(false);
+  const pick = (s: Route['sec']) => {
+    go({ sec: s });
+    const el = bar.current;
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar-h') || '64');
+      if (window.scrollY > top) scrollTo({ top, behavior: 'instant' as ScrollBehavior });
+    }
+  };
+  const SECTIONS: { key: Route['sec']; no: string; label: string; n?: number }[] = [
+    { key: 'new', no: '01', label: 'חדש בתיק', n: added.length + updated.length },
+    { key: 'map', no: '02', label: 'מפת התחומים והפעולות' },
+    { key: 'all', no: '03', label: 'כל הגיליונות', n: apps.length },
+  ];
+
   return (
     <div className="home">
       <section className="hero">
@@ -92,14 +111,30 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
         <div className="hero-demo" data-aoa-demo="large" />
       </section>
 
-      {!filtering && (added.length > 0 || updated.length > 0) && (
-        <section className="band band-screen">
+      <nav className="sec-bar" ref={bar} aria-label="חלקי דף הבית">
+        {SECTIONS.map((x) => (
+          <button key={x.key} className={sec === x.key ? 'on' : ''} aria-pressed={sec === x.key} onClick={() => pick(x.key)}>
+            <span className="mono">{x.no}</span>
+            {x.label}
+            {x.n !== undefined && <span className="mono dim">{x.n}</span>}
+          </button>
+        ))}
+        <button className="solid sec-add" onClick={() => onAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}>
+          הוספת אפליקציה חדשה
+        </button>
+      </nav>
+
+      <AnimatePresence mode="wait">
+      <motion.div key={sec} className="sec-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+
+      {sec === 'new' && (
+        <section className="band sec-section">
           <header className="band-head">
             <span className="mono">01</span>
             <h2>חדש בתיק</h2>
             <span className="band-note">שלושים הימים האחרונים</span>
           </header>
-          <div className="recent-split">
+          <div className="recent-rows">
             <div className="recent-col">
               <h3>
                 נוספו לאחרונה <span className="mono dim">{added.length}</span>
@@ -132,19 +167,24 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
         </section>
       )}
 
-      {!filtering && (
-        <section className="band band-screen band-map">
+      {sec === 'map' && (
+        <section className="band sec-section band-map">
           <header className="band-head">
             <span className="mono">02</span>
             <h2>מפת התחומים והפעולות</h2>
             <span className="band-note">שורה היא תחום, עמודה היא מה יוצאים איתו. ריחוף על משבצת מציג את האפליקציות בה. משבצת ריקה היא פער, ובה הצעה לאפליקציה חדשה.</span>
           </header>
           <Matrix apps={apps} facets={facets} sheets={sheets} go={go} onAdd={onAdd} />
-          {editing && <Vocabulary facets={facets} saveFacet={saveFacet} deleteFacet={deleteFacet} />}
+          <button className="link inline-edit vocab-toggle" onClick={() => setVocabOpen((v) => !v)}>
+            {vocabOpen ? 'סגירת המילון' : 'עריכת מילון התחומים וההקשרים'}
+          </button>
+          {vocabOpen && <Vocabulary facets={facets} saveFacet={saveFacet} deleteFacet={deleteFacet} />}
+          <BeyondMap apps={apps} facets={facets} go={go} onAdd={onAdd} saveFacet={saveFacet} />
         </section>
       )}
 
-      <section className={`band ${filtering ? '' : 'band-screen'}`} id="catalog">
+      {sec === 'all' && (
+      <section className="band sec-section" id="catalog">
         <header className="band-head">
           <span className="mono">{filtering ? 'Q' : '03'}</span>
           <h2>{filtering ? `${results.length} אפליקציות` : 'כל הגיליונות'}</h2>
@@ -154,11 +194,11 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
               הוספת אפליקציה
             </button>
             {filtering && (
-              <button className="chip on" onClick={() => go({ q: '', action: null, domain: null, ctx: null, links: false })}>
+              <button className="chip on" onClick={() => go({ q: '', action: null, domain: null, ctx: null, links: false, sec: 'all' })}>
                 ניקוי הסינון
               </button>
             )}
-            <button className={`chip ${route.links ? 'on' : ''}`} onClick={() => go({ links: !route.links })}>
+            <button className={`chip ${route.links ? 'on' : ''}`} onClick={() => go({ links: !route.links, sec: 'all' })}>
               רק עם אתר
             </button>
             {!q && (
@@ -191,7 +231,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
               <button className="solid" onClick={() => onAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined, name: q || undefined })}>
                 הוספת אפליקציה חדשה
               </button>
-              <button className="ghost" onClick={() => go({ q: '', action: null, domain: null, ctx: null, links: false })}>
+              <button className="ghost" onClick={() => go({ q: '', action: null, domain: null, ctx: null, links: false, sec: 'all' })}>
                 הצגת כל האפליקציות
               </button>
             </span>
@@ -204,6 +244,9 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
           </div>
         )}
       </section>
+      )}
+      </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
