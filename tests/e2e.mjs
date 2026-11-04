@@ -284,6 +284,11 @@ const browser = await chromium.launch();
   ok(btn && !/[←→]/.test(btn), `primary button has no arrows ("${btn}")`);
   ok((await page.locator('.app-links a[href*="github.com"]').count()) === 1, 'GitHub link shown');
   ok((await page.locator('.titleblock b').first().textContent())?.startsWith('A-'), 'sheet number in title block');
+  // share link with a picture: copies the portfolio's /s/<id> address, which serves the og: tags for WhatsApp
+  await page.evaluate(() => { window.__copied = ''; navigator.clipboard.writeText = async (t) => { window.__copied = t; }; });
+  await page.locator('.app-links .share-copy').click();
+  const shared = await page.evaluate(() => window.__copied);
+  ok(/^https:\/\/appofapp-gh\.vercel\.app\/s\/app-[\w-]+$/.test(shared), `share button copies the link with a picture (${shared})`);
   ok((await page.locator('.timeline li').count()) === 1, 'work log shown');
   await page.screenshot({ path: SHOTS + 'desktop-app.png' });
   // the cover has one action and says it on the frame; paging sits at the foot of the page and names where it goes

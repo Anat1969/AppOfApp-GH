@@ -6,7 +6,11 @@
   },
   "rewrites": [
     {
-      "source": "/((?!assets/|sw.js|ai-menu.js|creations.js|guide.js|demo.js|walk.js|streets.js|gis/|ashdod-logo.png|manifest.webmanifest|icon).*)",
+      "source": "/s/:id",
+      "destination": "/api/share?id=:id"
+    },
+    {
+      "source": "/((?!assets/|api/|sw.js|ai-menu.js|creations.js|guide.js|demo.js|walk.js|streets.js|gis/|ashdod-logo.png|manifest.webmanifest|icon).*)",
       "destination": "/index.html"
     }
   ],
@@ -111,5 +115,14 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/og.js": {
+      "maxDuration": 30,
+      "memory": 1024
+    },
+    "api/share.js": {
+      "maxDuration": 10
+    }
+  }
 }
