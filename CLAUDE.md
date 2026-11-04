@@ -245,8 +245,8 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   edge (same address, two answers); the image URL carries `v=` from the cover, so a new cover gives a new picture.
 - Sheet numbers (A-001...) follow creation order.
 - CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
-  `action` (exactly one of 7, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,
-  השראה, הוראה והצגה, משחק ואימון; rule: what the user walks away with), `domains[]` and `contexts[]`
+  `action` (exactly one of 9, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,
+  השראה, הוראה והצגה, משחק ואימון, זיקוק, החלטה; rule: what the user walks away with), `domains[]` and `contexts[]`
   (vocabulary in `aoa_facets`, editable in edit mode with synonyms), `keywords[]` (free).
   The word "כלי" is not a category: it is a synonym of diagnose and create.
 - Names carry no prefixes ("פנג שואי", not "כלי מדידה: פנג שואי"); the action label is shown above the name.
@@ -303,6 +303,17 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   default new). A search or a filter always shows the sheets. 01: added and updated as two ROWS ("בשורות ולא בטורים"),
   updated = changed after the day it was added, last 30 days. 02: the map sized so every domain row fits the screen
   (`--rows`), the vocabulary behind "עריכת מילון התחומים וההקשרים", and BeyondMap below it.
+- COMPOSITION TO THE SCREEN (Anat, 2026-11-04: "לא יתכן שכך יראה מסך - חתוך!", "יותר מידי שטח מת", "גלגול מזיז את סרגלי
+  הכפתורים", "כל דף והמידע שלו - ולא קפיצות בין עמודים"): the section bar is the first element of home and is stuck from the
+  first pixel; the hero is one compact strip in section 01 only; each section header sticks under the bar; the map's rows
+  are sized to fit what is left (checked at 1900x940); the page uses up to 1800px. In the table the controls and legend
+  stick under the top bar and the column headers stick under them (`--tt-h`, measured). Map clicks stay on the map: a cell
+  pins its window (filtering the catalog is an explicit link in it), a column header sorts the rows by that column and a
+  row header sorts the columns, a second click restores. Quieter traffic light: MOKED106 red #a23b2a, green #3f7a58, gold
+  marker instead of yellow, no browser-yellow `mark`. Fewer frames: button groups (filters, chips, segmented buttons,
+  legend) have no frame or border; buttons lift on hover and the pressed one is navy.
+- NEW COLUMNS (Anat, 2026-11-04: "בהתאם להמלצה. תוסיף עמודות זיקוק והחלטה"): actions `distill` (זיקוק, walk away with the
+  essence) and `decide` (החלטה, walk away with a choice), nine actions in all; 26 more idea cells in `ideas.ts`.
 - IDEAS (Anat, 2026-11-04: more suggestions, mergers that create insight, knowledge, information and new creations, unlike
   what exists, "מיזוגים וחיתוכים וזיקוקים", new columns and topics, fill every cell, new syntheses): `src/data/ideas.ts`
   holds 3 ideas for EVERY one of the 91 cells (new / merge / cut / distill; merge, cut and distill name their source apps by
