@@ -5,6 +5,7 @@ import type { Route } from '../lib/route';
 import { actionOf, related } from '../lib/facets';
 import FacetTags from './FacetTags';
 import AppCard from './AppCard';
+import { copyShare, shareUrl } from '../lib/share';
 import { activityOf, clean, fmtDate, platformOf, siteUrl, stripArrows, withProtocol, createdOf } from '../lib/format';
 import { edit, uploadImage } from '../lib/supabase';
 import CoverFrame from './CoverFrame';
@@ -218,6 +219,11 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
                 <a className="solid big" href={site} target="_blank" rel="noopener noreferrer">
                   {stripArrows(app.primaryBtn) || 'כניסה לאפליקציה'}
                 </a>
+              )}
+              {site && (
+                <button className="ghost share-copy" onClick={() => copyShare(app)} title={shareUrl(app)}>
+                  העתקת קישור עם תמונה
+                </button>
               )}
               {LINKS.filter((l) => app[l.url]).map((l) => (
                 <a key={String(l.url)} className="ghost" href={withProtocol(String(app[l.url]))} target="_blank" rel="noopener noreferrer">

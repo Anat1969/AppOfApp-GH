@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import type { AppData, Facet } from '../lib/types';
 import { actionOf, facetLabel } from '../lib/facets';
 import { createdOf, fmtDate, platformOf, projectName, siteUrl } from '../lib/format';
-import { toast } from './Toasts';
+import { copyShare, shareUrl } from '../lib/share';
 
 type Col = 'sheet' | 'name' | 'project' | 'purpose' | 'platform' | 'action' | 'domains' | 'contexts' | 'supabase' | 'github' | 'hasApi' | 'created' | 'updated';
 
@@ -277,10 +277,8 @@ export default function TableView({ apps, facets, sheets, editing, onOpen, onCha
                     {site ? (
                       <button
                         className="link"
-                        onClick={async () => {
-                          await navigator.clipboard.writeText(site).catch(() => {});
-                          toast('הקישור הועתק');
-                        }}
+                        onClick={() => copyShare(r.app)}
+                        title={shareUrl(r.app)}
                       >
                         העתקה
                       </button>
