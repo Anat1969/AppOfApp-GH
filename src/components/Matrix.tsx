@@ -33,6 +33,16 @@ interface Open {
   pinned: boolean;
 }
 
+/** A whole row (domain) or column (action) opened from its header. */
+interface Line {
+  kind: 'row' | 'col';
+  value: string;
+  x: number;
+  y: number;
+  above: boolean;
+  room: number;
+}
+
 /** Domain against action. Every cell is a door; an empty cell is a gap with a suggested app. */
 export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
   const domains = facets.filter((f) => f.kind === 'domain');
@@ -106,6 +116,41 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
         .filter((x, i, arr) => arr.findIndex((y) => y.id === x.id) === i)
     : [];
 
+  // A header opens the links of its whole line on the same page (Anat, 2026-11-05: "לחיצה על עמודה או שורה ... צריכה לפתוח
+  // את הקישורים של האפליקציות שבאותה שורה או עמודה באותו הדף"). The same click still sorts the map by that line.
+  const [line, setLine] = useState<Line | null>(null);
+  const linePop = useRef<HTMLDivElement>(null);
+  const openLine = (kind: Line['kind'], value: string, el: HTMLElement) => {
+    setOpen(null);
+    if (line?.kind === kind && line.value === value) return setLine(null);
+    const r = el.getBoundingClientRect();
+    const below = innerHeight - r.bottom - 16;
+    const above = below < 320 && r.top > below;
+    setLine({ kind, value, x: r.left + r.width / 2, y: above ? r.top - 8 : r.bottom + 8, above, room: Math.max(200, (above ? r.top : below) - 16) });
+  };
+  useEffect(() => {
+    if (!line) return;
+    const k = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setLine(null);
+      line.kind === 'col' ? setRowBy(null) : setColBy(null);
+    };
+    const out = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (linePop.current && !linePop.current.contains(t) && !t.closest('.matrix .axis')) setLine(null);
+    };
+    const y0 = scrollY;
+    const scroll = () => Math.abs(scrollY - y0) > 60 && setLine(null);
+    addEventListener('keydown', k);
+    addEventListener('pointerdown', out);
+    addEventListener('scroll', scroll, { passive: true });
+    return () => {
+      removeEventListener('keydown', k);
+      removeEventListener('pointerdown', out);
+      removeEventListener('scroll', scroll);
+    };
+  }, [line]);
+
   // Sorting stays inside the map (Anat, 2026-11-04: "מיון לפי שורה או עמודה - בתוך העמוד שלה"): a column header orders the
   // rows by how many apps they have in that column, a row header orders the columns; a second click restores the order.
   const [rowBy, setRowBy] = useState<ActionValue | null>(null);
@@ -121,7 +166,10 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
             <th className="corner mono">תחום / פעולה</th>
             {cols.map((ac) => (
               <th key={ac.value} scope="col" className={rowBy === ac.value ? 'sorted' : ''}>
-                <button className="axis" aria-pressed={rowBy === ac.value} onClick={() => setRowBy((v) => (v === ac.value ? null : ac.value))} title={`${ac.question}. לחיצה ממיינת את התחומים לפי העמודה`}>
+                <button className="axis" aria-pressed={rowBy === ac.value} onClick={(e) => {
+                    setRowBy((v) => (v === ac.value ? null : ac.value));
+                    openLine('col', ac.value, e.currentTarget);
+                  }} title={`${ac.question}. לחיצה פותחת את כל האפליקציות בעמודה וממיינת לפיה`}>
                   {ac.label}
                 </button>
               </th>
@@ -132,7 +180,10 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
           {rows.map((dm, i) => (
             <tr key={dm.value}>
               <th scope="row" className={colBy === dm.value ? 'sorted' : ''}>
-                <button className="axis" aria-pressed={colBy === dm.value} onClick={() => setColBy((v) => (v === dm.value ? null : dm.value))} title="לחיצה ממיינת את הפעולות לפי השורה">
+                <button className="axis" aria-pressed={colBy === dm.value} onClick={(e) => {
+                    setColBy((v) => (v === dm.value ? null : dm.value));
+                    openLine('row', dm.value, e.currentTarget);
+                  }} title="לחיצה פותחת את כל האפליקציות בשורה וממיינת לפיה">
                   {dm.label}
                 </button>
               </th>
@@ -272,6 +323,84 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
             )}
           </motion.div>
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {line && (() => {
+          const isRow = line.kind === 'row';
+          const label = isRow ? domains.find((x) => x.value === line.value)?.label : actionOf(line.value as ActionValue)?.label;
+          const groups = (isRow ? cols.map((ac) => ({ key: ac.value, label: ac.label, list: cellApps(line.value, ac.value) }))
+            : rows.map((dm) => ({ key: dm.value, label: dm.label, list: cellApps(dm.value, line.value as ActionValue) }))).filter((g) => g.list.length);
+          const total = new Set(groups.flatMap((g) => g.list.map((x) => x.id))).size;
+          return (
+            <motion.div
+              ref={linePop}
+              key={`${line.kind}:${line.value}`}
+              className="cell-pop line-pop"
+              role="dialog"
+              aria-label={`${isRow ? 'שורה' : 'עמודה'}: ${label}`}
+              style={{
+                top: line.y,
+                left: Math.max(12, Math.min(line.x - 210, document.documentElement.clientWidth - 476)),
+                maxHeight: Math.min(680, line.room),
+                translate: line.above ? '0 -100%' : undefined,
+              }}
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, pointerEvents: 'none' }}
+              transition={{ duration: 0.16 }}
+            >
+              <div className="pop-head line-head">
+                <span className="mono dim">{isRow ? 'שורה' : 'עמודה'}</span>
+                <strong>{label}</strong>
+                <span className="mono">{total} אפליקציות</span>
+                <button className="line-x" onClick={() => setLine(null)} aria-label="סגירה">
+                  סגירה
+                </button>
+              </div>
+              {groups.length ? (
+                groups.map((g) => (
+                  <section key={g.key} className="line-group">
+                    <div className="line-group-head mono">
+                      {g.label} <span className="dim">{g.list.length}</span>
+                    </div>
+                    <ul className="pop-list">
+                      {g.list.map((x) => {
+                        const site = siteUrl(x);
+                        return (
+                          <li key={x.id}>
+                            {site ? (
+                              <a className="pop-name" href={site} target="_blank" rel="noopener noreferrer" title={site}>
+                                {x.name}
+                              </a>
+                            ) : (
+                              <button className="pop-name" onClick={() => go({ app: x.id })} title="אין קישור: דף האפליקציה בתיק">
+                                {x.name}
+                              </button>
+                            )}
+                            <button className="pop-sheet mono" onClick={() => go({ app: x.id })} title="דף האפליקציה בתיק">
+                              {sheets.get(x.id)}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))
+              ) : (
+                <p className="mono dim pop-empty">עוד אין אפליקציות ב{isRow ? 'שורה' : 'עמודה'} הזו.</p>
+              )}
+              <div className="pop-foot">
+                <button className="link" onClick={() => go(isRow ? { domain: line.value, action: null, app: null } : { action: line.value as ActionValue, domain: null, app: null })}>
+                  סינון התיק ל{isRow ? 'שורה' : 'עמודה'}
+                </button>
+                <button className="link" onClick={() => onAdd(isRow ? { domain: line.value } : { action: line.value as ActionValue })}>
+                  הוספת אפליקציה כאן
+                </button>
+              </div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
     </div>
   );

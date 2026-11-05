@@ -273,6 +273,10 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   cells on the way to the window never switches it; it switches only after the pointer rests 280ms on another cell, never
   while the pointer is inside it, and a clicked window stays; the window that is leaving takes no clicks. Every empty cell holds a suggested app (`src/data/gapIdeas.ts`), the apps it
   can build on (same row and column), "הוספה לתיק מהרעיון" (prefilled dialog) and a ready Claude Code prompt.
+- MAP HEADERS (Anat, 2026-11-05: "לחיצה על עמודה או שורה ... צריכה לפתוח את הקישורים של האפליקציות שבאותה שורה או עמודה
+  באותו הדף"): clicking a domain row or action column header opens a window on the map (`.line-pop`) listing every app in
+  that line, grouped by the other axis, each name a direct link to the app plus its sheet number; the same click sorts the
+  map by that line, a second click closes and restores. Never navigate away from the map on a header click.
 - READING AT A GLANCE (Anat, 2026-10-26: "בעיה באדום פתרון בירוק"): meaning has a colour. Problem red (underline
   stroke), solution green (marker), description yellow marker; panels numbered 01 / 02 with "ולכן" between;
   numbers become figures, "label:" becomes a short heading, list lines become numbered steps; every card on the home
