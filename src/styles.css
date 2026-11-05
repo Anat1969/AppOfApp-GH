@@ -930,3 +930,12 @@ mark.hl { color: var(--ink); font-weight: 600; padding: 0 2px; background: linea
 .hero-welcome .hero-map:hover { background: #fff; box-shadow: var(--shadow-1); }
 .hero-welcome .hero-demo { position: static; width: 100%; }
 @media (max-width: 1000px) { .hero.hero-welcome { grid-template-columns: minmax(0, 1fr); } }
+
+/* A whole row or column opened from its header (Anat, 2026-11-05) */
+.line-pop { width: 440px; }
+.line-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.line-head strong { font-size: 1.15rem; font-weight: 700; }
+.line-x { margin-inline-start: auto; border: 1px solid var(--line-2); background: #fff; padding: 1px 8px; font-size: 0.8rem; color: var(--mid); border-radius: 0; }
+.line-x:hover { color: var(--ink); border-color: var(--ink); }
+.line-group { margin-top: 8px; }
+.line-group-head { color: var(--ink); background: rgba(23, 25, 28, 0.05); padding: 3px 6px; border-inline-start: 3px solid #d4af37; }
