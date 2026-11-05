@@ -916,3 +916,17 @@ mark.hl { color: var(--ink); font-weight: 600; padding: 0 2px; background: linea
 .table-top { top: calc(var(--bar-h) + var(--air)); box-shadow: 0 calc(var(--air) * -1) 0 var(--bg); }
 @media (min-width: 1101px) { .apps-table thead th { top: calc(var(--bar-h) + var(--air) + var(--tt-h, 120px)); } }
 @media (max-width: 700px) { :root { --gutter: 16px; --air: 10px; } }
+
+/* An inviting home with the video in the place of honour (Anat, 2026-11-05). Text on one side, the video large on the
+   other, on a warm white panel; without a video the text spans the panel. */
+.hero.hero-welcome { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: center; gap: 28px clamp(28px, 4vw, 72px); margin: 6px 0 10px; padding: clamp(24px, 3.2vw, 48px); overflow: visible; background: #f8f6f1; box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 18px 50px -34px rgba(11, 31, 58, 0.45); border-top: 4px solid #d4af37; }
+.hero.hero-welcome:has(.hero-demo:empty) { grid-template-columns: minmax(0, 1fr); }
+.hero-welcome h1 { font-size: clamp(2.2rem, 3.6vw, 3.6rem); line-height: 1.08; margin: 10px 0 14px; font-weight: 700; color: #1a3a6f; letter-spacing: -0.01em; }
+.hero-welcome .lead { font-size: 1.15rem; margin: 0 0 8px; color: var(--ink); }
+.hero-invite { margin: 0 0 22px; color: var(--mid); font-size: 1rem; max-width: 42ch; }
+.hero-welcome .hero-cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; }
+.hero-welcome .hero-add { font-size: 1.05rem; padding: 0.85rem 1.4rem; background: #1a3a6f; }
+.hero-welcome .hero-map { height: auto; padding: 0.85rem 1.2rem; border: 0; background: rgba(26, 58, 111, 0.08); color: #1a3a6f; }
+.hero-welcome .hero-map:hover { background: #fff; box-shadow: var(--shadow-1); }
+.hero-welcome .hero-demo { position: static; width: 100%; }
+@media (max-width: 1000px) { .hero.hero-welcome { grid-template-columns: minmax(0, 1fr); } }

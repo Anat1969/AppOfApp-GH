@@ -91,6 +91,17 @@
     .launch.large .thumb::after { left: 19px; bottom: 15px; border-width: 11px 0 11px 18px; }
     .launch.large .ltext { order: 1; padding: 10px 14px 12px; grid-template-columns: 1fr auto; align-items: baseline; }
     .launch.large .ltext b { font-size: 17px; }
+    /* Hero slot (data-aoa-demo="hero", Anat 2026-11-05: "צריך להיות כבוד לסרטון"): the poster fills the slot's width,
+       a big play mark sits in the middle, and the title and length read like a caption under a picture. */
+    :host([data-variant='hero']) { display: block; width: 100%; }
+    .launch.hero { flex-direction: column; align-items: stretch; gap: 0; padding: 0; width: 100%; box-shadow: 0 24px 60px -28px rgba(11,31,58,.55), 0 2px 6px rgba(20,22,26,.08); }
+    .launch.hero .thumb { order: 0; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+    .launch.hero .thumb::before { left: 50%; bottom: 50%; width: 88px; height: 88px; transform: translate(-50%, 50%); box-shadow: 0 10px 30px rgba(0,0,0,.45); transition: transform .2s, background .2s; }
+    .launch.hero .thumb::after { left: 50%; bottom: 50%; transform: translate(-35%, 50%); border-width: 18px 0 18px 30px; }
+    .launch.hero:hover .thumb::before { transform: translate(-50%, 50%) scale(1.06); }
+    .launch.hero .ltext { order: 1; padding: 14px 18px 16px; grid-template-columns: 1fr auto; align-items: baseline; border-top: 3px solid var(--aoa-demo-accent, #f2b705); }
+    .launch.hero .ltext b { font-size: 20px; }
+    .launch.hero .ltext small { font-size: 13px; }
     .corner { position: fixed; bottom: 18px; inset-inline-end: 18px; z-index: 2147482000; }
 
     .veil { position: fixed; inset: 0; z-index: 2147483200; background: rgba(8,14,26,.86); display: grid; place-items: center; padding: 56px 24px 24px; overflow: auto; animation: fade .2s; }
@@ -259,14 +270,17 @@
   // ---------- the home-page button ----------
   let current = null; // { id, demo }
   let launcher = null;
-  function makeLauncher(d, inSlot, large) {
+  function makeLauncher(d, inSlot, variant) {
+    const large = variant === 'large';
     const pl = plan(d);
     const [h, r] = host(inSlot ? '' : 'corner-host');
     const thumb = el('span', { className: 'thumb' });
     if (d.poster) thumb.style.backgroundImage = `url("${d.poster}")`;
-    const b = el('button', { className: `launch${inSlot ? '' : ' corner'}${large ? ' large' : ''}`, type: 'button', title: 'צפייה בסרטון ההדגמה', on: { click: () => play(current.demo) } }, [
+    const hero = variant === 'hero';
+    if (hero) h.dataset.variant = 'hero';
+    const b = el('button', { className: `launch${inSlot ? '' : ' corner'}${large ? ' large' : ''}${hero ? ' hero' : ''}`, type: 'button', title: 'צפייה בסרטון ההדגמה', on: { click: () => play(current.demo) } }, [
       thumb,
-      el('span', { className: 'ltext' }, [el('b', { textContent: 'סרטון הדגמה' }), el('small', { dir: 'ltr', textContent: `${fmt(pl.length)} · ${fmtX(pl.speed)}` })]),
+      el('span', { className: 'ltext' }, [el('b', { textContent: hero ? 'צפייה בסרטון ההדגמה' : 'סרטון הדגמה' }), el('small', { dir: 'ltr', textContent: `${fmt(pl.length)} · ${fmtX(pl.speed)}` })]),
     ]);
     r.append(b);
     h.dataset.slot = inSlot ? '1' : '';
@@ -282,7 +296,7 @@
     if (!inSlot && document.documentElement.hasAttribute('data-aoa-demo-slots')) { launcher?.remove(); launcher = null; return; }
     if (launcher && launcher.isConnected && (inSlot ? slot.contains(launcher) : !launcher.dataset.slot)) return;
     launcher?.remove();
-    launcher = makeLauncher(d, inSlot, inSlot && slot.dataset.aoaDemo === 'large');
+    launcher = makeLauncher(d, inSlot, inSlot ? slot.dataset.aoaDemo : '');
     (inSlot ? slot : document.body).append(launcher);
   }
   let queued = false;
