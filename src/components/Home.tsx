@@ -100,21 +100,30 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
       <motion.div key={sec} className="sec-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
 
       {sec === 'new' && (
-        <section className="hero hero-strip">
+        <section className="hero hero-welcome">
           <div className="hero-text">
             <div className="mono kicker">
               תיק אפליקציות · {apps.length} אפליקציות · {ACTIONS.length} פעולות · {facets.filter((f) => f.kind === 'domain').length} תחומים
             </div>
-            <h1>בחר: תחום, נושא או אפליקציה</h1>
+            <h1>
+              בחר: תחום, נושא
+              <br />
+              או אפליקציה
+            </h1>
             <p className="lead">כל גיליון פותח עולם שלם: בעיה, פתרון, ותוצר שעובד בפועל.</p>
+            <p className="hero-invite">הסרטון מראה בדקה איך מוצאים כאן כל דבר, ואיך רעיון הופך לאפליקציה.</p>
+            <div className="hero-cta">
+              <button className="solid hero-add" onClick={() => onAdd()}>
+                הוספת אפליקציה חדשה
+              </button>
+              <button className="ghost hero-map" onClick={() => pick('map')}>
+                למפת התחומים
+              </button>
+            </div>
           </div>
-          <div className="hero-cta">
-            <button className="solid hero-add" onClick={() => onAdd()}>
-              הוספת אפליקציה חדשה
-            </button>
-            {/* "סרטון הדגמה": public/demo.js mounts its button here when aoa_apps holds a demo for this page. */}
-            <div className="hero-demo" data-aoa-demo="" />
-          </div>
+          {/* The demo video has the place of honour (Anat, 2026-11-05: "דף הבית לא מזמין. צריך להיות כבוד לסרטון"):
+              public/demo.js fills this slot with a full-width poster and a big play mark. */}
+          <div className="hero-demo" data-aoa-demo="hero" />
         </section>
       )}
       {sec === 'new' && (

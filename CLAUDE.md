@@ -198,7 +198,7 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   `data.demo` = { src, poster, duration, speed, length, whole, at[] }; `at` lists the page addresses that show the button.
   Length and speed are applied at playback, never burned into the file, so a change shows at once with no render and
   no deployment. "כל הסיפור" (default) ties them: length = duration / speed, so the closing card is always seen; off,
-  the ending is cut and the panel says so. The button mounts in `[data-aoa-demo]` (here: the hero, `large`); an app
+  the ending is cut and the panel says so. The button mounts in `[data-aoa-demo]` (`large`, or `hero`: full slot width, 16:9 poster, a big play mark in the middle, a caption bar; here the home hero uses `hero`); an app
   whose `<html>` has `data-aoa-demo-slots` shows it only where a slot is, any other app gets it in the corner.
   The panel also copies a ready request to Claude for a new video at the chosen length. Video: `templates/demo.cjs`
   in Claude-GH, file in `aoa-media/<appId>/demo-<ts>.mp4`. Code `public/demo.js`, loaded by `ai-menu.js` after idle.
@@ -316,6 +316,10 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   שיקפצו מסכים, ועדיין לארגן מידע בתוך מסגרת המסך"): a quiet margin under the top bar (`--air`, 18px) and at both sides
   (`--gutter`, 36-96px, page up to 1680px) where the pointer can rest without opening anything; the sticky bars keep the
   margin when stuck (a background shadow fills it); the map still fits 1900x940. Balance: compact, never cramped.
+- INVITING HOME, THE VIDEO HONOURED (Anat, 2026-11-05: "דף הבית לא מזמין. צריך להיות כבוד לסרטון"): section 01 opens
+  with a warm white panel under a gold line: kicker, a bold navy headline, the lead, one line on what the video shows, and
+  two buttons (add an app, to the map); the demo video sits beside it at about half the width (`data-aoa-demo="hero"`).
+  Without a video the text spans the panel.
 - NEW COLUMNS (Anat, 2026-11-04: "בהתאם להמלצה. תוסיף עמודות זיקוק והחלטה"): actions `distill` (זיקוק, walk away with the
   essence) and `decide` (החלטה, walk away with a choice), nine actions in all; 26 more idea cells in `ideas.ts`. Ten apps moved there ("כן תעביר", `supabase/migrations/20261104_aoa_distill_decide.sql`).
 - IDEAS (Anat, 2026-11-04: more suggestions, mergers that create insight, knowledge, information and new creations, unlike
