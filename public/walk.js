@@ -7,7 +7,9 @@
  *   <space-walk ref-base="/principles/"></space-walk>
  *   el.plan = { ...see docs/walk-standard.md... }      // or <space-walk src="plan.json">
  *
- * Attributes: src, eye (cm), variant (id), view ("walk" | "top"), ref-base, three (module URL).
+ * Attributes: src, eye (cm), variant (id), view ("walk" | "top"), ref-base, three (module URL), bare.
+ * eye, variant and view are live: changing them after load moves the viewer (no walkchange event).
+ * bare: the side panel is hidden and the host app owns the controls, driving eye / variant / view.
  * Event: "walkchange" with detail { eye, variant, view } on every user change.
  * Theme: --sw-ink, --sw-paper, --sw-card, --sw-line, --sw-muted, --sw-accent,
  *        --sw-problem, --sw-solution, --sw-marker, --sw-font, --sw-mono, --sw-display.
@@ -154,11 +156,16 @@
       .hint { display: none; }
       .panel { overflow: visible; }
     }
+    /* bare: the host app owns the controls (eye, variant, view through attributes); the scene fills the element */
+    :host([bare]) .panel { display: none; }
+    :host([bare]) .sw { grid-template-columns: 1fr; grid-template-rows: 1fr; height: 100%; }
+    :host([bare]) .stage { border-inline-start: 0; border-bottom: 0; }
+    @media (max-width: 860px) { :host([bare]) { height: var(--sw-height, 62vh); } }
     @media (prefers-reduced-motion: reduce) { .btn, .opt, .row { transition: none; } }
   `;
 
   class SpaceWalk extends HTMLElement {
-    static get observedAttributes() { return ['src']; }
+    static get observedAttributes() { return ['src', 'variant', 'view', 'eye']; }
 
     constructor() {
       super();
@@ -203,6 +210,16 @@
 
     attributeChangedCallback(name, old, val) {
       if (name === 'src' && val && old !== val && this.isConnected) this._load(val);
+      if (old === val || !this._plan || !this.shadowRoot.firstChild) return; // before the plan, _applyPlan reads them
+      if (name === 'variant') {
+        if ((this._plan.variants || []).find((v) => v.id === val) && val !== this._variant) this._setVariant(val, false);
+      } else if (name === 'view') {
+        const v = val === 'top' ? 'top' : 'walk';
+        if (v !== this._view) this._setView(v, false);
+      } else if (name === 'eye') {
+        const c = +val;
+        if (c > 0 && c !== this._eyeCm) this._setEye(c, false);
+      }
     }
 
     async _load(src) {
@@ -330,7 +347,8 @@
       if (!same) {
         const eyeAttr = +this.getAttribute('eye');
         const h = this._heights.find((x) => x.cm === eyeAttr) || this._heights[0];
-        this._eyeCm = h.cm; this._eye = h.cm / 100;
+        const cm = this.hasAttribute('bare') && eyeAttr > 0 ? eyeAttr : h.cm;
+        this._eyeCm = cm; this._eye = cm / 100;
         if (this.getAttribute('view') === 'top') this._view = 'top';
         const s = p.spawn || {};
         this._pos = { x: s.x || 0, z: s.z || 0 };
