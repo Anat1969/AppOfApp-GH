@@ -216,7 +216,7 @@ const browser = await chromium.launch();
   await page.screenshot({ path: SHOTS + 'desktop-gap-idea.png' });
   await page.locator('.cell-pop .ghost', { hasText: 'העתקת פרומפט' }).first().click();
   const prompt = await page.evaluate(() => navigator.clipboard.readText());
-  ok(prompt.includes('anat-app-builder') && prompt.includes('uipro init') && prompt.includes('איך נולדת אפליקציה חדשה'), 'the gap prompt for Claude Code is copied, with how to build');
+  ok(prompt.includes('anat-app-builder') && prompt.includes('uipro init') && prompt.includes('איך נולדת אפליקציה חדשה') && prompt.includes('שדרוג או אפליקציה חדשה'), 'the gap prompt for Claude Code is copied, with how to build');
   await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).first().click();
   ok((await page.locator('.dialog .connect').count()) === 0, 'no editor link field in the add form');
   ok((await page.locator('.dialog input').first().inputValue()).length > 2, 'the form itself opens right away, prefilled');
