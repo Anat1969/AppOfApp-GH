@@ -28,12 +28,17 @@ export function buildPrompt(idea: Idea, actionLabel: string, domainLabel: string
   const src = (idea.from ?? []).map((id) => apps.find((a) => a.id === id)).filter(Boolean) as AppData[];
   const line = (a: AppData) => `- ${a.name}${siteUrl(a) ? `: ${siteUrl(a)}` : ''}${a.githubUrl ? ` (קוד: ${a.githubUrl})` : ''}`;
   const refs = [...src, ...near.filter((a) => !src.some((s) => s.id === a.id))];
-  return `אני בונה אפליקציה חדשה: ${idea.title}.
+  return `רעיון לבנייה: ${idea.title}.
 סוג הרעיון: ${KIND_WORD[idea.kind]}.
 ${plain(idea.idea)}${idea.yields ? `\nמה היא מפיקה: ${idea.yields}.` : ''}
 פעולה: ${actionLabel}. תחום: ${domainLabel}.
 ${src.length ? `\nהאפליקציות שהיא נבנית מהן (קרא את הקוד והנתונים שלהן, ושמור על קישור חזרה אליהן):\n${src.map(line).join('\n')}\n` : ''}${refs.length > src.length ? `\nאפליקציות קרובות בתיק שאפשר להישען עליהן:\n${refs.slice(src.length).map(line).join('\n')}\n` : ''}
-איך נולדת אפליקציה חדשה אצלי:
+קודם מחליטים: שדרוג או אפליקציה חדשה (Anat, 2026-11-06).
+בדוק את האפליקציות שלמעלה, כולל הקוד שלהן. אם אחת מהן משרתת את אותו משתמש, מחזיקה כבר את הנתונים, ומשמשת באותו רגע בעבודה, הוסף לה את היכולת כמסך או כמצב, באותו מאגר ובאותה כתובת, ועדכן את הרשומה שלה בתיק.
+אם אחת משלוש התשובות היא "לא", בנה אפליקציה חדשה. אפליקציה עירונית ואפליקציה אישית לא מתמזגות.
+כתוב באפיון במשפט אחד מה החלטת ולמה.
+
+איך נולדת אפליקציה חדשה אצלי (רק אם הוחלט על אפליקציה חדשה):
 1. אפיון קצר בתוך התשובה: למי, מה נכנס, מה יוצא, שלוש התשובות הראשונות שהמשתמש רואה.
 2. מאגר GitHub חדש בשם <NAME>-GH, Vite + React + TypeScript, עברית ו-RTL, בלי אייקונים.
 3. כפתור הלוגו A&I (https://appofapp-gh.vercel.app/ai-menu.js) וכל פעולות העריכה בתוכו; התקנה מ-Chrome.

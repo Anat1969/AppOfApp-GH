@@ -331,7 +331,10 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   holds 3 ideas for EVERY one of the 91 cells (new / merge / cut / distill; merge, cut and distill name their source apps by
   id and what they yield), 13 portfolio-wide SYNTHESES and 7 NEW_AXES (five proposed domains, two proposed actions). The
   cell window lists them (`IdeaList.tsx`) under the cell's apps, each with "הוספה לתיק מהרעיון" and a prompt for Claude Code
-  that includes the source apps and "איך נולדת אפליקציה חדשה אצלי" (7 steps); "איך רעיון הופך לאפליקציה" explains the
+  that includes the source apps, an UPGRADE-OR-NEW decision first (Anat, 2026-11-06: build into an existing app when it
+  has the same user, already holds the data and is used at the same moment; municipal and personal never merge; one
+  sentence says what was decided and why; no `modes[]` axis until a few real upgrades exist), then "איך נולדת אפליקציה
+  חדשה אצלי" (7 steps, only for a new app); "איך רעיון הופך לאפליקציה" explains the
   flow. An idea whose title is already an app name is hidden. Under the map, `BeyondMap.tsx`: syntheses, and new rows and
   columns (a proposed domain is added to the vocabulary in one click; actions are fixed in code). `gapIdeas.ts` is gone.
 - COVER IMAGE (Anat, 2026-10-27): the frame takes the image's own proportions (a screenshot is never cropped; very tall
