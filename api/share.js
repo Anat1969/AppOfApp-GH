@@ -1,7 +1,8 @@
 import { getApp, lineOf, origin, safeId, siteUrl, version } from './_app.js';
 
-// /s/<id> (rewrite in vercel.json). Link-preview robots get the og: tags; people go straight on to the app.
-const BOTS = /facebookexternalhit|facebot|whatsapp|twitterbot|telegrambot|slackbot|linkedinbot|discordbot|skypeuripreview|pinterest|vkshare|redditbot|applebot|googlebot|bingbot|embedly|iframely|preview|crawler|spider|bot\b/i;
+// /s/<id> (rewrite in vercel.json). One page for everyone: the og: tags for link previews, and an immediate redirect
+// for people. No user-agent test (Anat, 2026-11-07): WhatsApp Web and Desktop build the preview with a browser user agent,
+// so a 302 for "non-robots" sent them to the app itself and only apps with their own og: image showed a picture.
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 export default async function handler(req, res) {
@@ -14,22 +15,14 @@ export default async function handler(req, res) {
     return res.end();
   }
   const target = siteUrl(app) || `${base}/?app=${encodeURIComponent(id)}`;
-  const ua = String(req.headers['user-agent'] || '');
-  if (!BOTS.test(ua)) {
-    res.statusCode = 302;
-    res.setHeader('Location', target);
-    res.setHeader('Cache-Control', 'private, no-store');
-    return res.end();
-  }
   const title = app.name || 'אפליקציה';
   const line = lineOf(app);
   const image = `${base}/api/og?id=${encodeURIComponent(id)}&v=${version(app)}`;
   const self = `${base}/s/${encodeURIComponent(id)}`;
   const host = target.replace(/^https?:\/\//, '').replace(/\/$/, '');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  // Never cached at the edge: the same address answers robots with this page and people with a redirect.
-  res.setHeader('Cache-Control', 'private, no-store');
-  res.setHeader('Vary', 'User-Agent');
+  // Same answer for everyone, so a short edge cache is safe; a changed cover shows within five minutes.
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300');
   res.end(`<!doctype html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8">
 <title>${esc(title)}</title>
@@ -50,6 +43,7 @@ export default async function handler(req, res) {
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(line)}">
 <meta name="twitter:image" content="${esc(image)}">
+<meta http-equiv="refresh" content="0;url=${esc(target)}">
 <script>location.replace(${JSON.stringify(target).replace(/</g, '\\u003c')});</script>
-</head><body><p><a href="${esc(target)}">${esc(title)}</a></p></body></html>`);
+</head><body style="font-family:sans-serif;padding:24px"><p><a href="${esc(target)}">${esc(title)}</a></p></body></html>`);
 }
