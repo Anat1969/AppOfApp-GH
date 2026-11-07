@@ -12,8 +12,9 @@
  * Without a top bar, add data-auto to the script tag and the button mounts itself
  * at the top left corner.
  *
- * Municipal apps (Anat, 2026-10-27): brand="ashdod" shows the Ashdod Municipality logo
- * instead of the A&I mark; the menu inside is the same.
+ * Municipal apps (Anat, 2026-10-27; 2026-11-04): brand="ashdod" shows the Ashdod Municipality
+ * logo with the A&I mark only, never Anat's name on the button. Her name is inside the menu,
+ * as the app's editor ("עורכת האפליקציה"). The menu items are the same.
  *   <ai-menu brand="ashdod" chat="..."></ai-menu>
  *
  * "מדריך חי" (2026-11-03): an item that records a walkthrough and shares it as a link;
@@ -159,7 +160,13 @@
     .phone p { margin: 0; font-size: 12px; color: #5a5f66; }
     .phone code { direction: ltr; unicode-bidi: isolate; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: #6b7077; overflow-wrap: anywhere; }
     .brandimg { display: block; height: 36px; width: auto; }
-    :host([brand='ashdod']) .logo { padding: 4px 8px; background: #fff; }
+    :host([brand='ashdod']) .logo { padding: 4px 4px 4px 8px; gap: 8px; background: #fff; }
+    :host([brand='ashdod']) .logo .brandimg { order: 1; }
+    :host([brand='ashdod']) .head { flex-wrap: wrap; }
+    .editor { flex: 1 0 100%; display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2dfd9; }
+    .head .editor .mark { display: grid; color: #f4f3f0; order: 0; width: 30px; height: 30px; font-size: 10.5px; letter-spacing: 0; }
+    .editor div span { display: block; font-family: 'IBM Plex Mono', 'IBM Plex Sans Hebrew', ui-monospace, monospace; font-size: 11px; letter-spacing: 0; color: #6b7077; }
+    .editor b { font-weight: 500; font-size: 13px; }
     .head .brandimg { height: 30px; }
     @media (max-width: 700px) {
       .brandimg { height: 30px; }
@@ -204,8 +211,8 @@
     _applyBrand() {
       if (!this._btn) return;
       if (this._ashdod) {
-        this._btn.title = 'עיריית אשדוד';
-        this._btn.innerHTML = `<img class="brandimg" src="${ASHDOD_LOGO}" alt="עיריית אשדוד"><span class="status" hidden></span>`;
+        this._btn.title = 'עיריית אשדוד · A&I';
+        this._btn.innerHTML = `<img class="brandimg" src="${ASHDOD_LOGO}" alt="עיריית אשדוד"><span class="mark" aria-hidden="true">A&amp;I</span><span class="status" hidden></span>`;
       } else {
         this._btn.title = "אד' ענת שטיבלמן A&I";
         this._btn.innerHTML = `<span class="mark" aria-hidden="true">A&amp;I</span><span class="text"><span class="name">אד' ענת שטיבלמן</span><span class="status"></span></span>`;
@@ -294,6 +301,7 @@
       head.className = 'head';
       head.innerHTML = this._ashdod
         ? `<img class="brandimg" src="${ASHDOD_LOGO}" alt=""><div><b>עיריית אשדוד</b><span>ASHDOD MUNICIPALITY</span></div>`
+          + `<div class="editor"><span class="mark" aria-hidden="true">A&amp;I</span><div><span>עורכת האפליקציה</span><b>אד' ענת שטיבלמן</b></div></div>`
         : `<span class="mark" aria-hidden="true">A&amp;I</span><div><b>אד' ענת שטיבלמן</b><span>ARCHITECTURE &amp; INTELLIGENCE</span></div>`;
       p.append(head);
       for (const g of groups) {
