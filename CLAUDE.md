@@ -238,11 +238,12 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 - SHARE LINK WITH A PICTURE (Anat, 2026-11-04: on WhatsApp only some app links showed the app's image): a preview needs
   og: tags and a small image; most apps have no tags, and 39 of 100 covers are PNGs over 250KB (up to 2.3MB), which WhatsApp
   drops. So the link to send is the portfolio's `https://appofapp-gh.vercel.app/s/<id>` (`src/lib/share.ts`): Vercel
-  function `api/share.js` answers link-preview robots with og: tags (name, insight line, image) and sends people on to the
-  app with a 302; `api/og.js` (sharp) turns the cover into a 1200x630 JPEG of about 20-120KB, or a screenshot of the site
+  function `api/share.js` answers everyone with one page: og: tags (name, insight line, image) plus an immediate redirect
+  (script + meta refresh) to the app. NO USER-AGENT TEST (Anat, 2026-11-07, the picture showed only for some apps): WhatsApp
+  Web/Desktop fetch the preview with a browser user agent, so the old 302 for "people" sent them to the app's own site; `api/og.js` (sharp) turns the cover into a 1200x630 JPEG of about 20-120KB, or a screenshot of the site
   when there is no cover, or the A&I icon. Copied by "העתקת קישור עם תמונה" next to the enter button on the app page and
-  by "העתקה" in the table. Always the Vercel address (Pages cannot run functions). The share HTML is never cached at the
-  edge (same address, two answers); the image URL carries `v=` from the cover, so a new cover gives a new picture.
+  by "העתקה" in the table. Always the Vercel address (Pages cannot run functions). The share HTML is cached at the edge
+  for 5 minutes (same answer for all); the image URL carries `v=` from the cover, so a new cover gives a new picture.
 - Sheet numbers (A-001...) follow creation order.
 - CLASSIFICATION (Anat, 2026-10-24): every app sits on four axes, stored in `data`:
   `action` (exactly one of 9, fixed in `src/lib/facets.ts`: אבחון ומדידה, יצירה, חקירה ולמידה, ניהול ומעקב,
