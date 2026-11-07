@@ -604,7 +604,7 @@ app-article{display:block;direction:rtl}
   const plain = (s) => String(s ?? '').replace(/==(.+?)==/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1').trim();
   const norm = (s) => plain(s).replace(/[֑-ׇ]/g, '').replace(/[״׳"'.,:;!?\-–]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
   // טקסט עשיר בכתבה: גם מספרים מודגשים אוטומטית (לא בתוך תג)
-  const richA = (s) => rich(s).replace(/(^|[^\w&#;])(\d[\d,.–]*\d|\d)(?![^<]*>)/g, '$1<b class="ar-num">$2</b>');
+  const richA = (s) => rich(s).replace(/(^|[^\w&#;])(\d[\d,.–]*\d|\d)(?![^<]*>)/g, '$1<b class="ar-num" dir="ltr">$2</b>');
   const hostOf = (u) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return u || ''; } };
   const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12H4M10 5l-7 7 7 7"/></svg>';
   function injectCSS() {
@@ -671,7 +671,7 @@ app-article{display:block;direction:rtl}
     const ins = a.insight;
     P.insight = ins ? `<div class="ar-insight">${o.insLabel === false ? '' : `<span class="ar-lbl">${esc(o.insLabel || 'התובנה')}</span>`}<p class="ar-ins-t"><mark>${rich(String(ins.title).replace(/==/g, ''))}</mark></p>${ins.text ? `<p class="ar-ins-x">${richA(ins.text)}</p>` : ''}</div>` : '';
     const f = a.fromto;
-    P.fromto = f ? `<div class="ar-ft" data-drop="2"><span class="ar-lbl">ממה למה</span>${f.title ? `<p class="ar-ft-h">${rich(f.title)}</p>` : ''}<div class="ar-ft-row"><div class="ar-ft-s f"><span>${esc(f.fromLabel || 'ממה')}</span><p>${richA(f.from)}</p></div><div class="ar-ft-ar">${ARROW}</div><div class="ar-ft-s t"><span>${esc(f.toLabel || 'למה')}</span><p>${richA(f.to)}</p></div></div>${f.text ? `<p class="ar-ft-x">${richA(f.text)}</p>` : ''}</div>` : '';
+    P.fromto = f ? `<div class="ar-ft" data-drop="2"><span class="ar-lbl">ממה למה</span>${f.title ? `<p class="ar-ft-h">${rich(f.title)}</p>` : ''}<div class="ar-ft-row"><div class="ar-ft-s f"><span>${richA(f.fromLabel || 'ממה')}</span><p>${richA(f.from)}</p></div><div class="ar-ft-ar">${ARROW}</div><div class="ar-ft-s t"><span>${richA(f.toLabel || 'למה')}</span><p>${richA(f.to)}</p></div></div>${f.text ? `<p class="ar-ft-x">${richA(f.text)}</p>` : ''}</div>` : '';
     const h = a.haiku;
     P.haikuLines = h ? `<div class="ar-hk-l">${(h.lines || []).map((l) => `<span>${esc(l)}</span>`).join('')}</div>` : '';
     P.haiku = h ? `<div class="ar-haiku" data-drop="1">${P.haikuLines}${h.text ? `<p>${richA(h.text)}</p>` : ''}</div>` : '';
@@ -736,7 +736,7 @@ app-article{display:block;direction:rtl}
       <header class="ar-rp-band ar-fit">${P.kicker}${P.title}${P.lead}</header>
       ${a.hero ? `<div class="ar-rp-hero ar-fit">${P.img}${P.credit}</div>` : ''}
       <div class="ar-rp-main ar-fit"><div class="ar-rp-stmt">${P.insight}</div>
-        ${figs.length ? `<div class="ar-rp-figs" style="--n:${figs.length}">${figs.map((x) => `<div class="ar-rp-fig"><b>${esc(x.n)}</b><span>${esc(x.label)}</span></div>`).join('')}</div>` : '<span></span>'}
+        ${figs.length ? `<div class="ar-rp-figs" style="--n:${figs.length}">${figs.map((x) => `<div class="ar-rp-fig"><b dir="ltr">${esc(x.n)}</b><span>${esc(x.label)}</span></div>`).join('')}</div>` : '<span></span>'}
         <div class="ar-rp-cols"><div class="ar-rp-body ar-fit">${P.body}</div><div class="ar-rp-side ar-fit">${P.quote}${P.fromto}${P.haiku}</div></div></div>
       ${P.foot}`;
     },
