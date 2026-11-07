@@ -216,6 +216,11 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   sized in `--u` (cqw), fitted so text never leaves the frame. Print one creation or a room as A4; "העלאה לחדר בתערוכה"
   opens TAARUCHA `/studio/import`. JPG export: `tools/creations-render.cjs`. Standard: `docs/creations-standard.md`.
   First five apps: Amirot, Refua, Tzuna, PrasNovel, Olam.
+  ARTICLES (Anat, 2026-11-07: "תרכז כל כתבה ב-A4 אחד... פורמט משלה... להורדה והדפסה... ישר לתוך החדר שלה במוזאון"): the page
+  now opens on one A4 article per topic, composed from its creations by role (no new text), fitted by shrinking then dropping
+  whole blocks (haiku, fromto, last paragraphs). Seven layouts in `app.article.layout` (magazine, daf, herbarium, atlas,
+  blueprint, archive, report), "יצירת כתבה" builds one from `pool`, `<app-article src topic|pool>` renders one alone (TAARUCHA
+  hangs it in room `room-<app.id>`, work layout `cr-article`). Pilot: Olam (atlas). All in `creations.js`, no new file.
   04.11.2026, ענת: "כפתור 'הכל' לא יכול להראות כמו כפתור ידע, הבנה, יישום". ידע, הבנה ויישום הם כפתורי שלב עם סמל קו
   ומספר חדרים; "הכול" הוא קישור טקסט שקט בסוף השורה. לחיצה לא משאירה מסגרת: טבעת מיקוד רק במקלדת (`:focus-visible`).
 - WALK AT EYE HEIGHT (2026-11-03, from a reel on spaceplanner.co, Anat approved): `public/walk.js` serves `<space-walk>` to all
