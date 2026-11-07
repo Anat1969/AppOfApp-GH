@@ -604,7 +604,7 @@ app-article{display:block;direction:rtl}
   const plain = (s) => String(s ?? '').replace(/==(.+?)==/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1').trim();
   const norm = (s) => plain(s).replace(/[֑-ׇ]/g, '').replace(/[״׳"'.,:;!?\-–]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
   // טקסט עשיר בכתבה: גם מספרים מודגשים אוטומטית (לא בתוך תג)
-  const richA = (s) => rich(s).replace(/(^|[^\w&#;])(\d[\d,.–]*\d|\d)(?![^<]*>)/g, '$1<b class="ar-num" dir="ltr">$2</b>');
+  const richA = (s) => rich(s).replace(/(^|[^\w&#;])(\d[\d,.–/:]*\d|\d)(?![^<]*>)/g, '$1<b class="ar-num" dir="ltr">$2</b>');
   const hostOf = (u) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return u || ''; } };
   const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12H4M10 5l-7 7 7 7"/></svg>';
   function injectCSS() {
