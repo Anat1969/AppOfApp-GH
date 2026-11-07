@@ -375,5 +375,7 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 - OWNER AND LOGO (Anat, 2026-10-27): every app is either the municipality's or hers. `data.owner = "ashdod"` marks the
   39 municipal apps she ticked (the rest are hers). Municipal apps use `<ai-menu brand="ashdod">`, which shows the Ashdod
   Municipality logo (`public/ashdod-logo.png`, complete, transparent, approved by her) with the same menu inside.
+  Anat, 2026-11-04: in a municipal app her mark on the button is "A&I" only, without her name; the name is inside
+  the menu as the editor ("עורכת האפליקציה"). Changing this is the first thing done when opening a municipal app.
   At the start of every build, ask her whose app it is.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.

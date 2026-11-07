@@ -83,7 +83,7 @@ ok(!(await page.locator('header >> text=העתקת קישור').first().isVisibl
 
 ## Municipal apps (2026-10-27)
 
-Apps that belong to Ashdod Municipality show the municipality logo instead of the A&I mark. Same component, same menu:
+Apps that belong to Ashdod Municipality show the municipality logo with the A&I mark only, never Anat's name on the button (Anat, 2026-11-04: the first thing to do when opening a municipal app). Her name appears inside the menu, under the municipality, as "עורכת האפליקציה: אד' ענת שטיבלמן". Same component, same menu items:
 
 ```html
 <ai-menu brand="ashdod" chat="..." research="..."></ai-menu>
