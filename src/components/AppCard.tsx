@@ -13,10 +13,12 @@ interface Props {
   index?: number;
   compact?: boolean;
   why?: string;
+  /** No layout animation: for lists that mount and unmount inside a section (a layout node removed there stalls the section's exit). */
+  still?: boolean;
 }
 
 /** A sheet in the portfolio: framed cover with a slight perspective tilt that follows the pointer. */
-export default function AppCard({ app, sheet, category, onOpen, index = 0, compact, why }: Props) {
+export default function AppCard({ app, sheet, category, onOpen, index = 0, compact, why, still }: Props) {
   const mx = useMotionValue(0.5);
   const my = useMotionValue(0.5);
   const rx = useSpring(useTransform(my, [0, 1], [5, -5]), { stiffness: 200, damping: 20 });
@@ -31,7 +33,7 @@ export default function AppCard({ app, sheet, category, onOpen, index = 0, compa
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index, 12) * 0.03, duration: 0.45, ease: [0.2, 0.7, 0.2, 1] }}
-      layout="position"
+      layout={still ? undefined : 'position'}
     >
       <motion.button
         className="card-frame"

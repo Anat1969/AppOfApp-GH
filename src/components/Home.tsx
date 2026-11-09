@@ -81,6 +81,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
     { key: 'new', no: '01', label: 'חדש בתיק', n: added.length + updated.length },
     { key: 'map', no: '02', label: 'מפת התחומים והפעולות' },
     { key: 'all', no: '03', label: 'כל הגיליונות', n: apps.length },
+    { key: 'beyond', no: '04', label: 'סינתזות ושורות חדשות' },
   ];
 
   return (
@@ -173,13 +174,24 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
           <header className="band-head">
             <span className="mono">02</span>
             <h2>מפת התחומים והפעולות</h2>
-            <span className="band-note">שורה היא תחום, עמודה היא מה יוצאים איתו. ריחוף על משבצת מציג את האפליקציות בה. משבצת ריקה היא פער, ובה הצעה לאפליקציה חדשה.</span>
+            <span className="band-note">שורה היא תחום, עמודה היא מה יוצאים איתו. ריחוף על משבצת מציג את האפליקציות בה, ולחיצה פותחת אותן מתחת למפה. משבצת ריקה היא פער, ובה הצעה לאפליקציה חדשה.</span>
           </header>
           <Matrix apps={apps} facets={facets} sheets={sheets} go={go} onAdd={onAdd} />
           <button className="link inline-edit vocab-toggle" onClick={() => setVocabOpen((v) => !v)}>
             {vocabOpen ? 'סגירת המילון' : 'עריכת מילון התחומים וההקשרים'}
           </button>
           {vocabOpen && <Vocabulary facets={facets} saveFacet={saveFacet} deleteFacet={deleteFacet} />}
+        </section>
+      )}
+
+      {/* Syntheses and new rows have their own section, 04 (Anat, 2026-11-09), so the map section ends with the map. */}
+      {sec === 'beyond' && (
+        <section className="band sec-section band-beyond">
+          <header className="band-head">
+            <span className="mono">04</span>
+            <h2>סינתזות ושורות חדשות</h2>
+            <span className="band-note">רעיונות שמעבר למפה: מיזוגים בין תחומים רחוקים, ושורות ועמודות שעוד אין בה.</span>
+          </header>
           <BeyondMap apps={apps} facets={facets} go={go} onAdd={onAdd} saveFacet={saveFacet} />
         </section>
       )}

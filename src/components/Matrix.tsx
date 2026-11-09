@@ -6,6 +6,7 @@ import { ACTIONS, actionOf } from '../lib/facets';
 import { siteUrl, thumbOf } from '../lib/format';
 import { CELL_IDEAS } from '../data/ideas';
 import IdeaList, { HowToBuild } from './IdeaList';
+import AppCard from './AppCard';
 
 export interface AddPrefill {
   name?: string;
@@ -158,7 +159,25 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
   const rows = rowBy ? [...domains].sort((x, y) => cellApps(y.value, rowBy).length - cellApps(x.value, rowBy).length) : domains;
   const cols = colBy ? [...ACTIONS].sort((x, y) => cellApps(colBy, y.value).length - cellApps(colBy, x.value).length) : ACTIONS;
 
+  // A click on a filled cell opens all of its apps under the map, on the same page (Anat, 2026-11-09). Hover still shows
+  // the small window; a second click on the same cell closes the list.
+  const [picked, setPicked] = useState<{ domain: string; action: ActionValue } | null>(null);
+  const below = useRef<HTMLElement>(null);
+  const pick = (domain: string, action: ActionValue) => {
+    clearTimeout(switchTimer.current);
+    setOpen(null);
+    setLine(null);
+    setPicked((p) => (p?.domain === domain && p.action === action ? null : { domain, action }));
+  };
+  useEffect(() => {
+    if (picked) below.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [picked]);
+  const pd = picked && domains.find((f) => f.value === picked.domain);
+  const pa = picked && actionOf(picked.action);
+  const pickedApps = picked ? cellApps(picked.domain, picked.action) : [];
+
   return (
+    <>
     <div className="matrix-wrap">
       <table className="matrix" style={{ '--rows': domains.length } as React.CSSProperties}>
         <thead>
@@ -191,11 +210,12 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
                 const cell = cellApps(dm.value, ac.value);
                 const n = cell.length;
                 const isOpen = open?.domain === dm.value && open.action === ac.value;
+                const isPicked = picked?.domain === dm.value && picked.action === ac.value;
                 return (
                   <td key={ac.value}>
                     {n ? (
                       <motion.button
-                        className={`cell ${isOpen ? 'on' : ''}`}
+                        className={`cell ${isOpen ? 'on' : ''} ${isPicked ? 'picked' : ''}`}
                         style={{ ['--d' as string]: n / max }}
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -203,7 +223,8 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
                         onPointerEnter={(e) => e.pointerType === 'mouse' && show(dm.value, ac.value, e.currentTarget)}
                         onPointerLeave={hideSoon}
                         onFocus={(e) => show(dm.value, ac.value, e.currentTarget)}
-                        onClick={(e) => show(dm.value, ac.value, e.currentTarget, true)}
+                        onClick={() => pick(dm.value, ac.value)}
+                        aria-expanded={isPicked}
                         aria-label={`${dm.label}, ${ac.label}: ${n} אפליקציות`}
                       >
                         <span className="cell-stack" aria-hidden>
@@ -403,5 +424,31 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
         })()}
       </AnimatePresence>
     </div>
+    {picked && pd && pa && (
+      <section className="cell-below" ref={below} aria-label={`${pd.label}, ${pa.label}`}>
+        <header className="cell-below-head">
+          <span className="mono dim">משבצת</span>
+          <strong>
+            {pd.label} · {pa.label}
+          </strong>
+          <span className="mono">{pickedApps.length} אפליקציות</span>
+          <button className="link" onClick={() => go({ domain: picked.domain, action: picked.action, app: null })}>
+            סינון התיק למשבצת
+          </button>
+          <button className="link" onClick={() => onAdd({ action: picked.action, domain: picked.domain })}>
+            הוספת אפליקציה כאן
+          </button>
+          <button className="line-x" onClick={() => setPicked(null)}>
+            סגירה
+          </button>
+        </header>
+        <div className="recent">
+          {pickedApps.map((x, i) => (
+            <AppCard key={x.id} app={x} sheet={sheets.get(x.id) ?? ''} category={pd.label} onOpen={() => go({ app: x.id })} index={i} compact still />
+          ))}
+        </div>
+      </section>
+    )}
+    </>
   );
 }

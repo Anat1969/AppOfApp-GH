@@ -939,3 +939,15 @@ mark.hl { color: var(--ink); font-weight: 600; padding: 0 2px; background: linea
 .line-x:hover { color: var(--ink); border-color: var(--ink); }
 .line-group { margin-top: 8px; }
 .line-group-head { color: var(--ink); background: rgba(23, 25, 28, 0.05); padding: 3px 6px; border-inline-start: 3px solid #d4af37; }
+
+/* Paging arrows on the app page, side by side (Anat, 2026-11-09) */
+.seq-arrows { margin-inline-start: auto; display: flex; align-items: center; gap: 6px; }
+.seq-arrows .mono { margin-inline-end: 6px; }
+.seq-arrows button { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line-2); border-radius: 0; background: #fff; color: var(--navy); font-size: 1.35rem; line-height: 1; transition: background 0.15s, color 0.15s, box-shadow 0.15s; }
+.seq-arrows button:hover:not(:disabled) { background: var(--navy); color: #fff; box-shadow: var(--shadow-1); }
+
+/* The apps of a clicked cell, under the map (Anat, 2026-11-09) */
+.matrix .cell.picked { outline: 3px solid #e8a317; outline-offset: 1px; }
+.cell-below { margin-top: 18px; padding: 14px 16px 18px; background: var(--paper); border: 1px solid var(--line-2); border-top: 3px solid #e8a317; box-shadow: var(--shadow-1); scroll-margin-top: calc(var(--bar-h) + 80px); }
+.cell-below-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 14px; }
+.cell-below-head strong { font-size: 1.15rem; font-weight: 700; }

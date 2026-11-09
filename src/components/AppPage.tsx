@@ -145,6 +145,21 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, onB
             </button>
           </>
         )}
+        {/* Paging arrows, side by side (Anat, 2026-11-09). In Hebrew the next app is to the left. They sit at the far end
+            of this row, away from the cover, which keeps its single action. */}
+        {seq.total > 1 && (
+          <nav className="seq-arrows" aria-label="דפדוף בין האפליקציות">
+            <span className="mono dim">
+              {seq.pos} מתוך {seq.total}
+            </span>
+            <button disabled={!seq.prev} onClick={() => seq.prev && onOpen(seq.prev.id)} aria-label={seq.prev ? `האפליקציה הקודמת: ${seq.prev.name}` : 'אין אפליקציה קודמת'} title={seq.prev ? `הקודמת: ${seq.prev.name}` : undefined}>
+              <span aria-hidden>→</span>
+            </button>
+            <button disabled={!seq.next} onClick={() => seq.next && onOpen(seq.next.id)} aria-label={seq.next ? `האפליקציה הבאה: ${seq.next.name}` : 'אין אפליקציה הבאה'} title={seq.next ? `הבאה: ${seq.next.name}` : undefined}>
+              <span aria-hidden>←</span>
+            </button>
+          </nav>
+        )}
       </div>
 
       <div className="app-hero">
