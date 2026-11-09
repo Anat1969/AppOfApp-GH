@@ -383,4 +383,11 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   Anat, 2026-11-04: in a municipal app her mark on the button is "A&I" only, without her name; the name is inside
   the menu as the editor ("עורכת האפליקציה"). Changing this is the first thing done when opening a municipal app.
   At the start of every build, ask her whose app it is.
+- CELL CLICK, SECTION 04, PAGING ARROWS (Anat, 2026-11-09): a click on a filled map cell opens all the apps of that row
+  and column as cards under the map, on the same page (`.cell-below` in `Matrix.tsx`; hover still shows the small window,
+  a second click or "סגירה" closes). Cards there use `<AppCard still>`: a card with a layout animation that is removed
+  inside a section stalls the section's exit and leaves the page blank. "סינתזות" and "שורות ועמודות" (`BeyondMap`) are
+  section 04 in the bar, "סינתזות ושורות חדשות" (`?sec=beyond`), not under the map. The app page has two paging arrows
+  side by side at the end of the crumbs row, away from the cover: next is the left arrow (Hebrew), with "N מתוך M".
+  These arrows are her explicit request and the one exception to "no arrows"; the named paging at the foot stays.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.
