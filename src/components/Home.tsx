@@ -35,17 +35,19 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
   // Added and updated are two lists (Anat, 2026-11-04): an app counts as updated only when it changed after the day it was added.
   const MONTH = 30 * 86_400_000;
   const added = useMemo(() => apps.filter((a) => Date.now() - createdOf(a) < MONTH).sort((a, b) => createdOf(b) - createdOf(a)).slice(0, 6), [apps]);
-  const updated = useMemo(
-    () =>
-      apps
-        .filter((a) => {
-          const u = time(a.updatedAt);
-          return Date.now() - u < MONTH && u - createdOf(a) > 86_400_000;
-        })
-        .sort((a, b) => time(b.updatedAt) - time(a.updatedAt))
-        .slice(0, 6),
-    [apps],
-  );
+  // Each app appears once in this band (Anat, 2026-11-09: the same app sat in both lists): an app already shown as
+  // added is not repeated as updated.
+  const updated = useMemo(() => {
+    const shown = new Set(added.map((a) => a.id));
+    return apps
+      .filter((a) => {
+        if (shown.has(a.id)) return false;
+        const u = time(a.updatedAt);
+        return Date.now() - u < MONTH && u - createdOf(a) > 86_400_000;
+      })
+      .sort((a, b) => time(b.updatedAt) - time(a.updatedAt))
+      .slice(0, 6);
+  }, [apps, added]);
 
   const q = route.q.trim();
   const expanded = [
