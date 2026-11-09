@@ -123,12 +123,24 @@ const browser = await chromium.launch();
   await page.goto(BASE);
   await page.waitForSelector('.card');
   ok(await page.locator('.hero h1').isVisible(), 'home hero renders');
-  ok((await page.locator('.grid .card').count()) === rows.length, `catalog shows all ${rows.length} apps`);
+  ok(await page.locator('.sec-bar').isVisible(), 'home sections sit in one bar');
+  ok((await page.locator('.recent-rows .recent-col').count()) === 2, 'added and updated are two rows');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.waitForSelector('.matrix');
+  await page.waitForTimeout(300);
+  ok(page.url().includes('sec=map'), 'the section is in the address');
   ok((await page.locator('.matrix tbody tr').count()) === 6, 'matrix has a row per domain');
   ok((await page.locator('.matrix .gap').count()) > 0, 'empty cells are shown as gaps');
+  const barY = await page.locator('.sec-bar').evaluate((el) => el.getBoundingClientRect().top);
+  await page.locator('.sec-bar button', { hasText: 'כל הגיליונות' }).click();
+  await page.waitForSelector('.grid .card');
+  ok((await page.locator('.grid .card').count()) === rows.length, `catalog shows all ${rows.length} apps`);
+  ok(Math.abs((await page.locator('.sec-bar').evaluate((el) => el.getBoundingClientRect().top)) - barY) < 2, 'the section bar does not move when the section changes');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.waitForSelector('.matrix');
   ok(await page.locator('ai-menu .logo').isVisible(), 'A&I logo button in the top bar');
   ok((await page.locator('.topbar').getByText('העתקת קישור', { exact: true }).count()) === 0 || !(await page.locator('.topbar >> text=העתקת קישור').first().isVisible()), 'no loose development buttons in the bar');
-  ok(await isEditorDevice(page), 'every device edits, no link needed');
+  ok(!(await isEditorDevice(page)), 'no edit mode item in the logo: editing happens in place');
   ok(await noHScroll(page), 'desktop home: no horizontal scroll');
   await page.locator('ai-menu .logo').click();
   ok((await page.locator('ai-menu a.item', { hasText: 'שיחת הפיתוח' }).getAttribute('href'))?.includes('claude.ai/code/session_'), 'dev chat item links to the session');
@@ -141,10 +153,31 @@ const browser = await chromium.launch();
 
   // matrix cell: domain x action
   await page.locator('.matrix .cell[aria-label^="תכנון עירוני, אבחון"]').click();
+  await page.waitForTimeout(300);
+  ok(await page.locator('.cell-pop').isVisible() && page.url().includes('sec=map'), 'a cell click keeps the map and opens its window');
+  await page.locator('.matrix .axis', { hasText: 'משחק ואימון' }).click();
+  ok((await page.locator('.matrix thead th.sorted').count()) === 1 && page.url().includes('sec=map'), 'a column header sorts the map in place');
+  await page.waitForSelector('.line-pop');
+  ok((await page.locator('.line-pop .line-head strong').textContent()) === 'משחק ואימון', 'a column header opens its apps on the same page');
+  await page.locator('.matrix tbody .axis', { hasText: 'תכנון עירוני' }).click();
+  await page.waitForTimeout(250);
+  ok((await page.locator('.line-pop .line-head strong').textContent()) === 'תכנון עירוני' && (await page.locator('.line-pop a.pop-name').count()) > 0 && page.url().includes('sec=map'), 'a row header lists the links of every app in the row');
+  ok((await page.locator('.line-pop a.pop-name[href*="ashdod-mitar-twin"]').count()) === 1, 'the row list links straight to the app');
+  await page.locator('.matrix tbody .axis', { hasText: 'תכנון עירוני' }).click();
+  await page.waitForTimeout(250);
+  ok((await page.locator('.line-pop').count()) === 0, 'a second click closes the line');
+  await page.locator('.matrix .axis', { hasText: 'משחק ואימון' }).click();
+  ok((await page.locator('.matrix thead th').count()) === 10, 'the map has the two new columns, distill and decide');
+  await page.locator('.matrix .cell[aria-label^="תכנון עירוני, אבחון"]').click();
+  await page.locator('.cell-pop .link', { hasText: 'סינון התיק למשבצת' }).click();
+  await page.waitForTimeout(400);
   ok(page.url().includes('action=diagnose') && page.url().includes('domain=urban'), 'matrix cell writes action and domain to the address');
   ok((await page.locator('.grid .card').count()) === 1, 'matrix cell narrows to the one app');
   await page.locator('.chip', { hasText: 'ניקוי הסינון' }).click();
   ok(!page.url().includes('action='), 'clearing removes all filters');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.waitForSelector('.matrix');
+  await page.waitForTimeout(300);
 
   // hover window over a filled cell: one app per line, name links to the app, sheet opens the page
   await page.mouse.move(5, 5);
@@ -167,17 +200,24 @@ const browser = await chromium.launch();
   await page.locator('.cell-pop .pop-sheet').click();
   ok(page.url().includes('app=app-4'), 'the sheet number opens the app page');
   await page.locator('.brand').click();
+  ok(!page.url().includes('?'), 'brand returns to a clean home on the first section');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.waitForSelector('.matrix');
+  await page.waitForTimeout(300);
 
   // empty cell: an idea, apps to build on, a prompt and an add action
   await page.locator('.matrix .gap').first().click();
   await page.waitForSelector('.cell-pop .pop-idea');
-  ok((await page.locator('.cell-pop .pop-idea h4').textContent())?.length > 2, 'an empty cell suggests an app');
+  ok((await page.locator('.cell-pop .pop-idea h4').first().textContent())?.length > 2, 'an empty cell suggests an app');
+  ok((await page.locator('.cell-pop .pop-idea').count()) >= 3, 'every cell offers several ideas');
+  ok((await page.locator('.cell-pop .idea-kind').allTextContents()).some((k) => /מיזוג|חיתוך|זיקוק/.test(k)), 'ideas include merges, intersections or distillations');
+  ok(await page.locator('.cell-pop .how-build').isVisible(), 'the window explains how an idea becomes an app');
   await page.waitForTimeout(300);
   await page.screenshot({ path: SHOTS + 'desktop-gap-idea.png' });
-  await page.locator('.cell-pop .ghost', { hasText: 'העתקת פרומפט' }).click();
+  await page.locator('.cell-pop .ghost', { hasText: 'העתקת פרומפט' }).first().click();
   const prompt = await page.evaluate(() => navigator.clipboard.readText());
-  ok(prompt.includes('anat-app-builder') && prompt.includes('uipro init'), 'the gap prompt for Claude Code is copied');
-  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).click();
+  ok(prompt.includes('anat-app-builder') && prompt.includes('uipro init') && prompt.includes('איך נולדת אפליקציה חדשה') && prompt.includes('שדרוג או אפליקציה חדשה'), 'the gap prompt for Claude Code is copied, with how to build');
+  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).first().click();
   ok((await page.locator('.dialog .connect').count()) === 0, 'no editor link field in the add form');
   ok((await page.locator('.dialog input').first().inputValue()).length > 2, 'the form itself opens right away, prefilled');
   await page.locator('.dialog .solid', { hasText: 'הוספה לתיק' }).click();
@@ -188,7 +228,8 @@ const browser = await chromium.launch();
   ok(await page.locator('.hero-add').isVisible(), 'a prominent add button on the home page');
 
   // facet filters combine
-  await page.locator('.matrix .axis', { hasText: 'משחק ואימון' }).click();
+  await page.goto(BASE + '/?action=play');
+  await page.waitForTimeout(400);
   ok((await page.locator('.grid .card').count()) === 2, 'action column filters to 2 apps');
   await page.locator('.filters-panel .chip', { hasText: 'תכנון עירוני' }).click();
   ok((await page.locator('.grid .card').count()) === 1, 'action + domain narrows to 1');
@@ -207,8 +248,8 @@ const browser = await chromium.launch();
   await page.fill('.search input', 'כלי');
   await page.keyboard.press('Escape');
   await page.fill('.search input', 'כלי');
-  await page.locator('.search input').blur();
-  await page.waitForTimeout(250);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.waitForTimeout(500);
   ok((await page.locator('.grid .card').count()) >= 4, '"כלי" finds diagnose and create apps');
   ok(await page.locator('.search-clear').isVisible(), 'a grey X appears once something is searched');
   await page.locator('.search-clear').click();
@@ -216,25 +257,25 @@ const browser = await chromium.launch();
   ok((await page.locator('.search input').inputValue()) === '' && !page.url().includes('q='), 'the X resets the search');
   ok((await page.locator('.search-clear').count()) === 0, 'the X hides when there is nothing to reset');
   await page.fill('.search input', 'כלי');
-  await page.locator('.search input').blur();
-  await page.waitForTimeout(250);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.waitForTimeout(500);
   ok(await page.locator('.expand-note').isVisible(), 'the expansion is explained');
   await page.fill('.search input', 'כלי מדידה');
-  await page.locator('.search input').blur();
-  await page.waitForTimeout(250);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.waitForTimeout(500);
   ok((await page.locator('.grid .card-name').allTextContents()).includes('פנג שואי'), 'the old name still finds the app');
   await page.fill('.search input', 'עיתון');
-  await page.locator('.search input').blur();
-  await page.waitForTimeout(250);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.waitForTimeout(500);
   ok((await page.locator('.grid .card-name').allTextContents()).includes('רדאר אקטואליה'), 'a hidden concept finds the app');
   ok((await page.locator('.card-why').first().textContent())?.includes('עיתון'), 'the card says why it was found');
   await page.fill('.search input', 'והעיתון');
-  await page.locator('.search input').blur();
-  await page.waitForTimeout(250);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.waitForTimeout(500);
   ok((await page.locator('.grid .card-name').allTextContents()).includes('רדאר אקטואליה'), 'Hebrew prefixes are stripped');
   await page.fill('.search input', 'תב"ע');
-  await page.locator('.search input').blur();
-  await page.waitForTimeout(250);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.waitForTimeout(500);
   ok((await page.locator('.grid .card').count()) >= 3, 'a domain synonym finds the domain');
   await page.fill('.search input', '');
 
@@ -271,6 +312,8 @@ const browser = await chromium.launch();
   ok(!page.url().includes('?'), 'brand returns to a clean home');
 
   // app page
+  await page.goto(BASE + '/?sec=all');
+  await page.waitForSelector('.grid .card');
   await page.locator('.grid .card-name', { hasText: 'זיקוק DNA' }).click();
   await page.waitForSelector('.app-page');
   ok(page.url().includes('app=app-1'), 'card opens ?app=app-1');
@@ -284,13 +327,18 @@ const browser = await chromium.launch();
   ok(btn && !/[←→]/.test(btn), `primary button has no arrows ("${btn}")`);
   ok((await page.locator('.app-links a[href*="github.com"]').count()) === 1, 'GitHub link shown');
   ok((await page.locator('.titleblock b').first().textContent())?.startsWith('A-'), 'sheet number in title block');
+  // share link with a picture: copies the portfolio's /s/<id> address, which serves the og: tags for WhatsApp
+  await page.evaluate(() => { window.__copied = ''; navigator.clipboard.writeText = async (t) => { window.__copied = t; }; });
+  await page.locator('.app-links .share-copy').click();
+  const shared = await page.evaluate(() => window.__copied);
+  ok(/^https:\/\/appofapp-gh\.vercel\.app\/s\/app-[\w-]+$/.test(shared), `share button copies the link with a picture (${shared})`);
   ok((await page.locator('.timeline li').count()) === 1, 'work log shown');
   await page.screenshot({ path: SHOTS + 'desktop-app.png' });
   // the cover has one action and says it on the frame; paging sits at the foot of the page and names where it goes
   ok((await page.locator('.app-visual a.cover').getAttribute('href')) === 'https://zikuk-dna.vercel.app/dna', 'cover links to the app itself');
   ok(await page.locator('.app-visual .cover-bar').isVisible(), 'cover says it opens the app without hover');
   ok((await page.locator('.app-visual .cover-host').textContent()) === 'zikuk-dna.vercel.app', 'cover shows the address it opens');
-  ok((await page.locator('.crumbs .ghost').count()) === 0 && (await page.locator('.app-visual button').count()) === 0, 'no paging buttons near the cover');
+  ok((await page.locator('.crumbs .ghost').count()) === 0 && (await page.locator('.app-visual button:not(.inline-edit)').count()) === 0, 'no paging buttons near the cover');
   ok(/מתוך \d+ · /.test((await page.locator('.seq-head').textContent()) ?? ''), 'paging says which list it pages through');
   const nextName = await page.locator('.seq-link.next b').textContent();
   await page.locator('.seq-link.next').click();
@@ -334,15 +382,29 @@ const browser = await chromium.launch();
   ok(await page.locator('.legend .legend-item').first().isVisible(), 'sorted column shows a colour legend');
   ok((await page.locator('td.updated.grouped').count()) === rows.length, 'update column coloured by group');
   await page.locator('thead button', { hasText: 'שם' }).click();
-  ok((await page.locator('tbody tr').first().textContent())?.includes('אדריכלית'), 'table sorts by name');
+  ok((await page.locator('tbody tr').first().locator('.name-field').inputValue()).includes('אדריכלית'), 'table sorts by name');
+  ok((await page.locator('thead th.sorted', { hasText: 'שם' }).count()) === 1, 'the sorted column header stands out');
+  ok((await page.locator('thead th .sort-arrows').count()) >= 12, 'every sortable column shows arrows');
+  ok(await page.evaluate(() => { const w = document.querySelector('.table-wrap'); return w.scrollWidth <= w.clientWidth + 1; }), 'the whole table fits the screen width');
+  ok((await page.locator('tbody img.plat').count()) >= 1, 'platform shown as an icon');
+  ok((await page.locator('tbody a.row-thumb').first().getAttribute('href'))?.startsWith('https://'), 'thumbnail next to the name opens the app');
+  ok((await page.locator('thead th').filter({ hasText: /^(Supabase|GitHub|API)$/ }).count()) === 0, 'column names in Hebrew');
+  await page.locator('thead button', { hasText: 'עודכן' }).click();
+  const dayColours = await page.evaluate(() => [...document.querySelectorAll('td.updated')].map((td) => [td.querySelector('b').textContent, td.style.getPropertyValue('--g')]));
+  const byDay = new Map();
+  for (const [d, c] of dayColours) byDay.set(d, [...(byDay.get(d) ?? []), c]);
+  const colourDays = new Map();
+  for (const [d, cs] of byDay) for (const c of cs) colourDays.set(c, new Set([...(colourDays.get(c) ?? []), d]));
+  ok([...byDay.values()].every((cs) => new Set(cs).size === 1) && byDay.size === Math.min(colourDays.size, byDay.size) && [...colourDays.values()].every((ds) => ds.size === 1 || byDay.size > 12), 'sorting by date gives one colour per day');
+  await page.locator('thead button', { hasText: 'שם' }).click();
   await page.locator('tbody .tag', { hasText: 'משחק' }).first().click();
   ok((await page.locator('tbody tr').count()) === 2, 'tag click filters the table');
   await page.locator('.filters .chip.on').click();
   await page.fill('.table-search', 'זיקוק');
   ok((await page.locator('tbody tr').count()) === 1, 'table search filters');
   await page.screenshot({ path: SHOTS + 'desktop-table.png' });
-  await page.locator('tbody .link.strong').first().click();
-  ok(page.url().includes('app=app-1') && !page.url().includes('view=table'), 'table name opens the app page');
+  await page.locator('tbody td:first-child .link').first().click();
+  ok(page.url().includes('app=app-1') && !page.url().includes('view=table'), 'table sheet number opens the app page');
 
   ok(errors.length === 0, `no console errors (${errors.join(' | ')})`);
   await context.close();
@@ -366,11 +428,11 @@ const browser = await chromium.launch();
   await page.locator('ai-menu .logo').click();
   await page.waitForTimeout(300);
   await page.screenshot({ path: SHOTS + 'desktop-menu-editor.png' });
-  await page.locator('ai-menu .item', { hasText: 'מצב עריכה' }).click();
-  await page.waitForTimeout(250);
-  ok((await page.locator('ai-menu .status').textContent()) === 'עריכה פעילה, שמירה אוטומטית', 'logo shows the editing state');
-  ok(await page.locator('.edit-light').isVisible(), 'edit mode lights the frame');
-  ok(await page.locator('.vocab').isVisible(), 'edit mode shows the vocabulary');
+  await page.keyboard.press('Escape');
+  ok((await page.locator('.edit-light').count()) === 0, 'no edit frame: there is no edit mode');
+  await page.locator('.sec-bar button', { hasText: 'מפת התחומים' }).click();
+  await page.locator('.vocab-toggle').click();
+  ok(await page.locator('.vocab').isVisible(), 'the vocabulary opens under the map');
   const firstDomain = page.locator('.vocab li').first();
   await firstDomain.locator('button', { hasText: 'שם' }).click();
   await page.waitForTimeout(200);
@@ -388,7 +450,7 @@ const browser = await chromium.launch();
 
   await page.goto(BASE + '/?app=app-1');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
-  await menu(page, 'מצב עריכה');
+  await page.locator('h1.app-title').click();
   await page.waitForSelector('.app-page.is-editing');
   await page.locator('.form label:has-text("שם בתפריט") input').fill('מחקר: זיקוק DNA 2');
   await page.waitForTimeout(1200);
@@ -396,6 +458,8 @@ const browser = await chromium.launch();
   ok(saved?.data?.name === 'מחקר: זיקוק DNA 2' && saved.id === 'app-1', 'editing the name saves the app (debounced)');
   ok(calls.filter((c) => c.action === 'save_app').length === 1, 'typing produces a single save');
 
+  await page.locator('.form .inline-edit', { hasText: 'סיום' }).click();
+  await page.locator('.inline-edit', { hasText: 'שינוי סיווג' }).click();
   await page.locator('.facet-edit .chip', { hasText: 'השראה' }).click();
   await page.locator('.facet-edit .chip', { hasText: 'קיימות וטבע' }).click();
   await page.locator('.facet-edit .kw-add input').fill('בדיקה, זיקוק');
@@ -404,6 +468,7 @@ const browser = await chromium.launch();
   const f = lastOf(calls, 'save_app')?.data;
   ok(f?.action === 'inspire' && f?.domains?.includes('sustainability') && f?.keywords?.includes('זיקוק'), 'action, domain and keywords saved');
 
+  await page.locator('.p-problem .inline-edit').click();
   const ta = page.locator('.p-problem textarea');
   await ta.fill('רעיונות נשארים מופשטים.');
   await ta.evaluate((el) => el.setSelectionRange(8, 14));
@@ -411,19 +476,31 @@ const browser = await chromium.launch();
   await page.waitForTimeout(1100);
   ok(lastOf(calls, 'save_app')?.data?.problem === 'רעיונות **נשארים** מופשטים.', `the emphasis button wraps the selection (${lastOf(calls, 'save_app')?.data?.problem})`);
 
+  await page.locator('.inline-edit', { hasText: 'יומן העבודה' }).click();
   await page.locator('.log-add input').fill('בדיקת יומן');
+  await page.locator('.log-add .solid').click();
+  await page.locator('.inline-edit', { hasText: 'הערות' }).click();
+  await page.locator('.notes .ghost', { hasText: 'הוספת הערה' }).click();
+  await page.waitForTimeout(1100);
+  const s2 = lastOf(calls, 'save_app');
+  ok(s2?.data?.changeLog?.[0]?.text === 'בדיקת יומן', 'work log entry saved');
+  ok(s2?.data?.redNotes?.length === 2, 'note added and saved');
+  await page.locator('.p-problem .inline-edit').click();
+  /*
   await page.locator('.log-add .solid').click();
   await page.locator('.notes .ghost', { hasText: 'הוספת הערה' }).click();
   await page.waitForTimeout(1100);
   const s2 = lastOf(calls, 'save_app');
   ok(s2?.data?.changeLog?.[0]?.text === 'בדיקת יומן', 'work log entry saved');
   ok(s2?.data?.redNotes?.length === 2, 'note added and saved');
+  */
 
   await page.locator('.p-problem .link', { hasText: 'ניסוח אוטומטי' }).click();
   await page.waitForTimeout(300);
   ok(lastOf(calls, 'generate')?.name?.includes('זיקוק'), 'generate request sent');
   ok((await page.locator('.p-problem textarea').inputValue()) === 'בעיה **חדשה**.', 'generated text fills the field');
 
+  await page.locator('.cover-change .inline-edit').click();
   await page.locator('.app-visual input[type=file]').setInputFiles({ name: 'c.png', mimeType: 'image/png', buffer: png });
   await page.waitForTimeout(600);
   ok(/^app-1\/cover-\d+\.png$/.test(lastOf(calls, 'sign_upload')?.path ?? ''), 'upload asks for a signed path');
@@ -431,7 +508,9 @@ const browser = await chromium.launch();
   await page.waitForTimeout(1000);
   ok(lastOf(calls, 'save_app')?.data?.coverImage?.includes('/aoa-media/app-1/cover-'), 'new cover saved on the app');
   ok(await page.evaluate(() => [...document.querySelectorAll('.app-page input, .app-page textarea')].every((e) => e.getAttribute('autocomplete') === 'off')), 'no browser autofill in the editing fields');
+  await page.locator('.inline-edit', { hasText: 'עריכת קישורים' }).click();
   ok(await page.locator('.link-preview').isVisible(), 'the link field shows where the cover and the button go');
+  await page.locator('.cover-change .inline-edit').click();
   // a screenshot pasted anywhere on the page (nothing focused) becomes the cover, once, even when pasted twice fast
   const signsBefore = calls.filter((c) => c.action === 'sign_upload').length;
   await page.evaluate(async (b64) => {
@@ -448,13 +527,26 @@ const browser = await chromium.launch();
   ok(calls.filter((c) => c.action === 'sign_upload').length === signsBefore + 1, 'paste anywhere uploads one copy');
   await page.screenshot({ path: SHOTS + 'editor-app.png', fullPage: true });
 
+  // from the phone (tools bank, tool 2): a QR code to the phone page, and the new cover arrives here on its own
+  // test covers are 64px wide, so the tools overflow the tiny frame; a real cover is checked in phone-qr.png
+  await page.locator('.app-visual .cover-phone').dispatchEvent('click');
+  await page.waitForSelector('.phone-qr svg');
+  ok((await page.locator('.phone-url a').getAttribute('href'))?.includes('app=app-1') && (await page.locator('.phone-url a').getAttribute('href'))?.includes('shoot=1'), 'phone: the QR leads to the phone page of this app');
+  ok(await page.locator('.phone-wait').isVisible(), 'phone: the computer says it is waiting');
+  await page.screenshot({ path: SHOTS + 'phone-qr.png' });
+  const oldCover = rows[0].data.coverImage;
+  rows[0].data.coverImage = 'https://ktqmwpbzcnzkhjskqisy.supabase.co/storage/v1/object/public/aoa-media/app-1/cover-phone.jpg';
+  await page.waitForSelector('.phone-qr', { state: 'detached', timeout: 9000 }).catch(() => {});
+  ok((await page.locator('.app-visual .cover img').getAttribute('src'))?.endsWith('cover-phone.jpg'), 'phone: the new cover shows on the computer without reloading');
+  rows[0].data.coverImage = oldCover;
+
   // add from a gap idea: the dialog is prefilled
-  await page.goto(BASE + '/');
+  await page.goto(BASE + '/?sec=map');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
   await page.locator('.matrix .gap').first().click();
   await page.waitForSelector('.cell-pop .pop-idea');
-  const ideaTitle = await page.locator('.cell-pop .pop-idea h4').textContent();
-  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).click();
+  const ideaTitle = await page.locator('.cell-pop .pop-idea h4').first().textContent();
+  await page.locator('.cell-pop .solid', { hasText: 'הוספה לתיק מהרעיון' }).first().click();
   ok((await page.locator('.dialog input').first().inputValue()) === ideaTitle, 'add dialog is prefilled from the idea');
   ok((await page.locator('.dialog .chip.on').count()) === 2, 'action and domain of the cell are preselected');
   await page.keyboard.press('Escape');
@@ -472,35 +564,49 @@ const browser = await chromium.launch();
   ok(added?.data?.action === 'diagnose' && added?.data?.domains?.includes('urban'), 'new app carries its classification');
 
   // delete it
-  await page.locator('.danger .ghost').click();
+  ok((await page.locator('.danger .ghost').count()) === 0, 'no loose delete button on the app page');
+  await page.locator('ai-menu .logo').click();
+  const lastItem = page.locator('ai-menu .group').last().locator('.item').last();
+  ok((await lastItem.textContent())?.includes('ביטול האפליקציה'), 'remove app is the last item in the A&I menu');
+  ok((await lastItem.evaluate((el) => getComputedStyle(el).color)) === 'rgb(179, 38, 30)', 'remove app item is red');
+  await page.screenshot({ path: SHOTS + 'menu-remove.png' });
+  await lastItem.click();
+  const confirmBtn = page.locator('.dialog .danger-solid');
+  ok(await confirmBtn.isDisabled(), 'remove is locked until the name is typed');
+  await page.locator('.remove-app input').fill('אפליקציה');
+  ok(await confirmBtn.isDisabled(), 'a partial name keeps it locked');
+  ok(!lastOf(calls, 'delete_app'), 'nothing deleted before confirming');
+  await page.locator('.remove-app input').fill('אפליקציה בדיקה');
+  await page.screenshot({ path: SHOTS + 'remove-dialog.png' });
+  await confirmBtn.click();
   await page.waitForTimeout(400);
   ok(lastOf(calls, 'delete_app')?.id === added.id, 'delete sends delete_app');
   ok(!page.url().includes('app='), 'after delete returns home');
+  await page.locator('.toast-act', { hasText: 'שחזור' }).click();
+  await page.waitForTimeout(400);
+  ok(lastOf(calls, 'restore_app')?.id === added.id, 'restore from the toast sends restore_app');
 
-  // table edit
+  // table edit: no edit mode, every cell is a field that saves at once (Anat, 2026-11-04)
   await page.goto(BASE + '/?view=table');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
-  await menu(page, 'מצב עריכה');
-  const purpose = page.locator('tbody tr').filter({ has: page.locator('input[aria-label="שם האפליקציה"][value*="שישה כובעי"]') }).locator('input[aria-label=purpose]');
+  ok((await page.locator('.edit-light').count()) === 0, 'the table edits without edit mode');
+  const purpose = page.locator('tbody tr').filter({ has: page.locator('input.name-field[value*="שישה כובעי"]') }).locator('input[aria-label^="מטרה"]');
   await purpose.fill('משחק חשיבה');
-  await purpose.blur();
-  await page.waitForTimeout(1000);
+  await purpose.press('Enter');
+  await page.waitForTimeout(1200);
   ok(lastOf(calls, 'save_app')?.data?.purpose === 'משחק חשיבה', 'table cell edit saves');
-  const nameInput = page.locator('input[aria-label="שם האפליקציה"]').first();
-  const oldName = await nameInput.inputValue();
+  const nameInput = page.locator('tbody tr').filter({ has: page.locator('input.name-field[value*="שישה כובעי"]') }).locator('input.name-field');
   await nameInput.fill('חשיבה: שישה כובעים');
   await nameInput.press('Enter');
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(1200);
   const renamedSave = lastOf(calls, 'save_app')?.data;
   ok(renamedSave?.name === 'חשיבה: שישה כובעים' && renamedSave?.originalName, 'table rename saves the name and keeps the old one searchable');
-  await page.locator('tbody tr').filter({ has: page.locator('input[value*="חשיבה: שישה"]') }).locator('button', { hasText: 'פתיחה' }).click();
+  await page.screenshot({ path: SHOTS + 'desktop-table-full.png' });
+  await page.locator('tbody tr').filter({ has: page.locator('input[value*="חשיבה: שישה"]') }).locator('td:first-child .link').click();
   await page.waitForTimeout(800);
-  const shown = [await page.title(), ...(await page.locator('.app-page input').evaluateAll((els) => els.map((e) => e.value)))].join(' | ');
-  ok(shown.includes('חשיבה: שישה כובעים'), 'the new name shows on the app page (' + shown.slice(0, 80) + ')');
+  ok((await page.locator('.app-title').textContent())?.includes('חשיבה: שישה כובעים') || (await page.title()).includes('חשיבה: שישה כובעים'), 'the new name shows on the app page');
   await page.goto(BASE + '/?view=table');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
-  await menu(page, 'מצב עריכה');
-  void oldName;
 
   // bulk
   await menu(page, 'ניסוח תוכן לכל');
@@ -529,8 +635,8 @@ const browser = await chromium.launch();
   ok(lb && lb.x >= 0 && lb.x + lb.width <= 391 && (await noHScroll(page)), 'mobile live search fits the screen');
   await page.screenshot({ path: SHOTS + 'mobile-live-search.png' });
   await page.fill('.search input', '');
-  await page.locator('.search input').blur();
-  await page.waitForTimeout(250);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.waitForTimeout(500);
   await page.screenshot({ path: SHOTS + 'mobile-home.png' });
   await page.goto(BASE + '/?app=app-1');
   await page.waitForSelector('.app-page');
@@ -546,13 +652,220 @@ const browser = await chromium.launch();
   const box = await page.locator('ai-menu .panel').boundingBox();
   ok(box && box.x >= 0 && box.x + box.width <= 391, `mobile menu fits the screen (${JSON.stringify(box)})`);
   await page.screenshot({ path: SHOTS + 'mobile-menu.png' });
-  await page.locator('ai-menu .item', { hasText: 'מצב עריכה' }).click();
-  ok(await noHScroll(page), 'mobile editor: no horizontal scroll');
+  await page.keyboard.press('Escape');
   await page.goto(BASE + '/?app=app-1');
   await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 1);
-  await menu(page, 'מצב עריכה');
+  await page.locator('.inline-edit', { hasText: 'עריכת קישורים' }).click();
   ok(await noHScroll(page), 'mobile app editing: no horizontal scroll');
   await page.screenshot({ path: SHOTS + 'mobile-edit.png', fullPage: true });
+  await context.close();
+}
+
+// ---------- live guide (מדריך חי): record, share as a link, play ----------
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  await setup(context, []);
+  const page = await context.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(String(e)));
+  await page.goto(BASE + '/');
+  await page.waitForSelector('.card');
+  await page.waitForFunction(() => window.AIDemo, null, { timeout: 10000 });
+  await page.locator('ai-menu .logo').click();
+  ok((await page.locator('ai-menu .item', { hasText: 'סרטון הדגמה' }).count()) === 0, 'demo: no "סרטון הדגמה" in the logo when this page has no video');
+  await page.locator('ai-menu .item', { hasText: 'מדריך חי' }).click();
+  await page.waitForFunction(() => window.AIGuide);
+  ok(await page.locator('ai-guide-layer .dock h2').isVisible(), 'guide: A&I item opens the live guide panel');
+  await page.screenshot({ path: SHOTS + 'guide-panel.png' });
+  await page.locator('ai-guide-layer button', { hasText: 'התחלת הקלטה' }).click();
+  ok(await page.locator('ai-guide-layer .rec').isVisible(), 'guide: recording bar shows');
+  await page.locator('.topbar').getByText('טבלה', { exact: true }).click();
+  await page.waitForSelector('table');
+  await page.locator('.table-search').fill('גינות');
+  await page.locator('.table-search').press('Tab');
+  await page.locator('.topbar').getByText('מפה', { exact: true }).click();
+  await page.waitForTimeout(200);
+  const n = await page.evaluate(() => JSON.parse(sessionStorage.getItem('ai-guide-rec')).s.length);
+  ok(n === 3, `guide: three actions became three steps (${n})`);
+  await page.screenshot({ path: SHOTS + 'guide-recording.png' });
+  await page.locator('ai-guide-layer button', { hasText: 'סיום ועריכה' }).click();
+  ok((await page.locator('ai-guide-layer .steps li').count()) === 3, 'guide: editor lists the steps');
+  ok((await page.locator('ai-guide-layer .steps input').first().inputValue()).includes('טבלה'), 'guide: step text names the button');
+  await page.locator('ai-guide-layer .title input').fill('איך מסננים בטבלה');
+  await page.screenshot({ path: SHOTS + 'guide-edit.png' });
+  await page.locator('ai-guide-layer button', { hasText: 'שמירה והעתקת קישור' }).click();
+  const link = await page.evaluate(() => window.AIGuide.link(JSON.parse(localStorage.getItem('ai-guides'))[0]));
+  ok(link.includes('#aig='), 'guide: the guide is carried in the link');
+
+  const viewer = await context.newPage();
+  viewer.on('pageerror', (e) => errs.push(String(e)));
+  await viewer.goto(link);
+  await viewer.waitForSelector('ai-guide-layer .bubble', { timeout: 8000 });
+  await viewer.waitForSelector('ai-guide-layer .ring', { timeout: 8000 });
+  ok((await viewer.locator('ai-guide-layer .bubble .say').textContent()).includes('טבלה'), 'guide link: first step bubble names the button');
+  ok(!(await viewer.evaluate(() => location.hash.includes('aig='))), 'guide link: the address is cleaned after reading');
+  const ring = await viewer.locator('ai-guide-layer .ring').boundingBox();
+  const btn = await viewer.locator('.topbar').getByText('טבלה', { exact: true }).boundingBox();
+  ok(ring && btn && ring.x <= btn.x && ring.x + ring.width >= btn.x + btn.width, 'guide link: the ring lights the real button');
+  await viewer.screenshot({ path: SHOTS + 'guide-play.png' });
+  await viewer.locator('.topbar').getByText('טבלה', { exact: true }).click();
+  await viewer.waitForFunction(() => document.querySelector('ai-guide-layer')?.shadowRoot.querySelector('.bubble .mono')?.textContent.includes('02'));
+  ok(true, 'guide link: clicking the lit button moves to step 2');
+  await viewer.locator('.table-search').fill('גינות');
+  await viewer.locator('.table-search').press('Tab');
+  await viewer.waitForFunction(() => document.querySelector('ai-guide-layer')?.shadowRoot.querySelector('.bubble .mono')?.textContent.includes('03'));
+  ok(true, 'guide link: typing in the field moves to step 3');
+  await viewer.locator('.topbar').getByText('מפה', { exact: true }).click();
+  await viewer.waitForFunction(() => document.querySelector('ai-guide-layer')?.shadowRoot.querySelector('.bubble .say')?.textContent.includes('הושלם'));
+  ok(true, 'guide link: last step ends the guide');
+  await viewer.setViewportSize({ width: 390, height: 800 });
+  ok(await noHScroll(viewer), 'guide: mobile, no horizontal scroll');
+  ok(errs.length === 0, `guide: no page errors (${errs.join(' | ')})`);
+  await context.close();
+}
+
+// ---------- demo video (סרטון הדגמה): home button, player with speed, settings in the A&I menu ----------
+{
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const calls = [];
+  await setup(context, calls);
+  const demo = { src: 'https://ktqmwpbzcnzkhjskqisy.supabase.co/storage/v1/object/public/aoa-media/x/demo.mp4', poster: '', duration: 42, speed: 1, whole: true, at: [BASE + '/'] };
+  // Registered after setup, so it answers first: the demo query, and the record that holds it.
+  await context.route(/\/rest\/v1\/aoa_apps\?select=(id,demo|data&id=eq\.app-0)/, (r) => {
+    const u = decodeURIComponent(r.request().url());
+    if (u.includes('select=id,demo')) return r.fulfill({ json: u.includes(BASE + '/') ? [{ id: 'app-0', demo }] : [] });
+    return r.fulfill({ json: [{ data: { ...rows[0].data, demo } }] });
+  });
+  const page = await context.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(String(e)));
+  await page.goto(BASE + '/');
+  await page.waitForSelector('.card');
+  const launch = page.locator('.hero-demo aoa-demo .launch');
+  await launch.waitFor({ timeout: 10000 });
+  ok(await launch.isVisible(), 'demo: the home page shows the demo button in the hero slot');
+  ok((await launch.innerText()).includes('0:42'), 'demo: the button says the length');
+  await page.screenshot({ path: SHOTS + 'demo-home.png' });
+  await launch.click();
+  ok(await page.locator('aoa-demo .veil video').isVisible(), 'demo: the button opens the player');
+  await page.keyboard.press('Escape');
+  ok((await page.locator('aoa-demo .veil').count()) === 0, 'demo: Escape closes the player');
+  // Sharing is a trial on one app: without demo.share the player stays as it was.
+  await launch.click();
+  ok((await page.locator('aoa-demo .bar .ctl', { hasText: 'שיתוף' }).count()) === 0, 'demo: no share button when demo.share is not set');
+  await page.keyboard.press('Escape');
+  demo.share = { text: 'בדיקה' };
+  await page.evaluate(() => window.AIDemo.reload());
+  await launch.click();
+  await page.locator('aoa-demo .bar .ctl', { hasText: 'שיתוף' }).click();
+  const nets = await page.locator('aoa-demo .nets a').evaluateAll((as) => as.map((a) => [a.textContent, decodeURIComponent(a.href)]));
+  ok(['וואטסאפ', 'פייסבוק', 'לינקדאין', 'X', 'טלגרם', 'מייל'].every((n) => nets.some((x) => x[0] === n)), 'demo: share lists WhatsApp, Facebook, LinkedIn, X, Telegram and e-mail');
+  ok(nets.every(([, h]) => h.includes('?aoa-demo=1')), 'demo: every shared link opens the player (?aoa-demo=1)');
+  await page.screenshot({ path: SHOTS + 'demo-share.png' });
+  await page.keyboard.press('Escape');
+  delete demo.share;
+  await page.locator('.topbar').getByText('טבלה', { exact: true }).click();
+  await page.waitForSelector('.table-wrap');
+  ok((await page.locator('aoa-demo .launch').count()) === 0, 'demo: no button outside the home page');
+  await page.locator('.topbar').getByText('מפה', { exact: true }).click();
+  await page.locator('ai-menu .logo').click();
+  await page.locator('ai-menu .item', { hasText: 'סרטון הדגמה' }).click();
+  const sum = page.locator('aoa-demo .panel .sum');
+  await sum.waitFor({ timeout: 10000 });
+  ok((await sum.innerText()).includes('0:42'), 'demo: the A&I item opens the settings with the length');
+  await page.locator('aoa-demo .panel .chip', { hasText: '×2' }).click();
+  ok((await sum.innerText()).includes('0:21'), 'demo: speed ×2 with the whole story makes it 0:21');
+  await page.screenshot({ path: SHOTS + 'demo-panel.png' });
+  await page.locator('aoa-demo .panel .solid', { hasText: 'שמירה' }).click();
+  await page.waitForFunction(() => document.querySelector('aoa-demo .panel, aoa-demo')
+    && [...document.querySelectorAll('aoa-demo')].some((h) => h.shadowRoot.querySelector('.st')?.textContent.startsWith('נשמר')));
+  const saved = calls.find((c) => c.action === 'save_app');
+  ok(saved && saved.id === 'app-0' && saved.data.demo.speed === 2 && saved.data.demo.length === 21 && saved.data.name === rows[0].data.name,
+    'demo: save keeps the record and stores speed 2 and length 21');
+  await page.setViewportSize({ width: 390, height: 800 });
+  ok(await noHScroll(page), 'demo: mobile, no horizontal scroll');
+  ok(errs.length === 0, `demo: no page errors (${errs.join(' | ')})`);
+  await context.close();
+}
+
+// ---------- from the phone: the phone page ----------
+{
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const calls = [];
+  await setup(context, calls);
+  const page = await context.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  await page.goto(BASE + '/?app=app-1&shoot=1');
+  await page.waitForSelector('.shoot-name');
+  ok((await page.locator('.shoot-name').textContent()) === rows[0].data.name, 'phone page: names the app it shoots for');
+  ok((await page.locator('.shoot input[type=file]').getAttribute('capture')) === 'environment', 'phone page: opens the back camera');
+  await page.locator('.shoot input[type=file]').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: png });
+  await page.waitForSelector('.shoot-photo');
+  await page.locator('.shoot-big', { hasText: 'שמירה כתמונת שער' }).click();
+  await page.waitForSelector('.shoot-ok');
+  const saved = lastOf(calls, 'save_app');
+  ok(/^app-1\/cover-\d+\./.test(lastOf(calls, 'sign_upload')?.path ?? ''), 'phone page: uploads under the app');
+  ok(saved?.id === 'app-1' && saved.data.coverImage.includes('/aoa-media/app-1/cover-') && saved.data.name === rows[0].data.name, 'phone page: saves the cover and keeps the record');
+  ok(saved?.data.changeLog?.[0]?.text.includes('מהטלפון'), 'phone page: writes the work log');
+  ok(await noHScroll(page), 'phone page: no horizontal scroll');
+  await page.screenshot({ path: SHOTS + 'phone-shoot.png' });
+  await page.goto(BASE + '/?app=missing&shoot=1');
+  await page.waitForSelector('.shoot-insight');
+  ok((await page.locator('.shoot-main').textContent()).includes('סרקי את הקוד החדש'), 'phone page: a wrong link says what to do');
+  ok(errs.length === 0, `phone page: no page errors (${errs.join(' | ')})`);
+  await context.close();
+}
+
+// ---------- "פתיחה בטלפון" in the A&I menu (trial: the portfolio only) ----------
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+  await setup(context, []);
+  await context.route(/cdn\.jsdelivr\.net\/npm\/qrcode-generator/, (r) => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(new URL('../node_modules/qrcode-generator/qrcode.js', import.meta.url)) }));
+  const page = await context.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  await page.goto(BASE + '/?app=app-1');
+  await page.waitForFunction(() => document.querySelector('ai-menu')?.items?.length > 0);
+  await page.locator('ai-menu .logo').click();
+  ok((await page.locator('ai-menu .item', { hasText: 'פתיחה בטלפון' }).count()) === 1, 'phone QR: the item is in the portfolio menu');
+  await page.locator('ai-menu .item', { hasText: 'פתיחה בטלפון' }).click();
+  await page.waitForFunction(() => document.querySelector('ai-menu').shadowRoot.querySelector('.phone svg'), null, { timeout: 8000 }).catch(() => {});
+  ok(await page.evaluate(() => !!document.querySelector('ai-menu').shadowRoot.querySelector('.phone .code svg')), 'phone QR: the code shows inside the menu');
+  ok((await page.evaluate(() => document.querySelector('ai-menu').shadowRoot.querySelector('.phone code').textContent)).includes('app=app-1'), 'phone QR: it carries the page state');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: SHOTS + 'menu-phone-qr.png' });
+  // any other app: the same element without the attribute keeps the menu as it was
+  const other = await page.evaluate(async () => {
+    const el = document.createElement('ai-menu');
+    document.body.append(el);
+    el.openMenu();
+    const has = [...el.shadowRoot.querySelectorAll('.item')].some((b) => b.textContent.includes('פתיחה בטלפון'));
+    el.remove();
+    return has;
+  });
+  ok(other === false, 'phone QR: apps without the trial attribute are unchanged');
+  ok(errs.length === 0, `phone QR: no page errors (${errs.join(' | ')})`);
+  await context.close();
+}
+
+// ---------- shared streets layer ----------
+{
+  const context = await browser.newContext();
+  await context.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+  await context.route(/\/rest\/v1\//, (r) => r.fulfill({ json: [] }));
+  const page = await context.newPage();
+  await page.goto(BASE + '/');
+  const res = await page.evaluate(async (base) => {
+    await new Promise((ok, no) => { const s = document.createElement('script'); s.src = base + '/streets.js'; s.onload = ok; s.onerror = no; document.head.append(s); });
+    const a = await window.AIStreets.locate('שדרות הרצל 12, אשדוד');
+    const b = await window.AIStreets.nearest(31.812281, 34.644832);
+    const g = await window.AIStreets.load();
+    return { a, b, n: g.features.length };
+  }, BASE);
+  ok(res.n === 2991, `streets: the shared layer serves all segments (${res.n})`);
+  ok(res.a?.name === 'שד הרצל' && Math.abs(res.a.lat - 31.79) < 0.03, `streets: an address finds its street (${JSON.stringify(res.a)})`);
+  ok(res.b?.name === "ז'בוטינסקי" && res.b.quarter === 'רובע א', 'streets: a point finds its street and quarter');
   await context.close();
 }
 

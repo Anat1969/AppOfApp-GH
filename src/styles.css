@@ -171,6 +171,10 @@ img { display: block; max-width: 100%; }
 .hero-add { font-size: 1.1rem; padding: 0.95rem 1.6rem; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, var(--shadow-3); }
 .hero-add:hover:not(:disabled) { transform: translateY(-2px); }
 .hero-cta .dim { max-width: 34ch; font-size: 0.92rem; }
+/* Demo video button (public/demo.js): the second focus of the hero, on the empty side. */
+.hero-demo { position: absolute; inset-inline-end: 0; bottom: 56px; }
+.hero-demo:empty { display: none; }
+@media (max-width: 1100px) { .hero-demo { position: static; margin-top: 28px; } }
 .card-why { font-size: 0.82rem; color: var(--navy); margin-top: 4px; }
 .live-why { font-size: 0.78rem; color: var(--navy); }
 .connect { display: grid; gap: 6px; padding: 12px; border: 1px dashed var(--ink-2); background: #fff; }
@@ -468,8 +472,13 @@ textarea { resize: vertical; line-height: 1.6; }
 .seq-link:hover { border-color: var(--navy); background: #fff; }
 .seq-link:hover b { color: var(--navy); }
 .seq-link:hover .arrow { color: var(--navy); }
-.danger { margin-top: 32px; display: flex; justify-content: flex-end; }
-.danger .ghost { color: var(--warn); border-color: rgba(138, 59, 46, 0.4); }
+.remove-warn { margin: 0; padding: 12px 14px; border-inline-start: 4px solid #b3261e; background: #fbe9e7; color: #5c1410; }
+.remove-app input:focus { outline: 2px solid #b3261e; outline-offset: 1px; }
+.remove-actions { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.danger-solid { border: 0; border-radius: 0; padding: 0.55rem 1rem; background: #b3261e; color: #fff; font-weight: 600; }
+.danger-solid:hover:not(:disabled) { background: #8f1d17; }
+.danger-solid:disabled { opacity: 0.4; cursor: not-allowed; }
+.toast-act { margin-inline-start: 12px; border: 1px solid rgba(244, 243, 240, 0.6); border-radius: 0; background: none; color: inherit; padding: 2px 10px; font-weight: 600; pointer-events: auto; }
 .warn { margin: -6px 0 0; color: var(--warn); font-size: 0.9rem; }
 
 /* ---------- table ---------- */
@@ -674,3 +683,262 @@ td.name-edit { display: flex; align-items: center; gap: 8px; min-width: 220px; }
 .link-preview .mono { font-size: 0.72rem; color: var(--ink-2); word-break: break-all; direction: ltr; text-align: right; }
 .link-warn { color: var(--p-red-ink); background: var(--p-red-wash); border-inline-start: 3px solid var(--p-red); padding: 6px 10px; font-size: 0.85rem; line-height: 1.5; }
 .links-form .form.two > label { align-self: start; }
+
+/* ===== From the phone to the screen (2026-11-03, tools bank tool 2) ===== */
+.cover-tools .cover-phone { background: var(--navy); color: #fff; border-color: var(--navy); }
+.cover-tools .cover-phone:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow-1); }
+.phone-link { display: grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: center; }
+.phone-qr { background: #fff; padding: 8px; box-shadow: var(--shadow-1); border: 1px solid var(--line); line-height: 0; }
+.phone-qr svg { width: 100%; height: auto; display: block; }
+.phone-steps { margin: 0; padding-inline-start: 20px; display: grid; gap: 10px; line-height: 1.6; }
+.phone-steps b { color: var(--ink); }
+.phone-wait { color: var(--navy); margin: 0; animation: phone-pulse 1.6s ease-in-out infinite; }
+.phone-url { margin: 0; font-size: 0.8rem; overflow-wrap: anywhere; color: var(--dim); }
+.phone-url a { color: var(--navy); direction: ltr; unicode-bidi: isolate; }
+.phone-note { margin: 0; font-size: 0.72rem; color: var(--dim); }
+@keyframes phone-pulse { 50% { opacity: 0.45; } }
+@media (max-width: 560px) { .phone-link { grid-template-columns: 1fr; } .phone-qr { width: 200px; justify-self: center; } }
+
+.shoot { min-height: 100dvh; background: #fff; color: var(--ink); display: grid; grid-template-rows: auto 1fr; }
+.shoot-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bar-navy, var(--navy)); color: #fff; border-bottom: 3px solid var(--amber, #e0a526); }
+.shoot-home { color: #fff; font-weight: 600; text-decoration: none; }
+.shoot-bar .mono { font-size: 0.74rem; opacity: 0.85; }
+.shoot-main { padding: 24px 16px 40px; display: grid; gap: 14px; align-content: start; max-width: 520px; width: 100%; margin: 0 auto; }
+.shoot-label { color: var(--dim); font-size: 0.74rem; }
+.shoot-name { font-size: 1.9rem; font-weight: 300; line-height: 1.15; margin: 0; }
+.shoot-insight { font-size: 1.2rem; font-weight: 500; margin: 6px 0; }
+.shoot-ok { color: var(--ok); }
+.shoot-note { color: var(--mid); margin: 0; font-size: 0.88rem; }
+.shoot-error { color: var(--warn); margin: 0; }
+.shoot-big { width: 100%; min-height: 56px; font-size: 1.1rem; border-radius: 0; }
+.shoot-row { display: grid; gap: 10px; }
+.shoot-photo { width: 100%; max-height: 56vh; object-fit: contain; background: var(--bg); box-shadow: var(--shadow-2); }
+.shoot-now { margin: 10px 0 0; display: grid; gap: 6px; }
+.shoot-now img { width: 100%; max-height: 30vh; object-fit: contain; background: var(--bg); opacity: 0.85; }
+.shoot-now figcaption { font-size: 0.72rem; color: var(--dim); }
+@media (prefers-reduced-motion: reduce) { .phone-wait { animation: none; } }
+
+/* Home in three sections, each a screen of its own (Anat, 2026-11-04): what is new (added and updated apart), the map
+   whole inside the screen, and all the sheets. */
+.band-screen { min-height: calc(100vh - var(--bar-h) - 24px); scroll-margin-top: calc(var(--bar-h) + 8px); padding-top: 8px; }
+.band-screen + .band-screen { border-top: 3px double var(--ink); padding-top: 28px; }
+.recent-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.recent-col h3 { margin: 0 0 14px; font-size: 1.1rem; font-weight: 500; display: flex; align-items: baseline; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+.recent-col .recent { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
+.band-map .band-head { margin-bottom: 10px; padding-bottom: 8px; }
+.band-map .matrix { border-spacing: 4px; min-width: 0; table-layout: fixed; }
+.band-map .matrix thead th:first-child { width: 150px; }
+.band-map .matrix td { height: max(26px, calc((100vh - var(--bar-h) - 360px) / var(--rows, 10))); }
+.band-map .matrix thead th { padding-top: 2px; padding-bottom: 2px; }
+.band-map .matrix tbody th .axis, .band-map .matrix thead .axis { font-size: 0.86rem; white-space: normal; line-height: 1.15; }
+.band-map .cell, .band-map .gap { min-width: 0; }
+.band-map .cell-stack { top: 3px; height: calc(100% - 6px); width: auto; }
+.band-map .cell-n { bottom: 50%; transform: translateY(50%); }
+@media (max-width: 900px) {
+  .recent-split { grid-template-columns: minmax(0, 1fr); }
+  .band-map .matrix { min-width: 640px; }
+  .band-map .matrix td { height: 40px; }
+}
+
+/* Table that fits the screen (Anat, 2026-11-04): fixed column widths, text wraps instead of widening the table, platform
+   icons, a thumbnail that opens the app, arrows on every header, the sorted column dark, and every cell edited in place. */
+.apps-table { table-layout: fixed; width: 100%; font-size: 0.86rem; }
+.apps-table thead th { white-space: normal; }
+.apps-table thead th > button { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 9px 8px; line-height: 1.15; }
+.apps-table thead th.sorted { background: var(--ink); }
+.apps-table thead th.sorted > button { color: #fff; font-weight: 700; box-shadow: inset 0 -3px 0 var(--amber, #e8a317); }
+.apps-table thead th.plain { padding: 9px 8px; }
+.sort-arrows { flex: none; fill: currentColor; }
+.apps-table tbody td { padding: 6px 8px; overflow-wrap: anywhere; vertical-align: middle; }
+.apps-table tbody td:first-child { white-space: normal; }
+.apps-table td.center { text-align: center; }
+.apps-table td.sorted:not(.grouped) { background: rgba(23, 25, 28, 0.05); }
+.apps-table .tag { white-space: normal; text-align: right; line-height: 1.25; padding: 2px 7px; font-size: 0.78rem; }
+.apps-table td.tags { display: table-cell; white-space: normal; }
+.apps-table td.tags span + span { margin-inline-start: 0; }
+.apps-table .tag { max-width: 100%; }
+.apps-table td.mono.dim { font-size: 0.72rem; }
+.apps-table td.tags > span { display: inline-block; margin: 0 0 3px 3px; }
+.apps-table .tag:has(.plat) { padding: 3px; border-radius: 0; display: inline-grid; place-items: center; }
+.plat { display: block; width: 20px; height: 20px; }
+.name-cell { display: table-cell; }
+.name-cell::after { content: ''; display: block; clear: both; }
+.name-cell > * { vertical-align: middle; }
+.row-thumb { float: right; width: 64px; height: 42px; margin-inline-end: 8px; border: 1px solid var(--line-2); background: #e9e7e2; overflow: hidden; display: grid; place-items: center; color: var(--mid); font-weight: 600; transition: box-shadow 0.2s, transform 0.2s; }
+.row-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+a.row-thumb:hover { box-shadow: 0 0 0 2px var(--ink); transform: translateY(-1px); }
+.name-stack { display: grid; gap: 1px; min-width: 0; overflow: hidden; }
+.name-stack .mono { font-size: 0.68rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.apps-table .cell-field.cell-field { width: 100%; min-width: 0; border: 1px solid transparent; border-radius: 0; background: transparent; box-shadow: none; padding: 3px 4px; font: inherit; color: var(--ink); text-overflow: ellipsis; }
+.apps-table .cell-field.cell-field:hover { border-color: var(--line-2); background: #fff; }
+.apps-table .cell-field.cell-field:focus { border-color: var(--ink); background: #fff; outline: 2px solid #e8a317; outline-offset: 0; text-overflow: clip; }
+.cell-field::placeholder { color: #b3b0aa; }
+.name-field { font-weight: 600; font-size: 0.92rem; }
+.link-cell { display: flex; align-items: center; gap: 4px; }
+.link-cell a { flex: none; display: grid; place-items: center; }
+.link-cell img { width: 18px; height: 18px; display: block; }
+.link-cell .cell-field { font-family: var(--mono); font-size: 0.7rem; }
+.apps-table td.flash { animation: cell-saved 1.4s ease-out; }
+@keyframes cell-saved { 0% { box-shadow: inset 0 0 0 2px #2f8a57; background-color: rgba(47, 138, 87, 0.16); } 100% { box-shadow: inset 0 0 0 2px transparent; } }
+.table-hint { flex-basis: 100%; }
+.apps-table td.updated b { font-size: 0.92rem; }
+@media (max-width: 1100px) { .table-wrap { overflow-x: auto; } .apps-table { min-width: 1080px; } }
+
+/* Home sections in one bar that stays in place (Anat, 2026-11-04: "כל הסעיפים הם סרגל קבוע בדף ... מקבעים כותרות ורק
+   התוכן משתנה"). Added and updated are two rows. */
+.sec-bar { position: sticky; top: var(--bar-h); z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 28px 0 0; padding: 8px 0; background: var(--bg, #ecebe7); border-bottom: 2px solid var(--ink); }
+.sec-bar > button:not(.sec-add) { height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border: 0; border-radius: 0; background: transparent; color: var(--ink-2); font-size: 0.98rem; transition: background 0.15s, box-shadow 0.15s, transform 0.15s; }
+.sec-bar > button:not(.sec-add):hover { background: #fff; box-shadow: var(--shadow-1); transform: translateY(-1px); }
+.sec-bar > button.on { background: var(--ink); color: #fff; box-shadow: inset 0 -3px 0 #e8a317; transform: none; }
+.sec-bar > button.on .mono { color: #e8a317; }
+.sec-bar .sec-add { margin-inline-start: auto; height: 40px; }
+.sec-section { margin-top: 18px; min-height: calc(100vh - var(--bar-h) - 80px); }
+.sec-section .band-head { margin-bottom: 12px; }
+.recent-rows { display: grid; gap: 22px; }
+.recent-rows .recent-col h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 500; display: flex; align-items: baseline; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+.recent-rows .recent { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.vocab-toggle { margin-top: 10px; }
+.inline-edit { font-size: 0.86rem; color: var(--mid); text-decoration-color: rgba(23, 25, 28, 0.25); }
+.inline-edit:hover { color: var(--ink); }
+.click-edit { cursor: text; border-radius: 0; transition: box-shadow 0.15s, background 0.15s; }
+.click-edit:hover { box-shadow: 0 0 0 6px rgba(232, 163, 23, 0.14); background: rgba(232, 163, 23, 0.06); }
+.panel-tools { display: inline-flex; gap: 14px; align-items: baseline; }
+.cover-change { position: relative; z-index: 3; margin-top: 10px; text-align: center; }
+.block-edit { display: grid; gap: 6px; align-content: start; }
+@media (max-width: 900px) {
+  .recent-rows .recent { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sec-bar .sec-add { margin-inline-start: 0; }
+}
+
+/* Ideas for every cell and beyond the map (Anat, 2026-11-04): new, merge, intersection, distillation. */
+.cell-pop { width: 420px; }
+.pop-empty { margin: 4px 0 8px; }
+.pop-ideas { margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--ink); }
+.pop-ideas-head { color: var(--ink); margin-bottom: 6px; }
+.idea-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.idea-list .pop-idea { position: relative; padding: 10px 12px; background: #fff; box-shadow: var(--shadow-1); border-inline-start: 4px solid var(--k, #1a3a6f); }
+.idea-list .pop-idea h4 { margin: 2px 0 4px; font-size: 1rem; }
+.idea-list .pop-idea p { margin: 0 0 6px; font-size: 0.9rem; line-height: 1.45; }
+.idea-new { --k: #1a3a6f; }
+.idea-merge { --k: #2f8a57; }
+.idea-cut { --k: #c8553d; }
+.idea-distill { --k: #b58900; }
+.idea-kind { display: inline-block; padding: 1px 8px; font-size: 0.7rem; color: #fff; background: var(--k); }
+.idea-yields { color: var(--ink); font-weight: 500; }
+.idea-from { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 0.84rem; }
+.idea-list .pop-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.idea-list .pop-actions .solid, .idea-list .pop-actions .ghost { font-size: 0.8rem; padding: 0.35rem 0.7rem; }
+.how-build { margin-top: 10px; padding: 8px 12px; background: rgba(26, 58, 111, 0.06); font-size: 0.88rem; }
+.how-build summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.how-build ol { margin: 8px 0 2px; padding-inline-start: 20px; display: grid; gap: 4px; }
+.beyond { margin-top: 26px; padding-top: 14px; border-top: 3px double var(--ink); }
+.beyond-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.beyond-tabs button { height: 40px; padding: 0 14px; border: 0; border-radius: 0; background: transparent; color: var(--ink-2); transition: background 0.15s, box-shadow 0.15s; }
+.beyond-tabs button:hover { background: #fff; box-shadow: var(--shadow-1); }
+.beyond-tabs button.on { background: var(--ink); color: #fff; }
+.beyond-note { color: var(--mid); margin: 10px 0; }
+.beyond-grid .idea-list { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.axes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.axis-card { background: var(--paper); padding: 14px; box-shadow: var(--shadow-1); display: grid; gap: 8px; align-content: start; }
+.axis-card h4 { margin: 0; font-size: 1.2rem; }
+.axis-card .idea-list .pop-idea { box-shadow: none; border: 1px solid var(--line); border-inline-start-width: 4px; }
+
+/* Composition to the screen (Anat, 2026-11-04: "לא יתכן שכך יראה מסך - חתוך!", "יותר מידי שטח מת", "גלגול מזיז את סרגלי
+   הכפתורים"): the section bar is the first thing on the page and is stuck from the first pixel, the hero is one compact
+   strip in section 01 only, each section's own header sticks under the bar, and the map fits whatever is left. */
+:root { --secbar-h: 54px; }
+.sec-bar { margin: 0; padding: 7px 0; min-height: var(--secbar-h); }
+.sec-bar .sec-add.is-hidden { visibility: hidden; }
+.hero.hero-strip { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px 28px; padding: 18px 0 6px; overflow: visible; }
+.hero-strip h1 { font-size: clamp(1.6rem, 2.4vw, 2.3rem); line-height: 1.15; margin: 4px 0 2px; font-weight: 300; }
+.hero-strip .lead { margin: 0; font-size: 1rem; }
+.hero-strip .hero-cta { margin: 0; flex-wrap: nowrap; }
+.hero-strip .hero-add { font-size: 1rem; padding: 0.7rem 1.2rem; }
+.hero-strip .hero-demo { position: static; }
+.sec-section { margin-top: 10px; min-height: 0; }
+.sec-section > .band-head { position: sticky; top: calc(var(--bar-h) + var(--secbar-h)); z-index: 20; background: var(--bg); margin-bottom: 10px; padding-top: 8px; }
+.band-map .matrix td { height: max(26px, calc((100vh - var(--bar-h) - var(--secbar-h) - 225px) / var(--rows, 10))); }
+.band-map .matrix th.sorted .axis { color: #fff; background: var(--ink); padding-inline: 6px; box-shadow: inset 0 -3px 0 #d4af37; }
+.band-map .matrix .axis[aria-pressed='false']:hover { background: #fff; }
+@media (max-width: 900px) {
+  .hero.hero-strip { grid-template-columns: minmax(0, 1fr); }
+  .hero-strip .hero-cta { flex-wrap: wrap; }
+  .hero-strip .hero-demo { max-width: 100%; }
+  .sec-section > .band-head { position: static; }
+}
+
+/* Quieter traffic light (Anat, 2026-11-04: "הטונים של הרמזור פלורסנטים מידי"): MOKED106 red, a deep green, gold instead
+   of the yellow highlighter, and no browser-yellow mark anywhere. */
+:root {
+  --p-red: #a23b2a; --p-red-ink: #6e2619; --p-red-tint: rgba(162, 59, 42, 0.09); --p-red-wash: #f8f1ee;
+  --s-green: #3f7a58; --s-green-ink: #26503a; --s-green-tint: rgba(63, 122, 88, 0.14); --s-green-wash: #f0f5f1;
+  --marker: rgba(212, 175, 55, 0.30);
+}
+mark.hl { color: var(--ink); font-weight: 600; padding: 0 2px; background: linear-gradient(180deg, transparent 55%, var(--marker) 55%, var(--marker) 94%, transparent 94%); }
+.idea-new { --k: #1a3a6f; }
+.idea-merge { --k: #3f7a58; }
+.idea-cut { --k: #a23b2a; }
+.idea-distill { --k: #a8862a; }
+
+/* Fewer frames around groups of buttons (Anat, 2026-11-04): button groups stand on the page, buttons have no border,
+   lift on hover, the pressed one is filled navy. */
+.filters-panel { background: none; border: 0; box-shadow: none; padding: 0; border-radius: 0; }
+.chip { border: 0; border-radius: 0; background: rgba(23, 25, 28, 0.05); box-shadow: none; }
+.chip:hover:not(:disabled):not(.on) { background: #fff; box-shadow: var(--shadow-1); transform: translateY(-1px); }
+.chip.on { background: #1a3a6f; color: #fff; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25); }
+.seg { border: 0; background: none; gap: 4px; }
+.seg button { background: rgba(23, 25, 28, 0.05); }
+.seg button.on { background: #1a3a6f; }
+.legend { border: 0; background: none; padding: 4px 0; }
+.table-view { padding-top: 0; }
+.table-top { position: sticky; top: var(--bar-h); z-index: 25; background: var(--bg); padding-top: 14px; }
+.table-top .band-head { margin-bottom: 6px; }
+@media (min-width: 1101px) {
+  .table-wrap { overflow: visible; }
+  .apps-table thead th { position: sticky; top: calc(var(--bar-h) + var(--tt-h, 120px)); z-index: 15; }
+}
+/* Use the width of a large screen (Anat, 2026-11-04: "יותר מידי שטח מת"). */
+.stage, .foot { max-width: 1800px; padding-inline: 32px; }
+.topbar-inner { max-width: 1800px; }
+.sec-bar > button.on:hover { background: var(--ink); color: #fff; transform: none; }
+
+/* Breathing room (Anat, 2026-11-04: "המסך עכשיו חנוק. כן צריך שטח מת למעלה ובצד כדי לתת לעכבר לנוע בלי שיקפצו מסכים, ועדיין
+   לארגן מידע בתוך מסגרת המסך"): a quiet margin under the top bar and at both sides, where the pointer can rest without
+   opening anything; the sticky bars keep that margin when stuck, and the map still fits the screen. */
+:root { --gutter: clamp(36px, 4.5vw, 96px); --air: 18px; }
+.stage, .foot { max-width: 1680px; padding-inline: var(--gutter); }
+.topbar-inner { max-width: 1680px; padding-inline: var(--gutter); }
+.home { padding-top: var(--air); }
+.sec-bar { top: calc(var(--bar-h) + var(--air)); box-shadow: 0 calc(var(--air) * -1) 0 var(--bg); }
+.sec-section > .band-head { top: calc(var(--bar-h) + var(--air) + var(--secbar-h)); }
+.sec-section { margin-top: 16px; }
+.band-map .matrix td { height: max(26px, calc((100vh - var(--bar-h) - var(--secbar-h) - var(--air) - 262px) / var(--rows, 10))); }
+.band-map .matrix-wrap { margin-bottom: var(--air); }
+.table-view { padding-top: var(--air); }
+.table-top { top: calc(var(--bar-h) + var(--air)); box-shadow: 0 calc(var(--air) * -1) 0 var(--bg); }
+@media (min-width: 1101px) { .apps-table thead th { top: calc(var(--bar-h) + var(--air) + var(--tt-h, 120px)); } }
+@media (max-width: 700px) { :root { --gutter: 16px; --air: 10px; } }
+
+/* An inviting home with the video in the place of honour (Anat, 2026-11-05). Text on one side, the video large on the
+   other, on a warm white panel; without a video the text spans the panel. */
+.hero.hero-welcome { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: center; gap: 28px clamp(28px, 4vw, 72px); margin: 6px 0 10px; padding: clamp(24px, 3.2vw, 48px); overflow: visible; background: #f8f6f1; box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 18px 50px -34px rgba(11, 31, 58, 0.45); border-top: 4px solid #d4af37; }
+.hero.hero-welcome:has(.hero-demo:empty) { grid-template-columns: minmax(0, 1fr); }
+.hero-welcome h1 { font-size: clamp(2.2rem, 3.6vw, 3.6rem); line-height: 1.08; margin: 10px 0 14px; font-weight: 700; color: #1a3a6f; letter-spacing: -0.01em; }
+.hero-welcome .lead { font-size: 1.15rem; margin: 0 0 8px; color: var(--ink); }
+.hero-invite { margin: 0 0 22px; color: var(--mid); font-size: 1rem; max-width: 42ch; }
+.hero-welcome .hero-cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; }
+.hero-welcome .hero-add { font-size: 1.05rem; padding: 0.85rem 1.4rem; background: #1a3a6f; }
+.hero-welcome .hero-map { height: auto; padding: 0.85rem 1.2rem; border: 0; background: rgba(26, 58, 111, 0.08); color: #1a3a6f; }
+.hero-welcome .hero-map:hover { background: #fff; box-shadow: var(--shadow-1); }
+.hero-welcome .hero-demo { position: static; width: 100%; }
+@media (max-width: 1000px) { .hero.hero-welcome { grid-template-columns: minmax(0, 1fr); } }
+
+/* A whole row or column opened from its header (Anat, 2026-11-05) */
+.line-pop { width: 440px; }
+.line-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.line-head strong { font-size: 1.15rem; font-weight: 700; }
+.line-x { margin-inline-start: auto; border: 1px solid var(--line-2); background: #fff; padding: 1px 8px; font-size: 0.8rem; color: var(--mid); border-radius: 0; }
+.line-x:hover { color: var(--ink); border-color: var(--ink); }
+.line-group { margin-top: 8px; }
+.line-group-head { color: var(--ink); background: rgba(23, 25, 28, 0.05); padding: 3px 6px; border-inline-start: 3px solid #d4af37; }
+>>>>>>> origin/main

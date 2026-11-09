@@ -13,12 +13,16 @@ export const ACTIONS: { value: ActionValue; label: string; short: string; questi
   { value: 'inspire', label: 'השראה', short: 'השראה', question: 'יוצאים עם רעיון', synonyms: ['השראה', 'רעיון', 'רעיונות', 'מוזה', 'אוסף'] },
   { value: 'teach', label: 'הוראה והצגה', short: 'הוראה', question: 'מעבירים ידע לאחרים', synonyms: ['הוראה', 'קורס', 'מצגת', 'הרצאה', 'הכשרה', 'הנחיות', 'תיק עבודות', 'גלריה'] },
   { value: 'play', label: 'משחק ואימון', short: 'משחק', question: 'מתרגלים ומשחקים', synonyms: ['משחק', 'אימון', 'מבחן', 'תרגול', 'תרגיל', 'חידון'] },
+  // Two columns Anat approved from the ideas (2026-11-04: "תוסיף עמודות זיקוק והחלטה").
+  { value: 'distill', label: 'זיקוק', short: 'זיקוק', question: 'יוצאים עם העיקר: כלל, מדד או עמוד אחד', synonyms: ['זיקוק', 'תמצית', 'סיכום', 'עיקר', 'כלל אצבע', 'מדד', 'תקציר'] },
+  { value: 'decide', label: 'החלטה', short: 'החלטה', question: 'יוצאים עם בחירה בין חלופות', synonyms: ['החלטה', 'בחירה', 'חלופות', 'השוואה', 'הכרעה', 'שיקולים', 'המלצה'] },
 ];
 
 export const actionOf = (v?: string) => ACTIONS.find((a) => a.value === v);
 
+/** A value without a vocabulary entry is never shown as its raw English key (Anat, 2026-11-04). */
 export const facetLabel = (facets: Facet[], kind: Facet['kind'], v: string) =>
-  facets.find((f) => f.kind === kind && f.value === v)?.label ?? v;
+  facets.find((f) => f.kind === kind && f.value === v)?.label ?? (/^[\x00-\x7f]+$/.test(v) ? 'לא מסווג' : v);
 
 const norm = (s: string) => s.toLowerCase().replace(/["'״׳]/g, '').trim();
 

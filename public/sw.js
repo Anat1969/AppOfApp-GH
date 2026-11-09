@@ -17,6 +17,8 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // The payslip reader (tlush/) is a separate page with private data: never cache it, never let it replace the shell.
+  if (url.pathname.includes('/tlush/') || url.pathname.endsWith('/tlush')) return;
 
   if (req.mode === 'navigate') {
     e.respondWith(

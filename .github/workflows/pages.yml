@@ -27,7 +27,12 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /AppOfApp-GH/
-      - run: cp dist/index.html dist/404.html && touch dist/.nojekyll
+      # gh-pages pushes must not start a Vercel build: each one failed and still counted toward the daily 100
+      # A block scalar: in a plain one the ': ' inside the JSON is read as a YAML key, and the whole workflow failed to load.
+      - run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+          echo '{ "git": { "deploymentEnabled": false } }' > dist/vercel.json
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

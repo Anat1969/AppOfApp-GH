@@ -7,6 +7,8 @@ const SAVE_DELAY = 800;
 
 export function useStore() {
   const [apps, setApps] = useState<AppData[]>([]);
+  const appsRef = useRef(apps);
+  appsRef.current = apps;
   const [categories, setCategories] = useState<Category[]>([]);
   const [facets, setFacets] = useState<Facet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +126,13 @@ export function useStore() {
     [flush],
   );
 
+  /** A change already saved on another device (the phone): shown here at once, and kept in an edit still on its way. */
+  const receiveApp = useCallback((id: string, patch: Partial<AppData>) => {
+    setApps((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+    const pending = latest.current.get(id);
+    if (pending) latest.current.set(id, { ...pending, ...patch });
+  }, []);
+
   const addApp = useCallback(async (app: AppData) => {
     setSaveState('saving');
     try {
@@ -141,15 +150,30 @@ export function useStore() {
 
   const deleteApp = useCallback(async (id: string) => {
     try {
+      const gone = appsRef.current.find((a) => a.id === id);
       await edit('delete_app', { id });
       setApps((prev) => prev.filter((a) => a.id !== id));
-      toast('האפליקציה נמחקה');
+      toast(`"${gone?.name ?? 'האפליקציה'}" בוטלה ועברה לסל המחזור`, 'info', { label: 'שחזור', run: () => restoreApp(id) });
       return true;
     } catch (e) {
       toast(`המחיקה נכשלה: ${(e as Error).message}`, 'error');
       return false;
     }
   }, []);
+
+  const restoreApp = useCallback(async (id: string) => {
+    try {
+      const r = await edit<{ data?: AppData }>('restore_app', { id });
+      const back = r?.data ? { ...r.data, id } : null;
+      if (back) setApps((prev) => (prev.some((a) => a.id === id) ? prev : [back, ...prev]));
+      else await load();
+      toast('האפליקציה שוחזרה');
+      return true;
+    } catch (e) {
+      toast(`השחזור נכשל: ${(e as Error).message}`, 'error');
+      return false;
+    }
+  }, [load]);
 
   const saveCategory = useCallback(async (cat: Category) => {
     try {
@@ -204,7 +228,7 @@ export function useStore() {
   return {
     apps, categories, facets, loading, loadError, reload: load,
     saveState, lastSaved,
-    updateApp, addApp, deleteApp, saveCategory, deleteCategory, saveFacet, deleteFacet,
+    updateApp, receiveApp, addApp, deleteApp, restoreApp, saveCategory, deleteCategory, saveFacet, deleteFacet,
   };
 }
 

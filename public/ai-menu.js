@@ -12,18 +12,77 @@
  * Without a top bar, add data-auto to the script tag and the button mounts itself
  * at the top left corner.
  *
- * Municipal apps (Anat, 2026-10-27): brand="ashdod" shows the Ashdod Municipality logo
- * instead of the A&I mark; the menu inside is the same.
+ * Municipal apps (Anat, 2026-10-27; 2026-11-04): brand="ashdod" shows the Ashdod Municipality
+ * logo with the A&I mark only, never Anat's name on the button. Her name is inside the menu,
+ * as the app's editor ("עורכת האפליקציה"). The menu items are the same.
  *   <ai-menu brand="ashdod" chat="..."></ai-menu>
+ *
+ * "מדריך חי" (2026-11-03): an item that records a walkthrough and shares it as a link;
+ * the code is public/guide.js, loaded on demand from the same address as this file.
+ *
+ * "סרטון הדגמה" (2026-11-03): an item that sets the app's demo video, its length and speed, and a button for it on
+ * the home page (slot data-aoa-demo, else the corner). Code public/demo.js, loaded on every page after idle, since
+ * the home button is for every visitor. Data: aoa_apps data.demo.
  *
  * App editing actions (optional):
  *   menu.items = [{ label: 'מצב עריכה', pressed: true, onSelect() {...} }, ...]
  *   menu.status = 'נשמר'   // short state shown under the name
+ * A destructive action (Anat, 2026-11-02: ביטול אפליקציה) takes danger: true. It is shown in red,
+ * alone in the last group of the menu, below sharing and development, so it is never clicked by habit.
+ * The app opens its own confirmation; the menu never deletes anything by itself.
  */
 (function () {
   if (customElements.get('ai-menu')) return;
   const BASE = (document.currentScript && document.currentScript.src) || 'https://appofapp-gh.vercel.app/ai-menu.js';
   const ASHDOD_LOGO = new URL('ashdod-logo.png', BASE).href;
+
+  // "מדריך חי" (public/guide.js): loaded only when used, or when a guide link or a
+  // guide in progress is waiting on this page.
+  let guideLoad = null;
+  const loadGuide = () =>
+    (guideLoad ||= window.AIGuide
+      ? Promise.resolve(window.AIGuide)
+      : new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = new URL('guide.js', BASE).href;
+          s.onload = () => (window.AIGuide ? res(window.AIGuide) : rej(new Error('guide.js')));
+          s.onerror = () => { guideLoad = null; rej(new Error('guide.js')); };
+          document.head.append(s);
+        }));
+  // "סרטון הדגמה" (public/demo.js): loaded after the page settles, because the home-page button is for everyone.
+  let demoLoad = null;
+  const loadDemo = () =>
+    (demoLoad ||= window.AIDemo
+      ? Promise.resolve(window.AIDemo)
+      : new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = new URL('demo.js', BASE).href;
+          s.onload = () => (window.AIDemo ? res(window.AIDemo) : rej(new Error('demo.js')));
+          s.onerror = () => { demoLoad = null; rej(new Error('demo.js')); };
+          document.head.append(s);
+        }));
+  const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1200));
+  const startDemo = () => idle(() => loadDemo().catch(() => {}), { timeout: 3000 });
+  document.readyState === 'complete' ? startDemo() : addEventListener('load', startDemo, { once: true });
+
+  try {
+    if (/[#&]aig=/.test(location.hash) || sessionStorage.getItem('ai-guide-play') || sessionStorage.getItem('ai-guide-rec')) loadGuide().catch(() => {});
+  } catch {}
+
+  // "פתיחה בטלפון" (2026-11-03, Claude-GH docs/tools-bank.md): a QR of this exact page, so the app moves to the phone in
+  // one scan. On trial: shown only where <ai-menu phone> is set (the portfolio first), so no other app changes until Anat
+  // approves. The QR encoder (qrcode-generator, MIT) is loaded only when the item is used.
+  let qrLoad = null;
+  const loadQR = () =>
+    (qrLoad ||= window.qrcode
+      ? Promise.resolve(window.qrcode)
+      : new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+          s.onload = () => (window.qrcode ? res(window.qrcode) : rej(new Error('qrcode')));
+          s.onerror = () => { qrLoad = null; rej(new Error('qrcode')); };
+          document.head.append(s);
+        }));
 
   // Chrome fires this once, early; keep it for the install item.
   let installEvent = null;
@@ -87,10 +146,27 @@
     .item[aria-pressed='true'] { background: #17191c; color: #f4f3f0; }
     .item[aria-pressed='true'] small { color: #b9bcc0; }
     .item.solid { background: linear-gradient(180deg, #2a2d32, #17191c); color: #f4f3f0; }
+    .group.danger { margin-top: 6px; border-top: 2px solid #b3261e; }
+    .group.danger .label { color: #b3261e; }
+    .item.danger { color: #b3261e; font-weight: 500; }
+    .item.danger small { color: #b3261e; }
+    .item.danger:hover:not(:disabled), .item.danger:focus-visible { background: #fbe9e7; }
     .note { padding: 6px 10px 4px; font-size: 12.5px; color: #2f5d46; }
     .note:empty { display: none; }
+    .phone { padding: 8px 10px 4px; display: grid; gap: 8px; justify-items: center; text-align: center; }
+    .phone .code { width: 168px; padding: 6px; background: #fff; box-shadow: 0 1px 2px rgba(20,22,26,.12); line-height: 0; }
+    .phone .code svg { width: 100%; height: auto; display: block; }
+    .phone b { font-size: 13.5px; font-weight: 600; }
+    .phone p { margin: 0; font-size: 12px; color: #5a5f66; }
+    .phone code { direction: ltr; unicode-bidi: isolate; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: #6b7077; overflow-wrap: anywhere; }
     .brandimg { display: block; height: 36px; width: auto; }
-    :host([brand='ashdod']) .logo { padding: 4px 8px; background: #fff; }
+    :host([brand='ashdod']) .logo { padding: 4px 4px 4px 8px; gap: 8px; background: #fff; }
+    :host([brand='ashdod']) .logo .brandimg { order: 1; }
+    :host([brand='ashdod']) .head { flex-wrap: wrap; }
+    .editor { flex: 1 0 100%; display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2dfd9; }
+    .head .editor .mark { display: grid; color: #f4f3f0; order: 0; width: 30px; height: 30px; font-size: 10.5px; letter-spacing: 0; }
+    .editor div span { display: block; font-family: 'IBM Plex Mono', 'IBM Plex Sans Hebrew', ui-monospace, monospace; font-size: 11px; letter-spacing: 0; color: #6b7077; }
+    .editor b { font-weight: 500; font-size: 13px; }
     .head .brandimg { height: 30px; }
     @media (max-width: 700px) {
       .brandimg { height: 30px; }
@@ -135,8 +211,8 @@
     _applyBrand() {
       if (!this._btn) return;
       if (this._ashdod) {
-        this._btn.title = 'עיריית אשדוד';
-        this._btn.innerHTML = `<img class="brandimg" src="${ASHDOD_LOGO}" alt="עיריית אשדוד"><span class="status" hidden></span>`;
+        this._btn.title = 'עיריית אשדוד · A&I';
+        this._btn.innerHTML = `<img class="brandimg" src="${ASHDOD_LOGO}" alt="עיריית אשדוד"><span class="mark" aria-hidden="true">A&amp;I</span><span class="status" hidden></span>`;
       } else {
         this._btn.title = "אד' ענת שטיבלמן A&I";
         this._btn.innerHTML = `<span class="mark" aria-hidden="true">A&amp;I</span><span class="text"><span class="name">אד' ענת שטיבלמן</span><span class="status"></span></span>`;
@@ -185,6 +261,7 @@
 
     close() {
       this._open = false;
+      this._qr = null;
       this._panel.hidden = true;
       this._btn.setAttribute('aria-expanded', 'false');
     }
@@ -203,13 +280,20 @@
       const research = this.getAttribute('research');
       const standalone = matchMedia('(display-mode: standalone)').matches;
       const groups = [];
-      if (this._items.length) groups.push({ label: 'עריכת האפליקציה', items: this._items });
+      const edits = this._items.filter((it) => !it.danger);
+      const danger = this._items.filter((it) => it.danger);
+      if (edits.length) groups.push({ label: 'עריכת האפליקציה', items: edits });
       const dev = [{ label: 'העתקת קישור', hint: 'למצב הנוכחי', onSelect: () => this._copy() }];
+      if (this.hasAttribute('phone')) dev.push({ label: 'פתיחה בטלפון', hint: this._qr ? 'סגירת הקוד' : 'QR לעמוד הזה', qr: true, onSelect: () => this._phone() });
+      dev.push({ label: 'מדריך חי', hint: 'הקלטה ושיתוף', onSelect: () => this._guide() });
+      // Only where this app has a video (Anat, 2026-11-03): an empty item that only copies a request is not a feature.
+      if (window.AIDemo && window.AIDemo.has()) dev.push({ label: 'סרטון הדגמה', hint: 'אורך ומהירות', onSelect: () => this._demo() });
       if (chat) dev.push({ label: 'שיחת הפיתוח', href: chat });
       if (research) dev.push({ label: 'פרויקט המחקר', href: research });
       if (installEvent) dev.push({ label: 'התקנת האפליקציה', solid: true, onSelect: () => this._install() });
       else if (!standalone) dev.push({ label: 'התקנת האפליקציה', hint: 'דרך תפריט Chrome', disabled: true });
       groups.push({ label: 'שיתוף ופיתוח', items: dev });
+      if (danger.length) groups.push({ label: 'פעולה מסוכנת', items: danger, danger: true });
 
       const p = this._panel;
       p.replaceChildren();
@@ -217,11 +301,12 @@
       head.className = 'head';
       head.innerHTML = this._ashdod
         ? `<img class="brandimg" src="${ASHDOD_LOGO}" alt=""><div><b>עיריית אשדוד</b><span>ASHDOD MUNICIPALITY</span></div>`
+          + `<div class="editor"><span class="mark" aria-hidden="true">A&amp;I</span><div><span>עורכת האפליקציה</span><b>אד' ענת שטיבלמן</b></div></div>`
         : `<span class="mark" aria-hidden="true">A&amp;I</span><div><b>אד' ענת שטיבלמן</b><span>ARCHITECTURE &amp; INTELLIGENCE</span></div>`;
       p.append(head);
       for (const g of groups) {
         const box = document.createElement('div');
-        box.className = 'group';
+        box.className = `group${g.danger ? ' danger' : ''}`;
         box.setAttribute('role', 'group');
         box.setAttribute('aria-label', g.label);
         const lab = document.createElement('div');
@@ -230,7 +315,7 @@
         box.append(lab);
         for (const it of g.items) {
           const el = document.createElement(it.href ? 'a' : 'button');
-          el.className = `item${it.solid ? ' solid' : ''}`;
+          el.className = `item${it.solid ? ' solid' : ''}${it.danger ? ' danger' : ''}`;
           el.setAttribute('role', 'menuitem');
           if (it.href) {
             el.href = it.href;
@@ -255,6 +340,17 @@
             el.append(s);
           }
           box.append(el);
+          // the QR opens in place, right under the item that asked for it
+          if (it.qr && this._qr) {
+            const qr = document.createElement('div');
+            qr.className = 'phone';
+            qr.setAttribute('aria-label', 'קוד QR לעמוד הזה');
+            qr.innerHTML = `<div class="code">${this._qr.svg}</div><b>סורקים במצלמה של הטלפון</b><p>אותו עמוד ואותו מצב, בלי להקליד כתובת.</p>`;
+            const c = document.createElement('code');
+            c.textContent = this._qr.url;
+            qr.append(c);
+            box.append(qr);
+          }
         }
         p.append(box);
       }
@@ -284,6 +380,43 @@
         this.close();
       }, 900);
       this.dispatchEvent(new CustomEvent('ai-copied', { detail: url, bubbles: true, composed: true }));
+    }
+
+    async _phone() {
+      if (this._qr) { this._qr = null; this._render(); return true; }
+      const url = location.href;
+      try {
+        const qrcode = await loadQR();
+        const q = qrcode(0, 'M');
+        q.addData(url);
+        q.make();
+        this._qr = { url, svg: q.createSvgTag({ cellSize: 4, margin: 1, scalable: true }) };
+      } catch {
+        this._note = 'קוד ה-QR לא נטען. אפשר להעתיק את הקישור ולשלוח אותו לטלפון.';
+      }
+      this._render();
+      this._position();
+      return true;
+    }
+
+    async _guide() {
+      try {
+        (await loadGuide()).open();
+      } catch {
+        this._note = 'המדריך לא נטען. בדקי חיבור ונסי שוב.';
+        this._render();
+        return true;
+      }
+    }
+
+    async _demo() {
+      try {
+        (await loadDemo()).open();
+      } catch {
+        this._note = 'הסרטון לא נטען. בדקי חיבור ונסי שוב.';
+        this._render();
+        return true;
+      }
     }
 
     async _install() {

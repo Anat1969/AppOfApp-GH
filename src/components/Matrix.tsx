@@ -4,8 +4,8 @@ import type { ActionValue, AppData, Facet } from '../lib/types';
 import type { Route } from '../lib/route';
 import { ACTIONS, actionOf } from '../lib/facets';
 import { siteUrl, thumbOf } from '../lib/format';
-import { GAP_IDEAS, gapKey } from '../data/gapIdeas';
-import { toast } from './Toasts';
+import { CELL_IDEAS } from '../data/ideas';
+import IdeaList, { HowToBuild } from './IdeaList';
 
 export interface AddPrefill {
   name?: string;
@@ -33,17 +33,14 @@ interface Open {
   pinned: boolean;
 }
 
-/** The ready prompt for Claude Code that turns a gap idea into an app. */
-function buildPrompt(title: string, idea: string, action: string, domain: string, near: AppData[]) {
-  const refs = near.map((a) => `- ${a.name}${siteUrl(a) ? `: ${siteUrl(a)}` : ''}`).join('\n');
-  return `אני בונה אפליקציה חדשה: ${title}.
-${idea}
-פעולה: ${action}. תחום: ${domain}.
-${refs ? `אפליקציות קיימות שלי שאפשר להישען עליהן ולקשר אליהן:\n${refs}\n` : ''}
-עבוד לפי הסקיל anat-app-builder: אפיון קצר בתוך התשובה, ואז בנייה מקצה לקצה. עברית ו-RTL, בלי אייקונים, כפתור הלוגו A&I, התקנה מ-Chrome, בדיקות Playwright, פריסה ל-Vercel ומיזוג ל-main.
-AI בתוך האפליקציה: Gemini החינמי (GEMINI_API_KEY) דרך פונקציית Edge, Claude רק כגיבוי. כל טקסט שה-AI כותב לפי תקן הזיקוק: שורת תובנה עד 8 מילים, משפט הסבר עד 20 מילים, והבלטות ב-** למושג המרכזי, לפרמטרים ולמספרים (https://github.com/Anat1969/AppOfApp-GH/blob/main/docs/ai-text-standard.md).
-לפני הבנייה: uipro init --ai claude
-בסוף: הוסף את האפליקציה לתיק העבודות https://appofapp-gh.vercel.app עם פעולה "${action}" ותחום "${domain}".`;
+/** A whole row (domain) or column (action) opened from its header. */
+interface Line {
+  kind: 'row' | 'col';
+  value: string;
+  x: number;
+  y: number;
+  above: boolean;
+  room: number;
 }
 
 /** Domain against action. Every cell is a door; an empty cell is a gap with a suggested app. */
@@ -110,22 +107,69 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
   const d = open && facets.find((f) => f.kind === 'domain' && f.value === open.domain);
   const a = open && actionOf(open.action);
   const list = open ? cellApps(open.domain, open.action) : [];
-  const idea = open && !list.length ? GAP_IDEAS[gapKey(open.domain, open.action)] : undefined;
+  // Ideas for every cell, filled or empty (Anat, 2026-11-04). An idea that has since been built is left out.
+  const names = new Set(apps.map((x) => x.name.trim()));
+  const ideas = open ? (CELL_IDEAS[`${open.domain}:${open.action}`] ?? []).filter((i) => !names.has(i.title.trim())) : [];
   // Raw material for a gap: apps in the same row (domain) and the same column (action).
   const near = open && !list.length
     ? [...apps.filter((x) => x.domains?.includes(open.domain)).slice(0, 2), ...apps.filter((x) => x.action === open.action).slice(0, 2)]
         .filter((x, i, arr) => arr.findIndex((y) => y.id === x.id) === i)
     : [];
 
+  // A header opens the links of its whole line on the same page (Anat, 2026-11-05: "לחיצה על עמודה או שורה ... צריכה לפתוח
+  // את הקישורים של האפליקציות שבאותה שורה או עמודה באותו הדף"). The same click still sorts the map by that line.
+  const [line, setLine] = useState<Line | null>(null);
+  const linePop = useRef<HTMLDivElement>(null);
+  const openLine = (kind: Line['kind'], value: string, el: HTMLElement) => {
+    setOpen(null);
+    if (line?.kind === kind && line.value === value) return setLine(null);
+    const r = el.getBoundingClientRect();
+    const below = innerHeight - r.bottom - 16;
+    const above = below < 320 && r.top > below;
+    setLine({ kind, value, x: r.left + r.width / 2, y: above ? r.top - 8 : r.bottom + 8, above, room: Math.max(200, (above ? r.top : below) - 16) });
+  };
+  useEffect(() => {
+    if (!line) return;
+    const k = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setLine(null);
+      line.kind === 'col' ? setRowBy(null) : setColBy(null);
+    };
+    const out = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (linePop.current && !linePop.current.contains(t) && !t.closest('.matrix .axis')) setLine(null);
+    };
+    const y0 = scrollY;
+    const scroll = () => Math.abs(scrollY - y0) > 60 && setLine(null);
+    addEventListener('keydown', k);
+    addEventListener('pointerdown', out);
+    addEventListener('scroll', scroll, { passive: true });
+    return () => {
+      removeEventListener('keydown', k);
+      removeEventListener('pointerdown', out);
+      removeEventListener('scroll', scroll);
+    };
+  }, [line]);
+
+  // Sorting stays inside the map (Anat, 2026-11-04: "מיון לפי שורה או עמודה - בתוך העמוד שלה"): a column header orders the
+  // rows by how many apps they have in that column, a row header orders the columns; a second click restores the order.
+  const [rowBy, setRowBy] = useState<ActionValue | null>(null);
+  const [colBy, setColBy] = useState<string | null>(null);
+  const rows = rowBy ? [...domains].sort((x, y) => cellApps(y.value, rowBy).length - cellApps(x.value, rowBy).length) : domains;
+  const cols = colBy ? [...ACTIONS].sort((x, y) => cellApps(colBy, y.value).length - cellApps(colBy, x.value).length) : ACTIONS;
+
   return (
     <div className="matrix-wrap">
-      <table className="matrix">
+      <table className="matrix" style={{ '--rows': domains.length } as React.CSSProperties}>
         <thead>
           <tr>
             <th className="corner mono">תחום / פעולה</th>
-            {ACTIONS.map((ac) => (
-              <th key={ac.value} scope="col">
-                <button className="axis" onClick={() => go({ action: ac.value, domain: null, app: null })} title={ac.question}>
+            {cols.map((ac) => (
+              <th key={ac.value} scope="col" className={rowBy === ac.value ? 'sorted' : ''}>
+                <button className="axis" aria-pressed={rowBy === ac.value} onClick={(e) => {
+                    setRowBy((v) => (v === ac.value ? null : ac.value));
+                    openLine('col', ac.value, e.currentTarget);
+                  }} title={`${ac.question}. לחיצה פותחת את כל האפליקציות בעמודה וממיינת לפיה`}>
                   {ac.label}
                 </button>
               </th>
@@ -133,14 +177,17 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
           </tr>
         </thead>
         <tbody>
-          {domains.map((dm, i) => (
+          {rows.map((dm, i) => (
             <tr key={dm.value}>
-              <th scope="row">
-                <button className="axis" onClick={() => go({ domain: dm.value, action: null, app: null })}>
+              <th scope="row" className={colBy === dm.value ? 'sorted' : ''}>
+                <button className="axis" aria-pressed={colBy === dm.value} onClick={(e) => {
+                    setColBy((v) => (v === dm.value ? null : dm.value));
+                    openLine('row', dm.value, e.currentTarget);
+                  }} title="לחיצה פותחת את כל האפליקציות בשורה וממיינת לפיה">
                   {dm.label}
                 </button>
               </th>
-              {ACTIONS.map((ac) => {
+              {cols.map((ac) => {
                 const cell = cellApps(dm.value, ac.value);
                 const n = cell.length;
                 const isOpen = open?.domain === dm.value && open.action === ac.value;
@@ -196,8 +243,8 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
             aria-label={`${d.label}, ${a.label}`}
             style={{
               top: open.y,
-              left: Math.max(12, Math.min(open.x - 170, document.documentElement.clientWidth - 352)),
-              maxHeight: Math.min(520, open.room),
+              left: Math.max(12, Math.min(open.x - 200, document.documentElement.clientWidth - 432)),
+              maxHeight: Math.min(620, open.room),
               translate: open.above ? '0 -100%' : undefined,
             }}
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -250,48 +297,110 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
                 </div>
               </>
             ) : (
-              <div className="pop-idea">
-                <p className="mono dim">משבצת ריקה. הצעה לאפליקציה שתמלא אותה:</p>
-                <h4>{idea?.title ?? `${a.label} ב${d.label}`}</h4>
-                <p>{idea?.idea ?? 'עדיין אין הצעה למשבצת הזו.'}</p>
-                <div className="pop-actions">
-                  <button className="solid" onClick={() => onAdd({ name: idea?.title, desc: idea?.idea, action: open.action, domain: open.domain })}>
-                    הוספה לתיק מהרעיון
-                  </button>
-                  <button
-                    className="ghost"
-                    onClick={async () => {
-                      const text = buildPrompt(idea?.title ?? '', idea?.idea ?? '', a.label, d.label, near);
-                      try {
-                        await navigator.clipboard.writeText(text);
-                        toast('הפרומפט ל-Claude Code הועתק');
-                      } catch {
-                        toast('לא ניתן להעתיק בדפדפן הזה', 'error');
-                      }
-                    }}
-                  >
-                    העתקת פרומפט ל-Claude Code
-                  </button>
-                </div>
-                {near.length > 0 && (
-                  <div className="pop-near">
-                    <span className="mono dim">אפשר להישען על</span>
-                    <ul className="pop-list">
-                      {near.map((x) => (
-                        <li key={x.id}>
-                          <button className="pop-name" onClick={() => go({ app: x.id })}>
-                            {x.name}
-                          </button>
-                          <span className="mono dim">{actionOf(x.action)?.short}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+              <p className="mono dim pop-empty">משבצת ריקה: עוד אין כאן אפליקציה.</p>
+            )}
+            {ideas.length > 0 && (
+              <div className="pop-ideas">
+                <div className="pop-ideas-head mono">{list.length ? 'רעיונות להמשך במשבצת' : 'רעיונות שימלאו אותה'}</div>
+                <IdeaList ideas={ideas} apps={apps} near={near} actionLabel={a.label} domainLabel={d.label} prefill={{ action: open.action, domain: open.domain }} go={go} onAdd={onAdd} />
+                <HowToBuild />
+              </div>
+            )}
+            {!list.length && near.length > 0 && (
+              <div className="pop-near">
+                <span className="mono dim">אפשר להישען על</span>
+                <ul className="pop-list">
+                  {near.map((x) => (
+                    <li key={x.id}>
+                      <button className="pop-name" onClick={() => go({ app: x.id })}>
+                        {x.name}
+                      </button>
+                      <span className="mono dim">{actionOf(x.action)?.short}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </motion.div>
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {line && (() => {
+          const isRow = line.kind === 'row';
+          const label = isRow ? domains.find((x) => x.value === line.value)?.label : actionOf(line.value as ActionValue)?.label;
+          const groups = (isRow ? cols.map((ac) => ({ key: ac.value, label: ac.label, list: cellApps(line.value, ac.value) }))
+            : rows.map((dm) => ({ key: dm.value, label: dm.label, list: cellApps(dm.value, line.value as ActionValue) }))).filter((g) => g.list.length);
+          const total = new Set(groups.flatMap((g) => g.list.map((x) => x.id))).size;
+          return (
+            <motion.div
+              ref={linePop}
+              key={`${line.kind}:${line.value}`}
+              className="cell-pop line-pop"
+              role="dialog"
+              aria-label={`${isRow ? 'שורה' : 'עמודה'}: ${label}`}
+              style={{
+                top: line.y,
+                left: Math.max(12, Math.min(line.x - 210, document.documentElement.clientWidth - 476)),
+                maxHeight: Math.min(680, line.room),
+                translate: line.above ? '0 -100%' : undefined,
+              }}
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, pointerEvents: 'none' }}
+              transition={{ duration: 0.16 }}
+            >
+              <div className="pop-head line-head">
+                <span className="mono dim">{isRow ? 'שורה' : 'עמודה'}</span>
+                <strong>{label}</strong>
+                <span className="mono">{total} אפליקציות</span>
+                <button className="line-x" onClick={() => setLine(null)} aria-label="סגירה">
+                  סגירה
+                </button>
+              </div>
+              {groups.length ? (
+                groups.map((g) => (
+                  <section key={g.key} className="line-group">
+                    <div className="line-group-head mono">
+                      {g.label} <span className="dim">{g.list.length}</span>
+                    </div>
+                    <ul className="pop-list">
+                      {g.list.map((x) => {
+                        const site = siteUrl(x);
+                        return (
+                          <li key={x.id}>
+                            {site ? (
+                              <a className="pop-name" href={site} target="_blank" rel="noopener noreferrer" title={site}>
+                                {x.name}
+                              </a>
+                            ) : (
+                              <button className="pop-name" onClick={() => go({ app: x.id })} title="אין קישור: דף האפליקציה בתיק">
+                                {x.name}
+                              </button>
+                            )}
+                            <button className="pop-sheet mono" onClick={() => go({ app: x.id })} title="דף האפליקציה בתיק">
+                              {sheets.get(x.id)}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))
+              ) : (
+                <p className="mono dim pop-empty">עוד אין אפליקציות ב{isRow ? 'שורה' : 'עמודה'} הזו.</p>
+              )}
+              <div className="pop-foot">
+                <button className="link" onClick={() => go(isRow ? { domain: line.value, action: null, app: null } : { action: line.value as ActionValue, domain: null, app: null })}>
+                  סינון התיק ל{isRow ? 'שורה' : 'עמודה'}
+                </button>
+                <button className="link" onClick={() => onAdd(isRow ? { domain: line.value } : { action: line.value as ActionValue })}>
+                  הוספת אפליקציה כאן
+                </button>
+              </div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
     </div>
   );

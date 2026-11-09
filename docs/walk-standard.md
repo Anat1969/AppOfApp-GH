@@ -1,0 +1,74 @@
+# walk.js: קו, נפח, גוף ראשון
+
+**תוכנית הופכת לתלת־ממד שהולכים בו, בגובה עיניים שבוחרים.**
+רכיב משותף לכל האפליקציות של ענת. נטען קודם מ-GitHub Pages של התיק, ולא מ-Vercel: ב-03.11.2026 Vercel הגיש גרסה ישנה כשהמכסה נחסמה, והיא נטענה בלי שגיאה, ולכן הגיבוי לא הופעל. נולד ב-03.11.2026 מסרטון על spaceplanner.co.
+
+## שימוש
+
+```html
+<!-- Pages first: it follows every merge to main with no Vercel quota. Vercel is the backup. -->
+<script src="https://anat1969.github.io/AppOfApp-GH/walk.js"></script>
+<script>if (!customElements.get('space-walk')) document.write('<script src="https://appofapp-gh.vercel.app/walk.js"><\/script>')</script>
+<space-walk ref-base="/principles/"></space-walk>
+<script>document.querySelector('space-walk').plan = PLAN</script>
+```
+
+או `<space-walk src="plan.json">`. מאפיינים: `eye` (ס"מ), `variant`, `view` (`walk` או `top`), `ref-base`, `three`.
+אירוע `walkchange` עם `{ eye, variant, view }` בכל שינוי. האפליקציה שומרת אותו בכתובת, ולכן "העתקת קישור" בתפריט A&I שומרת את המצב.
+המאפיינים `eye`, `variant` ו-`view` חיים: שינוי שלהם אחרי הטעינה מזיז את הצופה מיד, בלי אירוע `walkchange`.
+
+**מצב `bare`: האפליקציה שולטת, הרכיב רק מציג.**
+`<space-walk bare>` מסתיר את הפאנל, והסצנה ממלאת את כל הרכיב.
+המצב, המבט וגובה העיניים נקבעים רק דרך `variant`, `view` ו-`eye`, מהכפתורים של האפליקציה עצמה.
+ב-`bare` גובה העיניים יכול להיות כל מספר בס"מ, לא רק אחד מ-`heights`.
+החישוב נשאר זמין דרך `SpaceWalk.evaluate`, כדי שהאפליקציה תציג את הספירה בפאנל משלה.
+בטלפון הגובה הוא `--sw-height`, וברירת המחדל 62vh.
+
+```html
+<space-walk bare variant="guide" view="walk" eye="160"></space-walk>
+<script>document.querySelector('space-walk').setAttribute('eye', '95')</script>
+```
+
+צבעים וגופנים: `--sw-ink`, `--sw-paper`, `--sw-card`, `--sw-line`, `--sw-muted`, `--sw-accent`, `--sw-problem`, `--sw-solution`, `--sw-marker`, `--sw-font`, `--sw-display`.
+
+## מבנה התוכנית (מטרים)
+
+```json
+{
+  "title": "כיכר מול גן ילדים",
+  "bounds": [-11, -8.5, 11, 11],
+  "spawn": { "x": 3.5, "z": 4.15, "yaw": 0 },
+  "heights": [{ "cm": 95, "label": "ילד בן 3" }, { "cm": 160, "label": "מבוגר עומד" }],
+  "items": [ ...משותף לכל המצבים... ],
+  "variants": [{ "id": "common", "label": "מצב נפוץ", "tone": "problem", "note": "**...**", "items": [] },
+               { "id": "guide", "label": "לפי ההנחיות", "tone": "solution", "items": [] }],
+  "source": "מקורות: ..."
+}
+```
+
+פריט: `{ id, type, x, z, w, d, h, y0, rot, color, label, ref, refLabel }`.
+סוגים: `wall`, `box`, `hedge`, `planter`, `fence` (שקופה), `glass`, `window` (`sill`, `top`), `car`, `bench`, `shade`, `pole`, `tree` (`crown`), `play`, `surface` (`layer`), `note` (בלי גיאומטריה).
+פריט עם `check: "ok" | "fail"` ו-`value` מופיע ב"מידות במקום", בירוק או באדום.
+
+**`prism`**: תוואי אמיתי ממפה. `points: [[x, z], ...]` במטרים, מוקם מ-`y0` עד `y0 + h`. עם `glass: true` הוא שקוף, למשל מעטפת מותרת. עם `h` של עד 0.05 הוא משטח, כמו מגרש או תכסית. ההתנגשות נבדקת לפי הצורה עצמה.
+
+**עדכון חי**: תוכנית עם אותו `id` שמוצבת שוב, מטופס או מסליידר, שומרת את המקום, הגובה, המצב והתצוגה של מי שצופה.
+**`summary`** (בתוכנית או במצב): `{ insight, explain }` עם `**`. משמש כשאין פריטים שנמדדים לקו מבט, למשל נפח של בניין. כך גם רשימת החוסמים מוסתרת.
+**`speed`**: מטרים לשנייה בהליכה. ברירת המחדל 1.8, ולגוש עירוני 3 עד 6.
+
+## כלל החישוב (מוצג במסך)
+
+חוסם: חלק אטום שהחלק העליון שלו מגיע לגובה העיניים או מעליו. גדר שקופה, זכוכית, עצים וצל לא חוסמים. חלון נמדד לפי האדן.
+מגבלה: בדיקת גובה בלבד, בלי מרחק וזווית. `SpaceWalk.evaluate(plan, variant, eyeCm)` מחזיר את אותה ספירה לבדיקות.
+
+## שימושים
+
+- אורבן 95: כיכר מול גן ילדים (`/walk`).
+- תרגיל אחוזי בנייה ותכסית: הנפח על המגרש, מתעדכן מהטופס.
+- תואם מתאר: "ברחוב" בדף התכנית (`?view=walk`). השכבות של התכנית, היום מול לפי התכנית.
+- targil2: האפליקציה הראשונה במצב `bare`, עם הפקדים שלה.
+- גורד שחקים: "הליכה ברחוב". המגדל קומה אחר קומה בין הבניינים של רוגוזין.
+
+## שימושים הבאים
+
+התחדשות עירונית ("תוכנית לדייר"), תרגיל אחוזי בנייה ותכסית (נפח מותר), MUNI 100 (מבט מכיסא גלגלים), לפני ואחרי.

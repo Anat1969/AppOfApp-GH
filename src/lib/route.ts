@@ -9,6 +9,8 @@ export interface Route {
   q: string;
   view: 'home' | 'table';
   links: boolean;
+  /** Home section (Anat, 2026-11-04): a fixed bar of sections, only the content below it changes. */
+  sec: 'new' | 'map' | 'all';
 }
 
 function read(): Route {
@@ -21,6 +23,7 @@ function read(): Route {
     q: p.get('q') ?? '',
     view: p.get('view') === 'table' ? 'table' : 'home',
     links: p.get('links') === '1',
+    sec: p.get('sec') === 'map' ? 'map' : p.get('sec') === 'all' ? 'all' : 'new',
   };
 }
 
@@ -33,6 +36,7 @@ function write(r: Route) {
   if (r.ctx) p.set('ctx', r.ctx);
   if (r.q) p.set('q', r.q);
   if (r.links) p.set('links', '1');
+  if (r.sec !== 'new' && r.view === 'home' && !r.app) p.set('sec', r.sec);
   const s = p.toString();
   return `${location.pathname}${s ? `?${s}` : ''}`;
 }

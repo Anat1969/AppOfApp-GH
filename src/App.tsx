@@ -12,6 +12,7 @@ import AIMenu from './components/AIMenu';
 import AddAppDialog from './components/AddAppDialog';
 import type { AddPrefill } from './components/Matrix';
 import BulkDialog from './components/BulkDialog';
+import RemoveAppDialog from './components/RemoveAppDialog';
 import Toasts from './components/Toasts';
 
 const SORT_KEY = 'aoa-sort';
@@ -19,7 +20,6 @@ const SORT_KEY = 'aoa-sort';
 export default function App() {
   const store = useStore();
   const { route, go } = useRoute();
-  const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState<AddPrefill | null>(null);
   const [addSeq, setAddSeq] = useState(0);
   const openAdd = (p: AddPrefill = {}) => {
@@ -27,6 +27,7 @@ export default function App() {
     setAdding(p);
   };
   const [bulk, setBulk] = useState(false);
+  const [removing, setRemoving] = useState<AppData | null>(null);
   const [sort, setSortState] = useState<'date' | 'alpha'>(() => {
     try {
       return localStorage.getItem(SORT_KEY) === 'alpha' ? 'alpha' : 'date';
@@ -90,7 +91,7 @@ export default function App() {
   }, [active]);
 
   return (
-    <div className={`shell ${editing ? 'editing' : ''}`}>
+    <div className="shell">
       {/* Where am I (Anat, 2026-10-27, "ב + ג"): the portfolio is framed like a drawing sheet with a title stamp,
           under a dark blue bar, so it never looks like one of the apps it lists. */}
       <div className="sheet-frame" aria-hidden>
@@ -100,11 +101,10 @@ export default function App() {
           <span className="mono">A&amp;I · אד׳ ענת שטיבלמן</span>
         </div>
       </div>
-      {editing && (
-        <div className={`edit-light save-${store.saveState}`} aria-live="polite">
-          <span className="edit-light-tag mono">
-            מצב עריכה · {store.saveState === 'error' ? 'לא נשמר, מנסה שוב' : store.saveState === 'saving' ? 'שומר...' : 'כל שינוי נשמר אוטומטית'}
-          </span>
+      {/* No edit mode (Anat, 2026-11-04): the frame lights only when a save did not go through and is being retried. */}
+      {store.saveState === 'error' && (
+        <div className="edit-light save-error" aria-live="polite">
+          <span className="edit-light-tag mono">לא נשמר, מנסה שוב אוטומטית</span>
         </div>
       )}
       <TopBar
@@ -113,18 +113,17 @@ export default function App() {
         facets={facets}
         search={search}
         go={go}
-        onHome={() => go({ app: null, action: null, domain: null, ctx: null, q: '', view: 'home', links: false })}
+        onHome={() => go({ app: null, action: null, domain: null, ctx: null, q: '', view: 'home', links: false, sec: 'new' })}
         onSearch={(q) => go({ q, app: null, view: 'home' }, true)}
         onOpen={(id) => go({ app: id, view: 'home' })}
         onView={(view) => go({ view, app: null })}
         menu={
           <AIMenu
-            editing={editing}
             saveState={store.saveState}
             lastSaved={store.lastSaved}
-            setEditing={setEditing}
             onAdd={() => openAdd({ action: route.action ?? undefined, domain: route.domain ?? undefined })}
             onBulk={() => setBulk(true)}
+            onRemove={active ? () => setRemoving(active) : undefined}
           />
         }
       />
@@ -164,16 +163,13 @@ export default function App() {
                 facets={facets}
                 go={go}
                 seq={seq}
-                editing={editing}
                 onBack={() => go({ app: null })}
                 onOpen={(id) => go({ app: id })}
                 onChange={store.updateApp}
-                onDelete={async (id) => {
-                  if (await store.deleteApp(id)) go({ app: null });
-                }}
+                onReceive={store.receiveApp}
               />
             ) : route.view === 'table' ? (
-              <TableView key="table" apps={apps} facets={facets} sheets={sheets} editing={editing} onOpen={(id) => go({ app: id, view: 'home' })} onChange={store.updateApp} />
+              <TableView key="table" apps={apps} facets={facets} sheets={sheets} onOpen={(id) => go({ app: id, view: 'home' })} onChange={store.updateApp} />
             ) : (
               <Home
                 key="home"
@@ -190,7 +186,6 @@ export default function App() {
                 go={go}
                 sort={sort}
                 setSort={setSort}
-                editing={editing}
                 saveFacet={store.saveFacet}
                 deleteFacet={store.deleteFacet}
               />
@@ -213,13 +208,23 @@ export default function App() {
         onCreate={async (a) => {
           const ok = await store.addApp(a);
           if (ok) {
-            setEditing(true);
             go({ app: a.id, view: 'home' });
           }
           return ok;
         }}
       />
       <BulkDialog open={bulk} onClose={() => setBulk(false)} apps={apps} facets={facets} onChange={store.updateApp} />
+      <RemoveAppDialog
+        app={removing}
+        sheet={removing ? sheets.get(removing.id) ?? '' : ''}
+        onClose={() => setRemoving(null)}
+        onRemove={async (id) => {
+          if (await store.deleteApp(id)) {
+            setRemoving(null);
+            go({ app: null });
+          }
+        }}
+      />
       <Toasts />
     </div>
   );

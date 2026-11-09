@@ -1,4 +1,4 @@
-export type ActionValue = 'diagnose' | 'create' | 'explore' | 'manage' | 'inspire' | 'teach' | 'play';
+export type ActionValue = 'diagnose' | 'create' | 'explore' | 'manage' | 'inspire' | 'teach' | 'play' | 'distill' | 'decide';
 
 export type FacetKind = 'domain' | 'context';
 

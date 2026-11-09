@@ -5,6 +5,7 @@ import type { Route } from '../lib/route';
 import { actionOf, related } from '../lib/facets';
 import FacetTags from './FacetTags';
 import AppCard from './AppCard';
+import { copyShare, shareUrl } from '../lib/share';
 import { activityOf, clean, fmtDate, platformOf, siteUrl, stripArrows, withProtocol, createdOf } from '../lib/format';
 import { edit, uploadImage } from '../lib/supabase';
 import CoverFrame from './CoverFrame';
@@ -13,6 +14,7 @@ import MarkedTextarea from './MarkedTextarea';
 import ChangeLog from './ChangeLog';
 import Notes from './Notes';
 import { toast } from './Toasts';
+import PhoneLink from './PhoneLink';
 
 interface Props {
   app: AppData;
@@ -23,11 +25,11 @@ interface Props {
   go: (p: Partial<Route>) => void;
   /** Paging: the neighbours in the list the app was opened from, and which list that is. */
   seq: { prev?: AppData; next?: AppData; pos: number; total: number; label: string };
-  editing: boolean;
   onBack: () => void;
   onOpen: (id: string) => void;
   onChange: (a: AppData) => void;
-  onDelete: (id: string) => void;
+  /** A change saved on another device, shown without saving it again. */
+  onReceive?: (id: string, patch: Partial<AppData>) => void;
 }
 
 type Field = 'desc' | 'problem' | 'solution';
@@ -39,7 +41,20 @@ const LINKS: { url: keyof AppData; label: keyof AppData; fallback: string }[] = 
   { url: 'supabaseProjectUrl', label: 'supabaseUrlLabel', fallback: 'מסד נתונים' },
 ];
 
-export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, editing, onBack, onOpen, onChange, onDelete }: Props) {
+export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, onBack, onOpen, onChange, onReceive }: Props) {
+  const [phone, setPhone] = useState(false);
+  // No edit mode (Anat, 2026-11-04: "כן לערוך ללא מצב עריכה"): every block reads as a page and turns into its field on a
+  // click; one block is open at a time, and every keystroke is saved by the store's autosave.
+  const [open, setOpen] = useState<string | null>(null);
+  const is = (k: string) => open === k;
+  const tog = (k: string) => setOpen((o) => (o === k ? null : k));
+  const editing = open !== null;
+  useEffect(() => setOpen(null), [app.id]);
+  /** Click on reading text opens its field, unless the click was the end of selecting text to copy. */
+  const openOnClick = (k: string) => () => {
+    if (String(getSelection?.() ?? '').trim()) return;
+    setOpen(k);
+  };
   const [gen, setGen] = useState<Field | 'all' | null>(null);
   const site = siteUrl(app);
   // Other apps that open the same address: a wrong link pasted or autofilled from another app shows up here.
@@ -91,18 +106,21 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
           <span className="step-no mono">{no}</span>
           {title}
         </h3>
-        {editing && (
+        <span className="panel-tools">
           <button className="link" onClick={() => generate(field)} disabled={!!gen}>
             {gen === field || gen === 'all' ? 'מנסח...' : 'ניסוח אוטומטי'}
           </button>
-        )}
+          <button className="link inline-edit" onClick={() => tog(field)}>
+            {is(field) ? 'סיום' : 'עריכה'}
+          </button>
+        </span>
       </header>
-      {editing ? (
+      {is(field) ? (
         <MarkedTextarea value={app[field] ?? ''} onChange={(v) => set({ [field]: v })} label={title} />
-      ) : clean(app[field]) ? (
-        <RichText text={app[field]} lead terms={terms} tone={field === 'desc' ? 'desc' : field} />
       ) : (
-        <p className="dim">טרם נכתב.</p>
+        <div className="click-edit" onClick={openOnClick(field)} title="לחיצה לעריכה">
+          {clean(app[field]) ? <RichText text={app[field]} lead terms={terms} tone={field === 'desc' ? 'desc' : field} /> : <p className="dim">טרם נכתב. לחיצה לכתיבה.</p>}
+        </div>
       )}
     </section>
   );
@@ -135,7 +153,24 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
             <span />
             <span />
           </div>
-          <CoverFrame src={app.coverImage} alt={app.name} href={site} editing={editing} onFile={upload('cover')} pasteAnywhere onUrl={(url) => set({ coverImage: url })} />
+          <CoverFrame src={app.coverImage} alt={app.name} href={site} editing={is('cover')} onFile={upload('cover')} pasteAnywhere onUrl={(url) => set({ coverImage: url })} onPhone={onReceive ? () => setPhone(true) : undefined} />
+          <div className="cover-change">
+            <button className="link inline-edit" onClick={() => tog('cover')}>
+              {is('cover') ? 'סיום החלפת התמונה' : 'החלפת תמונה'}
+            </button>
+          </div>
+          {onReceive && (
+            <PhoneLink
+              app={app}
+              open={phone}
+              onClose={() => setPhone(false)}
+              onReceive={(fresh) => {
+                onReceive(app.id, { coverImage: fresh.coverImage, changeLog: fresh.changeLog, updatedAt: fresh.updatedAt });
+                setPhone(false);
+                toast('התמונה מהטלפון התקבלה ונשמרה');
+              }}
+            />
+          )}
         </div>
 
         <div className="app-summary">
@@ -162,7 +197,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
             </div>
           </div>
 
-          {editing ? (
+          {is('title') ? (
             <div className="form">
               <label>
                 <span className="mono">שם בתפריט</span>
@@ -170,53 +205,76 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
               </label>
               <label>
                 <span className="mono">כותרת הדף</span>
-                <input value={app.title ?? ''} onChange={(e) => set({ title: e.target.value })} />
+                <input value={app.title ?? ''} onChange={(e) => set({ title: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && setOpen(null)} />
               </label>
+              <button className="link inline-edit" onClick={() => setOpen(null)}>
+                סיום
+              </button>
             </div>
           ) : (
             <>
               {domainLabels.length > 0 && <div className="mono kicker">{domainLabels.join(' · ')}</div>}
-              <h1 className="app-title">{app.name}</h1>
+              <h1 className="app-title click-edit" onClick={openOnClick('title')} title="לחיצה לעריכת השם">
+                {app.name}
+              </h1>
               {clean(app.title) && clean(app.title) !== app.name && clean(app.title) !== app.originalName && <p className="app-subtitle">{app.title}</p>}
               <FacetTags app={app} facets={facets} editing={false} onChange={onChange} go={go} />
+              <button className="link inline-edit" onClick={() => tog('facets')}>
+                {is('facets') ? 'סיום שינוי הסיווג' : 'שינוי סיווג ומילות מפתח'}
+              </button>
             </>
           )}
 
-          {editing ? (
+          {is('desc') ? (
             <label className="form-block">
               <span className="mono">
                 תיאור
-                <button className="link" onClick={() => generate()} disabled={!!gen}>
-                  {gen === 'all' ? 'מנסח...' : 'ניסוח אוטומטי של כל השדות'}
-                </button>
+                <span className="panel-tools">
+                  <button className="link" onClick={() => generate()} disabled={!!gen}>
+                    {gen === 'all' ? 'מנסח...' : 'ניסוח אוטומטי של כל השדות'}
+                  </button>
+                  <button className="link inline-edit" onClick={() => setOpen(null)}>
+                    סיום
+                  </button>
+                </span>
               </span>
               <MarkedTextarea value={app.desc ?? ''} onChange={(v) => set({ desc: v })} label="תיאור" />
             </label>
           ) : (
-            clean(app.desc) && <RichText className="app-desc" text={app.desc} lead terms={terms} tone="desc" />
+            <div className="click-edit" onClick={openOnClick('desc')} title="לחיצה לעריכת התיאור">
+              {clean(app.desc) ? <RichText className="app-desc" text={app.desc} lead terms={terms} tone="desc" /> : <p className="dim">אין עדיין תיאור. לחיצה לכתיבה.</p>}
+            </div>
           )}
 
 
-          {!editing && (
+          {(
             <div className="app-links">
               {site && (
                 <a className="solid big" href={site} target="_blank" rel="noopener noreferrer">
                   {stripArrows(app.primaryBtn) || 'כניסה לאפליקציה'}
                 </a>
               )}
+              {site && (
+                <button className="ghost share-copy" onClick={() => copyShare(app)} title={shareUrl(app)}>
+                  העתקת קישור עם תמונה
+                </button>
+              )}
               {LINKS.filter((l) => app[l.url]).map((l) => (
                 <a key={String(l.url)} className="ghost" href={withProtocol(String(app[l.url]))} target="_blank" rel="noopener noreferrer">
                   {String(app[l.label] ?? '') || l.fallback}
                 </a>
               ))}
+              <button className="link inline-edit" onClick={() => tog('links')}>
+                {is('links') ? 'סיום עריכת הקישורים' : 'עריכת קישורים ופרטים'}
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {editing && <FacetTags app={app} facets={facets} editing onChange={onChange} go={go} />}
+      {is('facets') && <FacetTags app={app} facets={facets} editing onChange={onChange} go={go} />}
 
-      {editing && (
+      {is('links') && (
         <section className="panel links-form">
           <header className="panel-head">
             <h3>קישורים</h3>
@@ -278,11 +336,21 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
       </div>
 
       <div className="analysis">
-        <ChangeLog app={app} editing={editing} onChange={onChange} />
-        <Notes app={app} editing={editing} onChange={onChange} />
+        <div className="block-edit">
+          <ChangeLog app={app} editing={is('log')} onChange={onChange} />
+          <button className="link inline-edit" onClick={() => tog('log')}>
+            {is('log') ? 'סיום עריכת היומן' : 'הוספה ועריכה ביומן העבודה'}
+          </button>
+        </div>
+        <div className="block-edit">
+          <Notes app={app} editing={is('notes')} onChange={onChange} />
+          <button className="link inline-edit" onClick={() => tog('notes')}>
+            {is('notes') ? 'סיום עריכת ההערות' : 'הוספה ועריכה של הערות'}
+          </button>
+        </div>
       </div>
 
-      {!editing && near.length > 0 && (
+      {near.length > 0 && (
         <section className="band related">
           <header className="band-head">
             <span className="mono">R</span>
@@ -331,18 +399,6 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
         </nav>
       )}
 
-      {editing && (
-        <div className="danger">
-          <button
-            className="ghost"
-            onClick={() => {
-              if (confirm(`למחוק את "${app.name}"? הפעולה אינה הפיכה.`)) onDelete(app.id);
-            }}
-          >
-            מחיקת האפליקציה
-          </button>
-        </div>
-      )}
     </motion.article>
   );
 }
