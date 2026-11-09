@@ -11,6 +11,8 @@ export interface Route {
   links: boolean;
   /** Home section (Anat, 2026-11-04): a fixed bar of sections, only the content below it changes. */
   sec: 'new' | 'map' | 'all' | 'beyond';
+  /** A map cell opened as its own page, `domain:action` (Anat, 2026-11-10). */
+  cell: string | null;
 }
 
 function read(): Route {
@@ -24,6 +26,7 @@ function read(): Route {
     view: p.get('view') === 'table' ? 'table' : 'home',
     links: p.get('links') === '1',
     sec: p.get('sec') === 'map' ? 'map' : p.get('sec') === 'all' ? 'all' : p.get('sec') === 'beyond' ? 'beyond' : 'new',
+    cell: p.get('cell'),
   };
 }
 
@@ -37,6 +40,7 @@ function write(r: Route) {
   if (r.q) p.set('q', r.q);
   if (r.links) p.set('links', '1');
   if (r.sec !== 'new' && r.view === 'home' && !r.app) p.set('sec', r.sec);
+  if (r.cell && r.sec === 'map' && r.view === 'home' && !r.app) p.set('cell', r.cell);
   const s = p.toString();
   return `${location.pathname}${s ? `?${s}` : ''}`;
 }

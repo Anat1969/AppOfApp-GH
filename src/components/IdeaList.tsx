@@ -28,11 +28,22 @@ export function buildPrompt(idea: Idea, actionLabel: string, domainLabel: string
   const src = (idea.from ?? []).map((id) => apps.find((a) => a.id === id)).filter(Boolean) as AppData[];
   const line = (a: AppData) => `- ${a.name}${siteUrl(a) ? `: ${siteUrl(a)}` : ''}${a.githubUrl ? ` (קוד: ${a.githubUrl})` : ''}`;
   const refs = [...src, ...near.filter((a) => !src.some((s) => s.id === a.id))];
+  const sharp = idea.example
+    ? `\nהדוגמה שהמסך הראשון חייב לשחזר (מספרים בדוגמה הם להמחשה, אלא אם כתוב מקור):\n${idea.example}\n${idea.test ? `\nאיך בודקים שהכלי אמין (חייב להופיע באפליקציה עצמה, בעמוד "איך מודדים"):\n${idea.test}\n` : ''}`
+    : '';
   return `רעיון לבנייה: ${idea.title}.
 סוג הרעיון: ${KIND_WORD[idea.kind]}.
 ${plain(idea.idea)}${idea.yields ? `\nמה היא מפיקה: ${idea.yields}.` : ''}
 פעולה: ${actionLabel}. תחום: ${domainLabel}.
-${src.length ? `\nהאפליקציות שהיא נבנית מהן (קרא את הקוד והנתונים שלהן, ושמור על קישור חזרה אליהן):\n${src.map(line).join('\n')}\n` : ''}${refs.length > src.length ? `\nאפליקציות קרובות בתיק שאפשר להישען עליהן:\n${refs.slice(src.length).map(line).join('\n')}\n` : ''}
+${sharp}${src.length ? `\nהאפליקציות שהיא נבנית מהן (קרא את הקוד והנתונים שלהן, ושמור על קישור חזרה אליהן):\n${src.map(line).join('\n')}\n` : ''}${refs.length > src.length ? `\nאפליקציות קרובות בתיק שאפשר להישען עליהן:\n${refs.slice(src.length).map(line).join('\n')}\n` : ''}
+לפני כל דבר אחר: בחן את הרעיון, אל תאשר אותו אוטומטית.
+1. זקק במשפט אחד את המנגנון: מה עובר מתחום לתחום, ומה המשתמש יודע בסוף שלא ידע קודם.
+2. מבחן הבנאליות: אם התוצר הוא רק ציון, דירוג או רשימה שאפשר לקבל משתי האפליקציות בנפרד, הרעיון לא הובן. חדד אותו עד שיש בו החלטה שמשתנה בגללו.
+3. חשוף שלושה דברים שעלולים להכשיל אותו (נתון שאין, הנחה שלא נבדקה, משתמש שלא יחזור), ולכל אחד מה עושים.
+4. נתונים: כתוב מאיפה מגיע כל נתון. נתון אמיתי, הערכה והדגמה נראים שונה על המסך (קו מקווקו, תג "הערכה" או "הדגמה"). לא ממציאים נתון עירוני.
+5. תקן ואמינות: על איזה תקן, הנחיה או מקור הכלי נשען, ואיך הוא מודד את האמינות של עצמו.
+רק אחרי חמשת אלה כותבים אפיון.
+
 קודם מחליטים: שדרוג או אפליקציה חדשה (Anat, 2026-11-06).
 בדוק את האפליקציות שלמעלה, כולל הקוד שלהן. אם אחת מהן משרתת את אותו משתמש, מחזיקה כבר את הנתונים, ומשמשת באותו רגע בעבודה, הוסף לה את היכולת כמסך או כמצב, באותו מאגר ובאותה כתובת, ועדכן את הרשומה שלה בתיק.
 אם אחת משלוש התשובות היא "לא", בנה אפליקציה חדשה. אפליקציה עירונית ואפליקציה אישית לא מתמזגות.
@@ -72,7 +83,19 @@ export default function IdeaList({ ideas, apps, near = [], actionLabel, domainLa
           <p>
             <Marked text={idea.idea} />
           </p>
+          {idea.example && (
+            <p className="idea-example">
+              <span className="mono">דוגמה</span>
+              {idea.example}
+            </p>
+          )}
           {idea.yields && <p className="idea-yields">מפיק: {idea.yields}</p>}
+          {idea.test && (
+            <p className="idea-test">
+              <span className="mono">איך בודקים</span>
+              {idea.test}
+            </p>
+          )}
           {!!idea.from?.length && (
             <p className="idea-from">
               <span className="mono dim">מתוך</span>

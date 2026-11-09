@@ -113,7 +113,7 @@ export default function App() {
         facets={facets}
         search={search}
         go={go}
-        onHome={() => go({ app: null, action: null, domain: null, ctx: null, q: '', view: 'home', links: false, sec: 'new' })}
+        onHome={() => go({ app: null, action: null, domain: null, ctx: null, q: '', view: 'home', links: false, sec: 'new', cell: null })}
         onSearch={(q) => go({ q, app: null, view: 'home' }, true)}
         onOpen={(id) => go({ app: id, view: 'home' })}
         onView={(view) => go({ view, app: null })}
