@@ -242,10 +242,10 @@ const browser = await chromium.launch();
   await page.locator('.chip', { hasText: 'רק עם אתר' }).click();
   ok((await page.locator('.grid .card').count()) === rows.length - 1, 'links-only hides the app without a site');
   await page.locator('.chip', { hasText: 'רק עם אתר' }).click();
-  await page.locator('.seg button', { hasText: 'לפי שם' }).click();
+  await page.locator('.filters ~ .seg button', { hasText: 'לפי שם' }).click();
   const first = await page.locator('.grid .card-name').first().textContent();
   ok(first?.startsWith('אדריכלית'), 'alphabetical sort puts "אדריכלית" first');
-  await page.locator('.seg button', { hasText: 'לפי תאריך' }).click();
+  await page.locator('.filters ~ .seg button', { hasText: 'לפי תאריך' }).click();
 
   // search + suggestion
   await page.fill('.search input', 'גינות');

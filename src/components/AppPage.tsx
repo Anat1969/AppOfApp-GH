@@ -313,6 +313,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
           <div className="seq-links">
             {seq.prev ? (
               <button className="seq-link prev" onClick={() => onOpen(seq.prev!.id)}>
+                <span className="arrow">←</span>
                 <span className="mono">הקודמת · {sheets.get(seq.prev.id)}</span>
                 <b>{seq.prev.name}</b>
               </button>
@@ -323,6 +324,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, edi
               <button className="seq-link next" onClick={() => onOpen(seq.next!.id)}>
                 <span className="mono">הבאה · {sheets.get(seq.next.id)}</span>
                 <b>{seq.next.name}</b>
+                <span className="arrow">→</span>
               </button>
             )}
           </div>

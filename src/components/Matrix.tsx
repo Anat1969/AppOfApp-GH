@@ -156,7 +156,7 @@ export default function Matrix({ apps, facets, sheets, go, onAdd }: Props) {
                         onPointerEnter={(e) => e.pointerType === 'mouse' && show(dm.value, ac.value, e.currentTarget)}
                         onPointerLeave={hideSoon}
                         onFocus={(e) => show(dm.value, ac.value, e.currentTarget)}
-                        onClick={() => go({ domain: dm.value, action: ac.value, app: null })}
+                        onClick={() => go({ domain: dm.value, action: ac.value, app: null, view: 'home' })}
                         aria-label={`${dm.label}, ${ac.label}: ${n} אפליקציות`}
                       >
                         <span className="cell-stack" aria-hidden>

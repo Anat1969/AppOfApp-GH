@@ -134,6 +134,16 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
               </span>
             )}
           </div>
+          {!q && !filtering && (
+            <span className="seg">
+              <button className={sort === 'date' ? 'on' : ''} onClick={() => setSort('date')}>
+                04 · לפי תאריך
+              </button>
+              <button className={sort === 'alpha' ? 'on' : ''} onClick={() => setSort('alpha')}>
+                04 · לפי שם
+              </button>
+            </span>
+          )}
         </header>
         {q && near && (
           <p className="expand-note">
