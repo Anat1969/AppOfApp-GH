@@ -946,8 +946,13 @@ mark.hl { color: var(--ink); font-weight: 600; padding: 0 2px; background: linea
 .seq-arrows button { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line-2); border-radius: 0; background: #fff; color: var(--navy); font-size: 1.35rem; line-height: 1; transition: background 0.15s, color 0.15s, box-shadow 0.15s; }
 .seq-arrows button:hover:not(:disabled) { background: var(--navy); color: #fff; box-shadow: var(--shadow-1); }
 
-/* The apps of a clicked cell, under the map (Anat, 2026-11-09) */
-.matrix .cell.picked { outline: 3px solid #e8a317; outline-offset: 1px; }
-.cell-below { margin-top: 18px; padding: 14px 16px 18px; background: var(--paper); border: 1px solid var(--line-2); border-top: 3px solid #e8a317; box-shadow: var(--shadow-1); scroll-margin-top: calc(var(--bar-h) + 80px); }
-.cell-below-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 14px; }
-.cell-below-head strong { font-size: 1.15rem; font-weight: 700; }
+/* A map cell as its own page (Anat, 2026-11-10) */
+.cell-page .cell-back { height: 40px; background: #1a3a6f; }
+.cell-page-ideas { margin-top: 34px; padding-top: 14px; border-top: 3px double var(--ink); }
+.cell-page-ideas h3 { margin: 0 0 12px; font-size: 1.15rem; font-weight: 700; }
+.cell-page-ideas .idea-list { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+/* Idea with an example and a reliability check (Anat, 2026-11-10) */
+.idea-list .pop-idea p.idea-example { padding: 8px 10px; background: #fbf6e6; border-inline-start: 3px solid #d4af37; color: var(--ink); }
+.idea-list .pop-idea p.idea-test { color: var(--mid); font-size: 0.84rem; }
+.idea-example .mono, .idea-test .mono { display: block; margin-bottom: 2px; color: #1a3a6f; font-weight: 600; }

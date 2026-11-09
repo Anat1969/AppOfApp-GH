@@ -9,6 +9,7 @@ import Filters from './Filters';
 import Matrix, { type AddPrefill } from './Matrix';
 import Vocabulary from './Vocabulary';
 import BeyondMap from './BeyondMap';
+import CellPage from './CellPage';
 
 interface Props {
   apps: AppData[];
@@ -67,10 +68,11 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
   // The sections sit in one bar that stays in place; only the content under it changes (Anat, 2026-11-04). A search or a
   // filter always shows the sheets.
   const sec = filtering ? 'all' : route.sec;
+  const cell = sec === 'map' ? route.cell : null;
   const bar = useRef<HTMLElement>(null);
   const [vocabOpen, setVocabOpen] = useState(false);
   const pick = (s: Route['sec']) => {
-    go({ sec: s });
+    go({ sec: s, cell: null });
     const el = bar.current;
     if (el) {
       const top = el.getBoundingClientRect().top + window.scrollY - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar-h') || '64');
@@ -100,7 +102,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
       </nav>
 
       <AnimatePresence mode="wait">
-      <motion.div key={sec} className="sec-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+      <motion.div key={cell ? `cell:${cell}` : sec} className="sec-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
 
       {sec === 'new' && (
         <section className="hero hero-welcome">
@@ -169,12 +171,14 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
         </section>
       )}
 
-      {sec === 'map' && (
+      {cell && <CellPage cell={cell} apps={apps} facets={facets} sheets={sheets} go={go} onAdd={onAdd} />}
+
+      {sec === 'map' && !cell && (
         <section className="band sec-section band-map">
           <header className="band-head">
             <span className="mono">02</span>
             <h2>מפת התחומים והפעולות</h2>
-            <span className="band-note">שורה היא תחום, עמודה היא מה יוצאים איתו. ריחוף על משבצת מציג את האפליקציות בה, ולחיצה פותחת אותן מתחת למפה. משבצת ריקה היא פער, ובה הצעה לאפליקציה חדשה.</span>
+            <span className="band-note">שורה היא תחום, עמודה היא מה יוצאים איתו. ריחוף על משבצת מציג את האפליקציות בה, ולחיצה פותחת אותן בדף משלהן, עם חזרה למפה. משבצת ריקה היא פער, ובה הצעה לאפליקציה חדשה.</span>
           </header>
           <Matrix apps={apps} facets={facets} sheets={sheets} go={go} onAdd={onAdd} />
           <button className="link inline-edit vocab-toggle" onClick={() => setVocabOpen((v) => !v)}>

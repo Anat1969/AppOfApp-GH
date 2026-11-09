@@ -35,7 +35,7 @@ export default function BeyondMap({ apps, facets, go, onAdd, saveFacet }: Props)
       </div>
       {tab === 'syn' ? (
         <>
-          <p className="beyond-note">מיזוגים, חיתוכים וזיקוקים של אפליקציות מתחומים רחוקים, שמפיקים תובנה, ידע, מידע או יצירה חדשה.</p>
+          <p className="beyond-note"><Marked text="כל סינתזה מעבירה **מנגנון** מתחום אחד לתחום רחוק, ולא רק מצרפת שתי אפליקציות. לכל אחת דוגמה אחת מוחשית, ואיך בודקים שהיא אמינה." /></p>
           <div className="beyond-grid">
             <IdeaList ideas={syn} apps={apps} actionLabel="לפי הרעיון" domainLabel="כמה תחומים" prefill={{}} go={go} onAdd={onAdd} />
           </div>
@@ -50,7 +50,7 @@ export default function BeyondMap({ apps, facets, go, onAdd, saveFacet }: Props)
                 <h4>{ax.label}</h4>
                 <p className="dim">{ax.why}</p>
                 <IdeaList
-                  ideas={ax.ideas.map((x): Idea => ({ kind: 'new', title: x.title, idea: x.idea }))}
+                  ideas={ax.ideas.map((x): Idea => ({ kind: 'new', title: x.title, idea: x.idea, example: x.example, test: x.test }))}
                   apps={apps}
                   actionLabel={ax.kind === 'action' ? ax.label : 'לפי הרעיון'}
                   domainLabel={ax.kind === 'domain' ? ax.label : 'לפי הרעיון'}
