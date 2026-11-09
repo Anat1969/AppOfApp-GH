@@ -956,3 +956,5 @@ mark.hl { color: var(--ink); font-weight: 600; padding: 0 2px; background: linea
 .idea-list .pop-idea p.idea-example { padding: 8px 10px; background: #fbf6e6; border-inline-start: 3px solid #d4af37; color: var(--ink); }
 .idea-list .pop-idea p.idea-test { color: var(--mid); font-size: 0.84rem; }
 .idea-example .mono, .idea-test .mono { display: block; margin-bottom: 2px; color: #1a3a6f; font-weight: 600; }
+/* The hover window stays short: the reliability check shows on the cell page and in section 04 */
+.cell-pop .idea-test { display: none; }

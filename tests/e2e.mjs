@@ -231,6 +231,7 @@ const browser = await chromium.launch();
   await page.waitForSelector('.cell-pop .pop-idea');
   ok((await page.locator('.cell-pop .pop-idea h4').first().textContent())?.length > 2, 'an empty cell suggests an app');
   ok((await page.locator('.cell-pop .pop-idea').count()) >= 3, 'every cell offers several ideas');
+  ok((await page.locator('.cell-pop .pop-idea .idea-example').count()) >= 3, 'every cell idea carries a concrete example');
   ok((await page.locator('.cell-pop .idea-kind').allTextContents()).some((k) => /מיזוג|חיתוך|זיקוק/.test(k)), 'ideas include merges, intersections or distillations');
   ok(await page.locator('.cell-pop .how-build').isVisible(), 'the window explains how an idea becomes an app');
   await page.waitForTimeout(300);

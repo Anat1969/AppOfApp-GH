@@ -398,5 +398,8 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   show on the card. A municipal app and a personal app never merge, so a synthesis stays inside one owner.
   `buildPrompt` opens with five checks before any spec: distill the mechanism, the banality test, three things that can
   fail it, where every number comes from (real / estimate / demo look different), and the standard it rests on.
-  The 273 cell ideas (`CELL_IDEAS`) have not been rewritten to this bar yet.
+  ALL CELLS TOO (Anat, 2026-11-10: "תמפה את כולם בלי להפסיק"): the 351 cell ideas (13 domains x 9 actions x 3) are
+  rewritten to the same bar, each with `example` and `test`; no idea mixes owners, no title repeats. Real facts cited in
+  examples were checked from knowledge only, not against an outside source. A new idea must pass the same checks:
+  example and test present, one `**emphasis**`, source apps of one owner, a title that is not an app name.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.
