@@ -152,10 +152,12 @@ const browser = await chromium.launch();
   await page.screenshot({ path: SHOTS + 'desktop-home-full.png', fullPage: true });
 
   // matrix cell: domain x action
+  await page.waitForFunction(() => document.querySelectorAll('.matrix .cell').length > 0);
   await page.locator('.matrix .cell[aria-label^="תכנון עירוני, אבחון"]').click();
   await page.waitForTimeout(300);
   ok(await page.locator('.cell-pop').isVisible() && page.url().includes('sec=map'), 'a cell click keeps the map and opens its window');
-  await page.locator('.matrix .axis', { hasText: 'משחק ואימון' }).click();
+  await page.waitForFunction(() => document.querySelectorAll('.matrix thead .axis').length > 0);
+  await page.locator('.matrix thead .axis', { hasText: 'משחק ואימון' }).click();
   ok((await page.locator('.matrix thead th.sorted').count()) === 1 && page.url().includes('sec=map'), 'a column header sorts the map in place');
   await page.waitForSelector('.line-pop');
   ok((await page.locator('.line-pop .line-head strong').textContent()) === 'משחק ואימון', 'a column header opens its apps on the same page');
