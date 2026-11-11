@@ -27,7 +27,8 @@ export default async function handler(req, res) {
   const id = safeId(req.query.id);
   const app = id ? await getApp(id).catch(() => null) : null;
   const site = app ? siteUrl(app) : '';
-  const sources = [app?.coverImage, site && `https://image.thum.io/get/width/1200/crop/630/${site}`].filter((s) => s && /^https:\/\//.test(s));
+  // ?demo=1: the poster of the app's video first, for a link that opens the video.
+  const sources = [req.query.demo && app?.demo?.poster, app?.coverImage, site && `https://image.thum.io/get/width/1200/crop/630/${site}`].filter((s) => s && /^https:\/\//.test(s));
   let out = null;
   for (const src of sources) {
     const buf = await grab(src);
