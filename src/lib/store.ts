@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { edit, supabase } from './supabase';
 import type { AppData, Category, Facet, SaveState } from './types';
 import { toast } from '../components/Toasts';
+import { siteUrl, time } from './format';
 
 const SAVE_DELAY = 800;
 
@@ -147,6 +148,25 @@ export function useStore() {
       return false;
     }
   }, []);
+
+  // AUTOMATIC COVER (Anat, 2026-11-11): an app with an address and no cover gets a picture of its own home page, with
+  // no cut and paste. The portfolio asks for it when it meets such an app (a new one from the form, or one written
+  // straight into the table); at most three per visit, one after the other, and a site that failed waits a day.
+  const coverAsked = useRef(new Set<string>());
+  useEffect(() => {
+    if (loading || coverAsked.current.size >= 3) return;
+    const next = apps.find((a) => !a.coverImage && siteUrl(a) && !coverAsked.current.has(a.id) && Date.now() - time(a.coverTriedAt) > 86_400_000);
+    if (!next) return;
+    coverAsked.current.add(next.id);
+    setTimeout(() => {
+      edit<{ coverImage?: string; coverTriedAt?: string }>('auto_cover', { id: next.id })
+        .then((r) => {
+          if (r.coverImage) receiveApp(next.id, { coverImage: r.coverImage, coverAuto: true });
+          else if (r.coverTriedAt) receiveApp(next.id, { coverTriedAt: r.coverTriedAt });
+        })
+        .catch(() => {});
+    }, 1200);
+  }, [apps, loading, receiveApp]);
 
   const deleteApp = useCallback(async (id: string) => {
     try {

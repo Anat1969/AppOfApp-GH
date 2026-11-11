@@ -42,6 +42,45 @@ async function get(path: string) {
 const upsert = (table: string, row: unknown) => rest('POST', table, row, 'resolution=merge-duplicates,return=minimal');
 const safeId = (v: unknown) => String(v ?? '').replace(/[^\w-]/g, '').slice(0, 160);
 
+// AUTOMATIC COVER (Anat, 2026-11-11: "אתה שומר את הדף הראשי בתוך חלון מסגרת תמונה של האפליקציה כדי שאני לא אצטרך לבצע
+// פעולה זו באופן ידני של חיתוך והדבקה"): an app with an address and no cover gets a picture of its own home page.
+// Claude sessions take it with a real browser (tools/cover.cjs); this is the net for an app added from the form or
+// straight into the table: the portfolio asks for it when it meets an app without a cover.
+const withProtocol = (u: string) => (/^[a-z][a-z\d+.-]*:/i.test(u) ? u : `https://${u}`);
+/** Same rule as siteUrl() in src/lib/format.ts: the public app address, never an editor page. */
+function siteUrl(app: Record<string, unknown>): string {
+  const list = [app.previewUrl, app.websiteUrl, app.editUrl];
+  for (let i = 0; i < list.length; i++) {
+    const t = String(list[i] ?? '').trim();
+    if (!t) continue;
+    try {
+      const u = new URL(withProtocol(t));
+      if (!['http:', 'https:'].includes(u.protocol) || u.hostname === 'localhost') continue;
+      if (i === 2 && !['.base44.app', '.lovable.app', '.github.io', '.vercel.app'].some((d) => u.hostname.endsWith(d))) continue;
+      return u.href;
+    } catch {
+      continue;
+    }
+  }
+  return '';
+}
+
+async function homePicture(id: string, site: string): Promise<string> {
+  // A site that refuses (401, 404) or sends the visitor to a sign-in page of its host has no home page to show.
+  const page = await fetch(site, { redirect: 'follow', signal: AbortSignal.timeout(10000), headers: { 'user-agent': 'Mozilla/5.0 appofapp' } });
+  await page.body?.cancel();
+  if (!page.ok || new URL(page.url).hostname !== new URL(site).hostname) return '';
+  const r = await fetch(`https://image.thum.io/get/width/1280/crop/800/noanimate/${site}`, { signal: AbortSignal.timeout(40000) });
+  const type = (r.headers.get('content-type') ?? '').split(';')[0];
+  if (!r.ok || !/^image\/(png|jpeg)$/.test(type)) return '';
+  const buf = new Uint8Array(await r.arrayBuffer());
+  // A few KB is an error card or an empty page, not a home page.
+  if (buf.length < 12000) return '';
+  const path = `${id}/cover-${Date.now()}.${type === 'image/png' ? 'png' : 'jpg'}`;
+  const up = await fetch(`${SB}/storage/v1/object/${BUCKET}/${path}`, { method: 'POST', headers: { ...service, 'Content-Type': type }, body: buf });
+  return up.ok ? `${SB}/storage/v1/object/public/${BUCKET}/${path}` : '';
+}
+
 // The model answers in parts (insight line + explanation) so the hierarchy of the text standard is kept every time;
 // the server joins them into "insight. explanation" for desc / problem / solution.
 const PART = { type: 'object', additionalProperties: false, required: ['insight', 'detail'], properties: { insight: { type: 'string' }, detail: { type: 'string' } } };
@@ -290,6 +329,27 @@ Deno.serve(async (req) => {
         }
         await upsert('aoa_apps', { id, data, updated_at: now });
         return json({ ok: true, updated_at: now });
+      }
+
+      // The home page as the cover, for an app that has none. One try a day per app; a failed try is recorded on the
+      // app (coverTriedAt), so a site that cannot be photographed is not asked again on every visit.
+      case 'auto_cover': {
+        const id = safeId(body.id);
+        const [cur] = await get(`aoa_apps?select=data&id=eq.${id}`);
+        if (!cur) return json({ error: 'no such app' }, 404);
+        const d = cur.data as Record<string, unknown>;
+        if (d.coverImage) return json({ ok: true, coverImage: d.coverImage });
+        const site = siteUrl(d);
+        if (!site) return json({ ok: false, reason: 'no address' });
+        if (d.coverTriedAt && Date.now() - new Date(String(d.coverTriedAt)).getTime() < 86_400_000) return json({ ok: false, reason: 'tried today' });
+        const coverImage = await homePicture(id, site).catch(() => '');
+        // Read again: the picture took time, and an edit may have been saved meanwhile.
+        const [fresh] = await get(`aoa_apps?select=data&id=eq.${id}`);
+        const base = (fresh?.data ?? d) as Record<string, unknown>;
+        if (base.coverImage) return json({ ok: true, coverImage: base.coverImage });
+        const patch = coverImage ? { coverImage, coverAuto: true } : { coverTriedAt: now };
+        await rest('PATCH', `aoa_apps?id=eq.${id}`, { data: { ...base, ...patch } }, 'return=minimal');
+        return json(coverImage ? { ok: true, coverImage, coverAuto: true } : { ok: false, reason: 'no picture', coverTriedAt: now });
       }
 
       case 'delete_app': {

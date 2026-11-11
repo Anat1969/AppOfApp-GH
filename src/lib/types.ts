@@ -47,6 +47,10 @@ export interface AppData {
   supabaseProjectUrl?: string;
   supabaseUrlLabel?: string;
   coverImage?: string;
+  /** The cover is a picture of the app's own home page, taken automatically (not chosen by hand). */
+  coverAuto?: boolean;
+  /** Last failed try to take that picture; the next try is a day later. */
+  coverTriedAt?: string;
   logoImage?: string;
   category?: string | null;
   tags?: string[];
