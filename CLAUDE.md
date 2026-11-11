@@ -210,6 +210,16 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   Facebook, LinkedIn, X, Telegram, e-mail, copy link, and download (Instagram and TikTok take a file). The shared link is the
   page with `?aoa-demo=1`, which opens the player on arrival; the app's own og: tags give the network preview. Without
   `share` the player is unchanged. Download names are ASCII (`<host>-demo.mp4`): Chromium turns a Hebrew name into "download".
+- VISION FILM (Anat, 2026-11-11: "החזון סרטון בדף הבית מעורר השראה ... סרטון שמשווק את האפליקציה בצורה מעוררת השראה מראייה
+  כוללת שלו למקרה פרטי. על ידי שימוש בכל דפי הבית. 20 שניות קול של אברי במהירות 1.2"): the home video is not a tour of
+  screens. It sells the vision in four moves, one narrated sentence each: the vision (a wall of the home pages of all the
+  apps), the goal (all of them, counted), the tool (they fall into the map, field by result, empty cells show), one case
+  (a single home page comes forward with its question), then the closing card. `tools/vision-film.cjs` draws it from the
+  portfolio data frame by frame (no screen recording) with the script `docs/vision-film.json`; voice he-IL-AvriNeural at
+  its natural rate, music.py under it; the file is 24s and `data.demo.speed` 1.2 plays it in 20s. Re-run it when the
+  portfolio grows: `node tools/vision-film.cjs docs/vision-film.json <out> <Claude-GH templates dir> --upload` (about 6
+  minutes). The request the video panel copies for other apps asks for the same four moves. "מדריך חי" in the logo is a
+  different thing (a recorded click path shared as a link); its hint now says so.
 - CREATIONS (Anat, 2026-11-03: "כל אפליקציה צריכה דף עם כתבות שהיא יכולה להפיק מנושאים שעולים מהידע, הבנה ויישום"):
   `public/creations.js` serves `<app-creations src="./creations.json">` to all apps (Pages first, Vercel fallback). Each topic
   is a room with creations in nine designs (poster, gradient, veil, insight, quote, haiku, post, fromto, essay), A4 sheets
@@ -343,6 +353,15 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   חדשה אצלי" (7 steps, only for a new app); "איך רעיון הופך לאפליקציה" explains the
   flow. An idea whose title is already an app name is hidden. Under the map, `BeyondMap.tsx`: syntheses, and new rows and
   columns (a proposed domain is added to the vocabulary in one click; actions are fixed in code). `gapIdeas.ts` is gone.
+- AUTOMATIC COVER (Anat, 2026-11-11: "כשאתה מעלה אפליקציה חדשה לאפליקציה הזו - אתה שומר את הדף הראשי בתוך חלון מסגרת תמונה
+  של האפליקציה כדי שאני לא אצטרך לבצע פעולה זו באופן ידני של חיתוך והדבקה"): every app that enters the portfolio gets a
+  picture of its own home page as the cover, in the same task. A Claude session that adds an app runs
+  `node tools/cover.cjs <appId>` right after the row is saved (real browser, 1280x800, waits until the screen is still,
+  refuses a sign-in page of the host and an empty page; `--missing` covers every app without one, `--force` replaces).
+  The net for an app added from the form or straight into the table: the portfolio calls `aoa-edit` `auto_cover` when it
+  meets an app with an address and no cover (thum.io picture stored in aoa-media, three apps per visit, a failed site
+  waits a day in `coverTriedAt`). `data.coverAuto` marks a cover that was not chosen by hand; a cover Anat pastes or
+  uploads replaces it as before. Never ask her to cut and paste a screenshot.
 - COVER IMAGE (Anat, 2026-10-27): the frame takes the image's own proportions (a screenshot is never cropped; very tall
   ones are limited to 82vh and the frame narrows to them). In edit mode a screenshot pasted anywhere on the app page
   (Ctrl+V, unless text is pasted into a field) becomes the cover, shows at once as a preview, and uploads once even if

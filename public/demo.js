@@ -381,7 +381,10 @@
       `צור סרטון הדגמה לאפליקציה "${name}" (aoa_apps id: ${app.id}).`,
       `כתובת: ${(data && (data.previewUrl || data.websiteUrl)) || location.origin + location.pathname}`,
       `אורך יעד: ${Math.round(plan(demo).length || 40)} שניות, מהירות ${fmtX(demo.speed || 1)}.`,
-      'לפי templates/demo.cjs ב-Claude-GH, במצב תסריט: כרטיס פתיחה, 4 עד 5 סצנות עם שורת תובנה ומשפט הסבר, כרטיס סיום עם הכתובת.',
+      // The film sells the vision, it does not tour the screens (Anat, 2026-11-11): from the whole picture to one case.
+      'סרטון חזון, לא סיור במסכים: מעורר השראה, מהתמונה הכוללת למקרה פרטי אחד. ארבעה מהלכים: החזון, המטרה, הכלי, מקרה אחד, וכרטיס סיום עם הכתובת.',
+      'משפט קריינות אחד לכל מהלך, בקול של אברי (he-IL-AvriNeural), ומוזיקה שקטה מתחת. מספרים נכתבים במילים.',
+      'הדוגמה והכלי: tools/vision-film.cjs ו-docs/vision-film.json ב-AppOfApp-GH (20 שניות במהירות 1.2). סרטון שמדגים שימוש צעד אחר צעד: templates/demo.cjs ב-Claude-GH.',
       `העלה ל-aoa-media (${app.id}/demo-<ts>.mp4 ותמונת שער), ושמור ב-data.demo: src, poster, duration, וכתובת דף הבית ב-at.`,
     ].join('\n');
 

@@ -285,7 +285,7 @@
       if (edits.length) groups.push({ label: 'עריכת האפליקציה', items: edits });
       const dev = [{ label: 'העתקת קישור', hint: 'למצב הנוכחי', onSelect: () => this._copy() }];
       if (this.hasAttribute('phone')) dev.push({ label: 'פתיחה בטלפון', hint: this._qr ? 'סגירת הקוד' : 'QR לעמוד הזה', qr: true, onSelect: () => this._phone() });
-      dev.push({ label: 'מדריך חי', hint: 'הקלטה ושיתוף', onSelect: () => this._guide() });
+      dev.push({ label: 'מדריך חי', hint: 'מקליטים לחיצות, משתפים קישור', onSelect: () => this._guide() });
       // Only where this app has a video (Anat, 2026-11-03): an empty item that only copies a request is not a feature.
       if (window.AIDemo && window.AIDemo.has()) dev.push({ label: 'סרטון הדגמה', hint: 'אורך ומהירות', onSelect: () => this._demo() });
       if (chat) dev.push({ label: 'שיחת הפיתוח', href: chat });
