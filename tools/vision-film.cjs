@@ -65,7 +65,9 @@ const probe = (f) => parseFloat(execFileSync('ffprobe', ['-v', 'error', '-show_e
     return { file: f, dur: probe(f) - 0.8 }; // the voice file ends with about 0.8s of silence
   });
   const starts = [0];
-  const voiceAt = [0.6];
+  // The first sentence starts a full second in: a speaker or a headset that wakes up late swallowed its first word
+  // when it started at 0.6s (Anat, 2026-11-11: "אתה חותך את המילה הראשונה של הקריין").
+  const voiceAt = [1.2];
   for (let i = 1; i < says.length; i++) {
     voiceAt[i] = voiceAt[i - 1] + says[i - 1].dur + 0.7;
     starts[i] = voiceAt[i] - 0.35;
@@ -210,10 +212,10 @@ window.render = (t) => {
 
   // 4. Sound: the sentences at their seconds, music under them (lowered while the voice speaks), a lift at the close.
   const music = path.join(dir, 'music.wav');
-  execFileSync('python3', ['-I', path.join(templates, 'music.py'), music, String(end), sc.music || 'wonder', String(starts[4])]);
+  execFileSync('python3', ['-I', path.join(templates, 'music.py'), music, String(end), sc.music || 'bright', String(starts[4])]);
   const ins = says.flatMap((s) => ['-i', s.file]);
   const delays = says.map((s, i) => `[${i + 2}:a]adelay=${Math.round(voiceAt[i] * 1000)}:all=1[v${i}]`).join(';');
-  const filter = `${delays};${says.map((_, i) => `[v${i}]`).join('')}amix=inputs=${says.length}:normalize=0,asplit[vo][key];[1:a]volume=0.5[m];[m][key]sidechaincompress=threshold=0.02:ratio=8:attack=40:release=500[md];[vo][md]amix=inputs=2:normalize=0,afade=t=out:st=${(end - 1).toFixed(2)}:d=1[a]`;
+  const filter = `${delays};${says.map((_, i) => `[v${i}]`).join('')}amix=inputs=${says.length}:normalize=0,asplit[vo][key];[1:a]volume=0.45[m];[m][key]sidechaincompress=threshold=0.02:ratio=8:attack=40:release=500[md];[vo][md]amix=inputs=2:normalize=0,afade=t=out:st=${(end - 1).toFixed(2)}:d=1[a]`;
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(dir, 'f%04d.jpg'), '-i', music, ...ins, '-filter_complex', filter, '-map', '0:v', '-map', '[a]',
     '-c:v', 'libx264', '-crf', '21', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-t', String(end), '-movflags', '+faststart', `${out}.mp4`]);
   // The poster is the whole portfolio at one glance: every home page, counted.

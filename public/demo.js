@@ -114,6 +114,9 @@
     .bar small { font: 500 12px "IBM Plex Mono", monospace; opacity: .85; white-space: nowrap; }
     .ctl { min-width: 88px; padding: 7px 12px; border: 0; border-radius: 0; background: rgba(255,255,255,.12); color: #fff; font-size: 13px; }
     .ctl:hover { background: rgba(255,255,255,.22); }
+    .go { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 3; padding: 18px 30px; border: 0; border-radius: 0;
+      background: var(--aoa-demo-accent, #f2b705); color: var(--aoa-demo-ink, #0b1f3a); font-size: 20px; font-weight: 700; box-shadow: 0 14px 40px rgba(0,0,0,.5); }
+    .go:hover { transform: translate(-50%, -52%); }
     .stage.sharing video { max-height: calc(100vh - 330px); }
     @media (max-width: 600px) { .stage.sharing video { max-height: calc(100vh - 470px); } }
     .share { display: grid; gap: 10px; padding: 14px; background: rgba(255,255,255,.06); color: #fff; border-top: 1px solid rgba(255,255,255,.14); }
@@ -223,7 +226,19 @@
       else { v.pause(); toggle.textContent = 'המשך'; }
     });
     v.playbackRate = pl.speed;
-    v.play().catch(() => { v.muted = true; sound.textContent = 'צליל'; v.play().catch(() => { toggle.textContent = 'הפעלה'; }); });
+    // SOUND IS ALWAYS ON (Anat, 2026-11-11: "אני שולחת את השיתוף של הסרטונים - הצליל מכובה! תדליק אותו תמיד"). A
+    // link that opens the player has no click behind it, so the browser refuses sound. The video is never started
+    // muted instead (the first words of the narration were lost that way): it waits on its poster with one big
+    // button, and that click starts it from the first second, with sound.
+    v.play().catch(() => {
+      toggle.textContent = 'הפעלה';
+      const go = el('button', { className: 'go', type: 'button', textContent: 'הפעלה עם קול', on: { click: () => {
+        go.remove(); v.muted = false; v.currentTime = 0; v.playbackRate = pl.speed; v.play(); toggle.textContent = 'השהיה';
+      } } });
+      v.addEventListener('play', () => go.remove(), { once: true });
+      stage.append(go);
+      go.focus();
+    });
     x.focus();
   }
 
