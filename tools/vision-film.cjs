@@ -236,7 +236,7 @@ window.render = (t) => {
     const [row] = await rest(`aoa_apps?select=data&id=eq.${sc.appId}`);
     const demo = { ...(row.data.demo || {}), src, poster, duration: Math.round(duration * 10) / 10, speed: sc.speed, whole: true, length: Math.round(duration / sc.speed), updatedAt: new Date().toISOString(),
       // Every video is made to be sent on (Anat, 2026-11-11): share turns on the "שיתוף" button and the link that opens the player.
-      share: { text: sc.share || sc.scenes[0].line } };
+      share: { text: sc.share || sc.scenes[0].line }, music: sc.music || 'bright' };
     await edit('save_app', { id: sc.appId, data: { ...row.data, demo } });
     console.log('saved in data.demo:', src);
   }

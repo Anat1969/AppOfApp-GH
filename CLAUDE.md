@@ -235,6 +235,12 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   (3) Music is the mood `bright` of `music.py` in Claude-GH (marimba at 116 bpm, light bass and shaker, D major, nothing
   sustained under the voice), lowered under every sentence. `wonder` (slow pad and piano) is only for a quiet film she
   asks for. The three older videos with a share link: Refua, the inner-space magazine, PrasNovel.
+  VARIETY (Anat, the same day: "תגוון במוזיקה ועדיין שתהיה חיננית חיונית ומעוררת השראה. ושמור זאת ככלל"): `music.py` has
+  a lively family of five tunes (bright, spring, stroll, carousel, sunrise) and every video gets a different one. The
+  tune of each video is kept in `data.demo.music`; before a new video, read which tunes are taken and pick another.
+  Now: the portfolio bright, Refua stroll, PrasNovel carousel, the inner-space magazine sunrise; spring is free.
+  The three older videos were recorded again on 2026-11-11 with `demo.cjs` against their live sites, from the scripts in
+  their repositories (only the music changed, and the opening sentence now starts at 1.15s); their repositories were not touched.
 - CREATIONS (Anat, 2026-11-03: "כל אפליקציה צריכה דף עם כתבות שהיא יכולה להפיק מנושאים שעולים מהידע, הבנה ויישום"):
   `public/creations.js` serves `<app-creations src="./creations.json">` to all apps (Pages first, Vercel fallback). Each topic
   is a room with creations in nine designs (poster, gradient, veil, insight, quote, haiku, post, fromto, essay), A4 sheets
