@@ -227,6 +227,14 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   gives that link. The portfolio's own link: https://appofapp-gh.vercel.app/?aoa-demo=1 ; its page carries og: tags and
   `/api/og?id=<id>&demo=1` serves the video poster as the preview picture. Videos made before this date keep their
   setting until Anat asks.
+- VIDEO SOUND, FIRST WORD, MUSIC (Anat, 2026-11-11: "הצליל מכובה! תדליק אותו תמיד. אתה חותך את המילה הראשונה של הקריין.
+  המוזיקה נוראית - מוזיקה של הלוויות. תתאים מוזיקה ראויה חיונית וחיננית מבלי להפריע להסבר"): (1) the player never starts
+  a video muted. A shared link has no click behind it, so the browser refuses sound; the video then waits on its poster
+  with one big button "הפעלה עם קול", and that click starts it from the first second with sound (`.go` in `demo.js`).
+  (2) The first narrated sentence starts at 1.2s, never earlier: a speaker that wakes up late swallowed the first word.
+  (3) Music is the mood `bright` of `music.py` in Claude-GH (marimba at 116 bpm, light bass and shaker, D major, nothing
+  sustained under the voice), lowered under every sentence. `wonder` (slow pad and piano) is only for a quiet film she
+  asks for. The three older videos with a share link: Refua, the inner-space magazine, PrasNovel.
 - CREATIONS (Anat, 2026-11-03: "כל אפליקציה צריכה דף עם כתבות שהיא יכולה להפיק מנושאים שעולים מהידע, הבנה ויישום"):
   `public/creations.js` serves `<app-creations src="./creations.json">` to all apps (Pages first, Vercel fallback). Each topic
   is a room with creations in nine designs (poster, gradient, veil, insight, quote, haiku, post, fromto, essay), A4 sheets
