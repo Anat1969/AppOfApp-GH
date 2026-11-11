@@ -116,7 +116,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
               או אפליקציה
             </h1>
             <p className="lead">כל גיליון פותח עולם שלם: בעיה, פתרון, ותוצר שעובד בפועל.</p>
-            <p className="hero-invite">הסרטון מראה בדקה איך מוצאים כאן כל דבר, ואיך רעיון הופך לאפליקציה.</p>
+            <p className="hero-invite">הסרטון מראה ב-20 שניות את החזון: דפי הבית של כל הכלים, מפה אחת שמסדרת אותם, ומקרה אחד.</p>
             <div className="hero-cta">
               <button className="solid hero-add" onClick={() => onAdd()}>
                 הוספת אפליקציה חדשה
