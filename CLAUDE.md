@@ -220,6 +220,13 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   portfolio grows: `node tools/vision-film.cjs docs/vision-film.json <out> <Claude-GH templates dir> --upload` (about 6
   minutes). The request the video panel copies for other apps asks for the same four moves. "מדריך חי" in the logo is a
   different thing (a recorded click path shared as a link); its hint now says so.
+- EVERY VIDEO HAS A LINK TO SEND (Anat, 2026-11-11: "אני רוצה קישור לסרטון כדי שאוכל לשלוח אותו לכל מיני מקומות. תדאג
+  שיהיה כזה כפתור כשאתה מייצר אותם בעתיד"): from now on every video Claude produces is saved with `data.demo.share` =
+  { text }, so the player has "שיתוף" (copy link, WhatsApp, networks, download) and the link `<home>?aoa-demo=1` opens the
+  player on arrival. `tools/vision-film.cjs --upload` writes it from `share` in the script. The delivery message always
+  gives that link. The portfolio's own link: https://appofapp-gh.vercel.app/?aoa-demo=1 ; its page carries og: tags and
+  `/api/og?id=<id>&demo=1` serves the video poster as the preview picture. Videos made before this date keep their
+  setting until Anat asks.
 - CREATIONS (Anat, 2026-11-03: "כל אפליקציה צריכה דף עם כתבות שהיא יכולה להפיק מנושאים שעולים מהידע, הבנה ויישום"):
   `public/creations.js` serves `<app-creations src="./creations.json">` to all apps (Pages first, Vercel fallback). Each topic
   is a room with creations in nine designs (poster, gradient, veil, insight, quote, haiku, post, fromto, essay), A4 sheets
