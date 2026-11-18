@@ -158,6 +158,7 @@ TEXT STANDARD (Anat, 2026-10-26, "חשוב ביותר", for every app and every 
 distilled and emphasized in a hierarchy: an insight line of up to 8 words, one explanation sentence of up to 20 words,
 and `**` on the main concept, the parameters and the numbers. The paste-ready instruction is in `docs/ai-text-standard.md`;
 `GEN_SYSTEM` in `aoa-edit` is identical to it. Gemini free first, Claude only as a fallback.
+Model order (2026-11-18): `gemini-4-hydrogen` first (unconfirmed id, a 404 falls through), then `gemini-flash-latest`; see Claude-GH `docs/ai-tools-digest.md`.
 Gemini (2026-10-27): Anat's key starts with `AQ.` (the newer Google key format, works). Free models answer 503 or slowly at
 times, so `aoa-edit` tries `gemini-flash-latest`, then lighter models, 25s each. The model answers each field as
 {insight, detail} and the server joins them, so the hierarchy is kept every time.
