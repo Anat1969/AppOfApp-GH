@@ -107,7 +107,9 @@ type Gen = { desc: string; problem: string; solution: string };
 
 // Free Gemini models can be busy (503) or slow. Try the configured model, then lighter ones, each with its own
 // time limit, so one click still ends with text (Anat's key, 2026-10-27: first call returned 503).
-const GEMINI_MODELS = [...new Set([Deno.env.get('GEMINI_MODEL') ?? 'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'])];
+// 2026-11-18: gemini-4-hydrogen (free, ~2.5x faster than 3.8 Flash) goes first. Its id is not confirmed in Google's API docs;
+// an unknown id answers 404, which falls through to the next model, so a wrong guess costs one fast request.
+const GEMINI_MODELS = [...new Set([Deno.env.get('GEMINI_MODEL') ?? 'gemini-4-hydrogen', 'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'])];
 
 async function geminiOnce(key: string, model: string, user: string): Promise<Gen> {
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
