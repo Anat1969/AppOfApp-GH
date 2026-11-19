@@ -19,6 +19,8 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   // The payslip reader (tlush/) is a separate page with private data: never cache it, never let it replace the shell.
   if (url.pathname.includes('/tlush/') || url.pathname.endsWith('/tlush')) return;
+  // The cinema (cinema/) is a page of its own: the portfolio shell must never answer for it.
+  if (url.pathname.includes('/cinema/') || url.pathname.endsWith('/cinema')) return;
 
   if (req.mode === 'navigate') {
     e.respondWith(

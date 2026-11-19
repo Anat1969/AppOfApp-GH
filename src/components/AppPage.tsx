@@ -15,6 +15,7 @@ import ChangeLog from './ChangeLog';
 import Notes from './Notes';
 import { toast } from './Toasts';
 import PhoneLink from './PhoneLink';
+import CinemaLink from './CinemaLink';
 
 interface Props {
   app: AppData;
@@ -274,6 +275,7 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, onB
                   העתקת קישור עם תמונה
                 </button>
               )}
+              <CinemaLink appId={app.id} />
               {LINKS.filter((l) => app[l.url]).map((l) => (
                 <a key={String(l.url)} className="ghost" href={withProtocol(String(app[l.url]))} target="_blank" rel="noopener noreferrer">
                   {String(app[l.label] ?? '') || l.fallback}

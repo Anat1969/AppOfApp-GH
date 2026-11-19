@@ -81,6 +81,8 @@ async function setup(context, calls) {
   await context.route(/\/rest\/v1\/aoa_apps/, (r) => r.fulfill({ json: rows }));
   await context.route(/\/rest\/v1\/aoa_categories/, (r) => r.fulfill({ json: cats }));
   await context.route(/\/rest\/v1\/aoa_facets/, (r) => r.fulfill({ json: facets }));
+  // the cinema feed: app-1 has one film on screen, so its page links to the cinema
+  await context.route(/\/rest\/v1\/rpc\/aoa_cinema/, (r) => r.fulfill({ json: [{ key: 'aoa-media/app-1/film-1.mp4', app_id: 'app-1', url: 'https://x.supabase.co/storage/v1/object/public/aoa-media/app-1/film-1.mp4', private: false, old: false, hidden: false }] }));
   await context.route(/\/storage\/v1\/object\/upload\/sign\//, (r) => {
     calls.push({ action: 'storage_put', url: r.request().url() });
     r.fulfill({ json: { Key: 'aoa-media/x' } });
@@ -351,6 +353,7 @@ const browser = await chromium.launch();
   ok((await page.locator('.titleblock b').first().textContent())?.startsWith('A-'), 'sheet number in title block');
   // share link with a picture: copies the portfolio's /s/<id> address, which serves the og: tags for WhatsApp
   await page.evaluate(() => { window.__copied = ''; navigator.clipboard.writeText = async (t) => { window.__copied = t; }; });
+  ok((await page.locator('.app-links .cinema-link').count()) === ((await page.url()).includes('app-1') ? 1 : 0), 'an app with a film links to the cinema, an app without one does not');
   await page.locator('.app-links .share-copy').click();
   const shared = await page.evaluate(() => window.__copied);
   ok(/^https:\/\/appofapp-gh\.vercel\.app\/s\/app-[\w-]+$/.test(shared), `share button copies the link with a picture (${shared})`);
