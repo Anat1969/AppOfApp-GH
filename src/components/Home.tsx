@@ -9,6 +9,7 @@ import Filters from './Filters';
 import Matrix, { type AddPrefill } from './Matrix';
 import Vocabulary from './Vocabulary';
 import BeyondMap from './BeyondMap';
+import Magazine from './Magazine';
 import CellPage from './CellPage';
 
 interface Props {
@@ -84,6 +85,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
     { key: 'map', no: '02', label: 'מפת התחומים והפעולות' },
     { key: 'all', no: '03', label: 'כל הגיליונות', n: apps.length },
     { key: 'beyond', no: '04', label: 'סינתזות ושורות חדשות' },
+    { key: 'mag', no: '05', label: 'מגזין' },
   ];
 
   return (
@@ -197,6 +199,18 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
             <span className="band-note">רעיונות שמעבר למפה: מיזוגים בין תחומים רחוקים, ושורות ועמודות שעוד אין בה.</span>
           </header>
           <BeyondMap apps={apps} facets={facets} go={go} onAdd={onAdd} saveFacet={saveFacet} />
+        </section>
+      )}
+
+      {/* The magazine is its own app; the portfolio shows its door (Anat, 2026-11-19). */}
+      {sec === 'mag' && (
+        <section className="band sec-section band-mag">
+          <header className="band-head">
+            <span className="mono">05</span>
+            <h2>מגזין: המאמרים שנכתבו באפליקציות, בגיליון אחד</h2>
+            <span className="band-note">המאמרים נשארים באפליקציות שבהן נכתבו. המגזין "חוט" מחבר ביניהם לגיליונות.</span>
+          </header>
+          <Magazine />
         </section>
       )}
 

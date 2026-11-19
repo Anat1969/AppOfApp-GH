@@ -469,4 +469,10 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
   rewritten to the same bar, each with `example` and `test`; no idea mixes owners, no title repeats. Real facts cited in
   examples were checked from knowledge only, not against an outside source. A new idea must pass the same checks:
   example and test present, one `**emphasis**`, source apps of one owner, a title that is not an app name.
+- MAGAZINE DOOR (Anat, 2026-11-19: "בדף נוסף באפליקציה של האפליקציות, להציג את מה שאתה עושה כחלק ממנה"): the magazine "חוט" is its
+  own app (Anat1969/MaAmarim-GH, https://maamarim-gh.vercel.app): articles stay in the apps that wrote them and are edited there
+  into issues and threads. The portfolio only shows its door: section 05 "מגזין" in the home bar (`?sec=mag`, `Magazine.tsx`:
+  the current issue's cover, its contents, the three newest articles), and on the page of an app that writes articles
+  (`MAG_SOURCE`: תרבות וגילוי, מהות, מהמרחב הפנימי) a block of its articles that open in the magazine. No magazine content or
+  engine lives here; it reads the `mag_` tables. A new writing app gets a line in `MAG_SOURCE`.
 - Placeholder text from the old Lovable template ("תאר את...") is treated as empty and never shown.
