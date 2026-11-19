@@ -14,7 +14,11 @@
       "destination": "/tlush/index.html"
     },
     {
-      "source": "/((?!assets/|tlush|api/|sw.js|ai-menu.js|creations.js|guide.js|demo.js|walk.js|streets.js|gis/|ashdod-logo.png|manifest.webmanifest|icon).*)",
+      "source": "/cinema",
+      "destination": "/cinema/index.html"
+    },
+    {
+      "source": "/((?!assets/|tlush|cinema|api/|sw.js|ai-menu.js|creations.js|guide.js|demo.js|walk.js|streets.js|gis/|ashdod-logo.png|manifest.webmanifest|icon).*)",
       "destination": "/index.html"
     }
   ],

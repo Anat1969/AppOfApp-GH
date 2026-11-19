@@ -45,6 +45,7 @@ https://appofapp-gh.vercel.app
 npm run dev
 npm run build
 npx vite preview --port 4173 & node tests/e2e.mjs   # Playwright, every Supabase call mocked
+node tests/cinema.mjs   # the cinema page
 ```
 
 Second address (Anat, 2026-10-24: "קישור ישיר לאפ דרך גיטהב"): GitHub Pages at
@@ -58,6 +59,31 @@ mixed old lines back in: duplicated functions in `aoa-edit`, an unused import th
 Run `npm run build` again after every merge, right before pushing.
 
 Playwright comes from the global install: `ln -s "$(npm root -g)/playwright" node_modules/playwright`.
+
+## Cinema (`cinema/`, Anat 2026-11-19)
+
+"קולנוע האפליקציות": https://appofapp-gh.vercel.app/cinema/ (Pages: `/AppOfApp-GH/cinema/`). Her vision: "קולנוע של סרטונים כדי
+לעניין, לרגש ולחשוף לגיוון הרחב של האפליקציות שלי"; public, municipal apps included ("שום דבר לא סודי"). She chose: part of the
+portfolio, but a part that stands on its own, with links, and "כשנוצר סרט חדש, הוא משתלב מיד בתוך הרשימה".
+Third Vite entry (`cinema/index.html`, code `src/cinema/`), listed in `vercel.json` (rewrite + the catch-all exception) and skipped by the sw.
+- A NEW FILM JOINS BY ITSELF: nothing is registered. `aoa_cinema()` (security definer, `supabase/migrations/20261119_aoa_cinema.sql`)
+  reads every `video/*` file in storage live, plus `data.demo.src` on an app's own site, plus films added by link. The page reads it
+  again every minute and when the tab returns, and marks the arrival "חדש". Never replace this with a hand-kept list.
+- Which app a file belongs to: `aoa-media/<appId>/...` by folder (`demo-*` = הדגמה, anything else = יצירה); other buckets through
+  `aoa_video_sources` (bucket, app_id). A NEW APP THAT MAKES FILMS IN ITS OWN BUCKET gets one row there, and a title join in
+  `aoa_cinema()` if its tables hold the film's name (done for mo-media, article-media, neo-gallery-images, taarucha-media).
+- Two kinds: הדגמה (about the app) and יצירה (made inside the app). Not screened, but listed in "כל הסרטים": older takes of a demo
+  (`old`: not the current `data.demo.src`), files in a private bucket (`private`: mathcreator-library, 17 films), hidden by hand.
+- What she sets by hand lives in `aoa_videos` (key = `<bucket>/<path>`, `demo:<appId>` or `link:<uuid>`): title, sentence, app,
+  subjects, kind, hidden, opening film. Written only by `aoa_video_save` / `aoa_video_delete` (open to anon like all editing, they touch
+  this table only). The files themselves are never copied, moved or deleted from the cinema.
+- Three parts, in the address (`?tab=all|gaps`, `?kind=`, `?domain=`, `?app=`, `?film=<key>`): האולם (one screen beside the programme, in
+  the golden ratio, fits the screen; one press starts with sound, then film after film with a title card naming the next; the
+  programme is reshuffled on every visit so two films of one app are not neighbours), כל הסרטים (rename in place, edit, add by
+  click / drag / paste / link, sort with group headings), מה חסר (apps without a film by subject and by action, and a ready request
+  for Claude for each missing film). A film takes its subjects from its app unless set.
+- Links in: "קולנוע" in the portfolio top bar; on an app page "N סרטים בקולנוע" (`CinemaLink.tsx`) only when the app has a film on screen.
+- The dark surface is the screen only; the drawing-sheet frame and stamp stay in the portfolio pages. Test: `node tests/cinema.mjs`.
 
 ## Payslip reader (`tlush/`, Anat 2026-11-04)
 

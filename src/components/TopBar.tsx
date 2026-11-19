@@ -225,6 +225,10 @@ export default function TopBar({ route, apps, facets, search, onHome, onSearch, 
           <button className={`tab ${route.view === 'table' ? 'on' : ''}`} onClick={() => onView('table')}>
             טבלה
           </button>
+          {/* The cinema is a page of its own inside the portfolio (Anat, 2026-11-19). */}
+          <a className="tab" href={`${import.meta.env.BASE_URL}cinema/`}>
+            קולנוע
+          </a>
           <span className="sep" aria-hidden />
           {menu}
         </nav>
