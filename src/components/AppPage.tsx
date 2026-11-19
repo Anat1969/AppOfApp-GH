@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { AppData, Facet } from '../lib/types';
 import type { Route } from '../lib/route';
 import { actionOf, related } from '../lib/facets';
+import { MagazineFor } from './Magazine';
 import FacetTags from './FacetTags';
 import AppCard from './AppCard';
 import { copyShare, shareUrl } from '../lib/share';
@@ -364,6 +365,8 @@ export default function AppPage({ app, sheet, apps, sheets, facets, go, seq, onB
           </button>
         </div>
       </div>
+
+      <MagazineFor appId={app.id} />
 
       {near.length > 0 && (
         <section className="band related">

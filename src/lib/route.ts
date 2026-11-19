@@ -10,7 +10,7 @@ export interface Route {
   view: 'home' | 'table';
   links: boolean;
   /** Home section (Anat, 2026-11-04): a fixed bar of sections, only the content below it changes. */
-  sec: 'new' | 'map' | 'all' | 'beyond';
+  sec: 'new' | 'map' | 'all' | 'beyond' | 'mag';
   /** A map cell opened as its own page, `domain:action` (Anat, 2026-11-10). */
   cell: string | null;
 }
@@ -25,7 +25,7 @@ function read(): Route {
     q: p.get('q') ?? '',
     view: p.get('view') === 'table' ? 'table' : 'home',
     links: p.get('links') === '1',
-    sec: p.get('sec') === 'map' ? 'map' : p.get('sec') === 'all' ? 'all' : p.get('sec') === 'beyond' ? 'beyond' : 'new',
+    sec: p.get('sec') === 'map' ? 'map' : p.get('sec') === 'all' ? 'all' : p.get('sec') === 'beyond' ? 'beyond' : p.get('sec') === 'mag' ? 'mag' : 'new',
     cell: p.get('cell'),
   };
 }

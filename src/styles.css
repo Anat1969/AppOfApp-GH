@@ -958,3 +958,36 @@ mark.hl { color: var(--ink); font-weight: 600; padding: 0 2px; background: linea
 .idea-example .mono, .idea-test .mono { display: block; margin-bottom: 2px; color: #1a3a6f; font-weight: 600; }
 /* The hover window stays short: the reliability check shows on the cell page and in section 04 */
 .cell-pop .idea-test { display: none; }
+
+/* Section 05, the magazine door (2026-11-19): the cover of the current issue beside its contents. The magazine itself is MaAmarim-GH. */
+.mag { display: grid; grid-template-columns: minmax(0, min(46%, calc(100vh - var(--bar-h) - 190px))) minmax(0, 1fr); gap: 28px; align-items: start; }
+.mag-cover { position: relative; display: block; aspect-ratio: 1; background: #2e2e2b; overflow: hidden; box-shadow: var(--shadow-1); }
+.mag-cover img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.mag-veil { position: absolute; inset: auto 0 0 0; display: grid; gap: 4px; padding: 70px 22px 20px; color: #fff; background: linear-gradient(transparent, rgb(20 20 18 / 80%) 55%, rgb(20 20 18 / 93%)); }
+.mag-veil .mono { color: rgb(255 255 255 / 75%); }
+.mag-veil b { font-size: clamp(2rem, 4vw, 3.6rem); font-weight: 300; line-height: 1.05; }
+.mag-veil i { font-style: normal; font-size: 1.15rem; }
+.mag-enter { justify-self: start; margin-top: 8px; padding: 9px 16px; background: #fff; color: var(--ink); font-weight: 600; font-size: 0.92rem; }
+.mag-cover:hover .mag-enter { box-shadow: 0 0 0 3px #e8a317; }
+.mag-side { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.mag-lead { font-size: 1.12rem; line-height: 1.55; margin: 0; max-width: 60ch; }
+.mag-side h3 { margin: 10px 0 0; font-size: 0.86rem; font-weight: 600; color: var(--ink-2); }
+.mag-list { list-style: none; margin: 0; padding: 0; }
+.mag-list li { border-top: 1px solid var(--line); }
+.mag-list a { display: grid; grid-template-columns: 30px 1fr auto; align-items: baseline; gap: 10px; padding: 7px 6px; color: inherit; text-decoration: none; transition: background 0.15s, box-shadow 0.15s; }
+.mag-list a:hover { background: #fff; box-shadow: var(--shadow-1); }
+.mag-list b { font-weight: 500; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mag-latest { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.mag-latest.wide { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mag-latest a { display: grid; grid-template-columns: 76px 1fr; gap: 10px; align-items: start; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 1px 2px rgb(0 0 0 / 8%); transition: box-shadow 0.15s; min-width: 0; }
+.mag-latest a:hover { box-shadow: var(--shadow-1); }
+.mag-latest img { width: 76px; height: 76px; object-fit: contain; background: #ecebe7; display: block; }
+.mag-latest span { display: grid; gap: 2px; padding: 7px 0 7px 8px; min-width: 0; }
+.mag-latest a > span:only-child { grid-column: 1 / -1; padding-inline-start: 10px; }
+.mag-latest b { font-weight: 600; font-size: 0.98rem; line-height: 1.25; }
+.mag-latest i { font-style: normal; font-size: 0.82rem; color: var(--dim); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mag-latest em { font-style: normal; }
+@media (max-width: 900px) {
+  .mag { grid-template-columns: minmax(0, 1fr); }
+  .mag-latest { grid-template-columns: minmax(0, 1fr); }
+}
