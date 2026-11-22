@@ -135,3 +135,8 @@
 3. **TAARUCHA, מ-SQL (מתוך שיחת Claude):**
    - הכנסה לטבלאות `taarucha_exhibitions` ו-`taarucha_works`, לפי אותו מיפוי.
    - התמונות מוגשות דרך `https://cdn.jsdelivr.net/gh/<repo>@<commit>/public/...`, ולכן לא תלויות במכסת Vercel.
+
+## כתובת ישירה לכתבה (22.11.2026)
+`?ar-open=<מזהה הנושא>` לפני ה-hash גולל אל הכתבה של הנושא הזה בדף היצירות, למשל
+`https://refua-gh.vercel.app/?ar-open=harvey#v=creations`. המגזין "חוט" (MaAmarim-GH) קורא את `creations.json` של
+האפליקציה כמקור של כתבות (כל נושא הוא כתבה), ומקשר כך מכל כתבה אל הכתבה באפליקציה שכתבה אותה.
