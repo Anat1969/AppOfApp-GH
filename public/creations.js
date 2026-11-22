@@ -828,6 +828,9 @@ app-article{display:block;direction:rtl}
       if (qs.get('cr-article')) return this.shotArticle(qs.get('cr-article'));
       if (qs.get('cr')) return this.shot(qs.get('cr'));
       this.render();
+      // כתובת ישירה לכתבה אחת: ?ar-open=<מזהה הנושא> לפני ה-hash. המגזין "חוט" מקשר כך מכל כתבה אל הכתבה באפליקציה שלה.
+      const open = qs.get('ar-open');
+      if (open) requestAnimationFrame(() => this.querySelector('#cr-' + CSS.escape(open))?.scrollIntoView({ block: 'start' }));
     }
     get layout() { return this.getAttribute('layout') || new URLSearchParams(location.search).get('ar-layout') || ''; }
     get all() { return this.data.topics.flatMap((t) => t.creations.map((c) => ({ c, t }))); }
