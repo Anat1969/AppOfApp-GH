@@ -18,7 +18,7 @@
       "destination": "/cinema/index.html"
     },
     {
-      "source": "/((?!assets/|tlush|cinema|api/|sw.js|ai-menu.js|creations.js|guide.js|demo.js|walk.js|streets.js|gis/|ashdod-logo.png|manifest.webmanifest|icon).*)",
+      "source": "/((?!assets/|tlush|cinema|api/|sw.js|ai-menu.js|cover.js|creations.js|guide.js|demo.js|walk.js|streets.js|gis/|ashdod-logo.png|manifest.webmanifest|icon).*)",
       "destination": "/index.html"
     }
   ],
@@ -133,6 +133,19 @@
         {
           "key": "Cache-Control",
           "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/cover.js",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, must-revalidate"
         }
       ]
     }
