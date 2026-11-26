@@ -368,7 +368,10 @@ site meta: `supabase/migrations/20261026_aoa_fill_texts.sql`.
 - HOME AS A FIXED SECTION BAR (Anat, 2026-11-04: "כל הסעיפים הם סרגל קבוע בדף ואז יש מרחב מחייה לכל סעיף - בו מקבעים
   כותרות ורק התוכן משתנה"): under a compact hero, one sticky bar `.sec-bar` holds 01 חדש בתיק, 02 מפת התחומים והפעולות,
   03 כל הגיליונות and the add button. Only the content under it changes (fade, no vertical motion; `?sec=new|map|all`,
-  default new). A search or a filter always shows the sheets. 01: added and updated as two ROWS ("בשורות ולא בטורים"),
+  default new). A search or a filter always shows the sheets.
+  NO WAITING ON EXIT (Anat, 2026-11-26: "הכפתורים בשורה עם חדש בתיק לא עובדים"): the section body is a keyed `motion.div`
+  that only fades in; never wrap it in `AnimatePresence mode="wait"` again: one stalled exit (a layout card) freezes the bar.
+  Cards inside sections use `<AppCard still>`. 01: added and updated as two ROWS ("בשורות ולא בטורים"),
   updated = changed after the day it was added, last 30 days. 02: the map sized so every domain row fits the screen
   (`--rows`), the vocabulary behind "עריכת מילון התחומים וההקשרים", and BeyondMap below it.
 - COMPOSITION TO THE SCREEN (Anat, 2026-11-04: "לא יתכן שכך יראה מסך - חתוך!", "יותר מידי שטח מת", "גלגול מזיז את סרגלי

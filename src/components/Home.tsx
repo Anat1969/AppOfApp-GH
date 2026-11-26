@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { ActionValue, AppData, Facet } from '../lib/types';
 import { hasFilters, type Route } from '../lib/route';
 import { createdOf, time } from '../lib/format';
@@ -103,8 +103,10 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
         </button>
       </nav>
 
-      <AnimatePresence mode="wait">
-      <motion.div key={cell ? `cell:${cell}` : sec} className="sec-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+      {/* A section change never waits for the old section to leave (Anat, 2026-11-26: "הכפתורים בשורה לא עובדים"): with
+          AnimatePresence mode="wait" one stalled exit animation (a layout card inside) froze the whole bar. The new
+          section replaces the old one at once and only fades in. */}
+      <motion.div key={cell ? `cell:${cell}` : sec} className="sec-body" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>
 
       {sec === 'new' && (
         <section className="hero hero-welcome">
@@ -148,7 +150,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
               {added.length ? (
                 <div className="recent">
                   {added.map((a, i) => (
-                    <AppCard key={a.id} app={a} sheet={sheets.get(a.id) ?? ''} category={domainsOf(a)} onOpen={() => go({ app: a.id })} index={i} compact />
+                    <AppCard key={a.id} app={a} sheet={sheets.get(a.id) ?? ''} category={domainsOf(a)} onOpen={() => go({ app: a.id })} index={i} compact still />
                   ))}
                 </div>
               ) : (
@@ -162,7 +164,7 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
               {updated.length ? (
                 <div className="recent">
                   {updated.map((a, i) => (
-                    <AppCard key={a.id} app={a} sheet={sheets.get(a.id) ?? ''} category={domainsOf(a)} onOpen={() => go({ app: a.id })} index={i} compact />
+                    <AppCard key={a.id} app={a} sheet={sheets.get(a.id) ?? ''} category={domainsOf(a)} onOpen={() => go({ app: a.id })} index={i} compact still />
                   ))}
                 </div>
               ) : (
@@ -277,7 +279,6 @@ export default function Home({ apps, results, searched, facets, sheets, route, g
       </section>
       )}
       </motion.div>
-      </AnimatePresence>
     </div>
   );
 }
